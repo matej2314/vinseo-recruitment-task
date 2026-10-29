@@ -1,0 +1,142 @@
+---
+wersja: 5
+data_utworzenia: 2026-10-29
+data_modyfikacji: 2026-10-29
+---
+
+# Strategia testów
+
+Jak testujemy Firmowego asystenta spotkań w v1: warstwy, obowiązkowe obszary, narzędzia i reguły CI.
+
+## Cele
+
+- Chronić **reguły ACL** i **redakcję** przed regresją (wymagania krytyczne produktu).
+- Udowodnić **idempotentny pipeline** i **fail-closed** na niepoprawnym wyniku streszczenia.
+- Unikać kosztownych e2e przeglądarkowych jako głównej siatki bezpieczeństwa w MVP.
+- Te same testy lokalnie i na pull requestach; **merge do `main` tylko przy zielonych testach**.
+
+## Piramida v1
+
+```text
+        /\
+       /  \      e2e przeglądarka - poza MVP (świadomie)
+      /----\
+     / integ \   pipeline + API (supertest) + Postgres testowy
+    /--------\
+   /   unit   \  ACL, redaction, Zod, czysta idempotencja / reguły
+  /------------\
+```
+
+| Warstwa | Udział v1 | Co pokrywa |
+|---------|-----------|------------|
+| **Unit** | Dużo | `access` (tabela przypadków), redakcja PII, schemat Zod summary, mapowania pure, reguły statusów |
+| **Integracja** | Średnio | Job `meeting.process` z mockami portów + prawdziwy Postgres testowy; wybrane trasy Nest przez **supertest** (auth cookie, ACL, demo enqueue, **SSE**) |
+| **E2E UI (Playwright itd.)** | Brak / poza MVP | Widok testowy i przycisk Test weryfikujemy ręcznie lub późniejszym etapem; w v1 wystarczy ścieżka API+worker |
+
+Frontend (`web`): bez Playwright w v1; co najwyżej lekkie testy jednostkowe czystej logiki UI oraz **smoke build** (`next build` / typecheck w CI, jeśli włączone w pipeline).
+
+## Narzędzia
+
+| Element | Wybór |
+|---------|--------|
+| Runner | **Jest** (wszystkie apps; migracja ze Vitest w scaffoldzie Nest) |
+| HTTP API | **supertest** + `@nestjs/testing` |
+| Asercje kontraktu summary | Zod (parse w teście / oczekiwany sukces lub fail) |
+| Baza | Osobna baza **testowa** w Docker Compose (nie produkcyjna, nie współdzielona z dev bez izolacji) |
+
+## Baza testowa
+
+- W `docker-compose` (lub override): usługa Postgres z osobną bazą / osobnym kontenerem pod testy (np. DB name `meeting_memory_test`).
+- Migracje Prisma odpalane na bazę testową przed suite integracyjnym.
+- **Bez** prawdziwych nagrań i danych klientów - wyłącznie fixture / mock.
+- Testy jednostkowe ACL i redakcji **nie wymagają** bazy.
+
+## Obowiązkowe przypadki v1 (DoD testów)
+
+### Unit - ACL (`access`)
+
+Przykładowa tabela (rozszerzać w kodzie):
+
+| Użytkownik | Spotkanie | Oczekiwane |
+|------------|-----------|------------|
+| Uczestnik wewnętrzny | to spotkanie | allow |
+| Członek zespołu projektu, nieobecny na callu | spotkanie projektu | allow |
+| Obcy pracownik | cudze / inny projekt | deny → API 404 |
+| Admin | dowolne (wg reguły admin) | allow |
+
+### Unit - redakcja
+
+- Klasy **E+T+P+K** (e-mail, telefon, PESEL/dowód, karta płatnicza) są maskowane / usuwane przed wejściem do summarizera.
+- Idempotencja redakcji na już zredagowanym tekście (nie psuje treści wielokrotnie).
+
+### Unit - Zod summary (UC1)
+
+- Poprawny payload z mocka LlmClient → sukces.
+- Brak pól / zły typ / `actionItems` bez wymaganej struktury → reject (ścieżka failed).
+- Pipeline nie zależy od `summary.*` Fireflies (fixture źródła = transcript only).
+
+### UC2 ask (poza must-have etapu 0)
+
+- Gdy pojawi się stub: test ACL-before-retrieve (nie woła LLM z pełną bazą). Do czasu etapu 2 - nie blokuje DoD.
+
+### Integracja - pipeline
+
+- Dwukrotne przetworzenie tego samego `externalMeetingId` / fixture → **jedno** spotkanie.
+- Mock summarizera zwracający śmieci → status `failed`, brak kanonicznego summary.
+- Happy path → `completed` + zapisane zadania.
+
+### Integracja - API (supertest)
+
+- Login ustawia sesję (cookie); `/auth/me` działa.
+- `GET /meetings/:id` bez ACL → 404.
+- `POST /demo/run-meeting` przy ważnej sesji enqueue’uje job (asercja statusu / obecności joba lub spotkania) — **bez** bramki `DEMO_ENABLED` (flaga usunięta z kontraktu v1).
+
+### Integracja - SSE
+
+- Uprawniony użytkownik: `GET /meetings/:id/events` emituje statusy pipeline (ścieżka testowa do statusu terminalnego lub emisja statusu).
+- Brak ACL / brak zasobu → **404** (jak detail).
+
+### Audyt (`audit_log`)
+
+- Unit lub integracja: po **deny ACL** powstaje event `meeting.access.denied` (bez treści spotkania w payloadzie).
+- Po **failed** walidacji summary / jobie - odpowiedni `eventType` w `audit_log`.
+- Writer audytu nie przyjmuje / nie utrwala pól z raw transcriptem (test negatywny lub kontrakt payloadu).
+
+## Czego nie testujemy w v1 (świadomie)
+
+- Prawdziwego GraphQL Fireflies / webhooków prod.
+- Prawdziwego LLM.
+- Pełnego flow UI w przeglądarce (Playwright).
+- Wydajności przy 300 h/mies. (to założenie produktowe, nie load test w MVP).
+
+## Organizacja w monorepo
+
+- Testy współlokalizowane lub w `test/` danej aplikacji (`apps/api`, `apps/worker`).
+- Skrypt root: np. `pnpm test` odpala Jest we workspaces.
+- Nazewnictwo opisuje zachowanie (`access.allows-project-member.spec.ts`), nie implementację.
+
+## CI i reguła zespołu
+
+- Na każdym **pull request** uruchamiane są testy (Jest) - ten sam zestaw co lokalnie w rozsądnym zakresie (unit + integracja z Compose/Postgres testowym).
+- Dostępny też **workflow_dispatch** z wyborem brancha (diagnostyka).
+- **Reguła:** merge do **`main` tylko przy zielonych wymaganych checkach** (branch protection: required status checks). Direct push na `main` zablokowany.
+
+Szczegóły workflow i VPS: `deployment.md` (kolejny dokument).
+
+## Anty-patterny testowe (skrót)
+
+- Sam coverage % bez asercji ACL/redaction.
+- Testy, które tylko powielają implementację mockami wszystkiego.
+- Współdzielona baza dev+test bez izolacji.
+- Poleganie wyłącznie na ręcznym kliknięciu Test w UI.
+
+Patrz też: `anty_patterny.md`.
+
+## Mapowanie na inne dokumenty
+
+- Co chronimy produktowo: `dokumentacja_koncepcyjna.md`
+- Gdzie leży logika: `architektura.md`, `data_flow.md`
+- Kontrakty HTTP/jobów: `dokumentacja_komunikacji.md`
+- UI (smoke, bez Playwright must-have): `frontend.md`
+- LLM UC1/UC2: `llm_i_asystent.md`
+- CI / VPS: `deployment.md`

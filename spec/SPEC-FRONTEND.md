@@ -1,0 +1,134 @@
+---
+wersja: 3
+data_utworzenia: 2026-10-29
+data_modyfikacji: 2026-10-29
+---
+
+# SPEC — Frontend (`apps/web`)
+
+Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiwarki, BFF, SSE po Test. Kontekst: `docs/frontend.md`, przepływ Test: `docs/data_flow.md`. Kontrakty / SSE: `SPEC-KOMUNIKACJA`, sesja/ACL: `SPEC-AUTH_I_ACL`. Warstwy: `SPEC-ARCHITEKTURA`. Smoke: `SPEC-TESTY`.
+
+## Cel / zakres
+
+- Minimalny UI v1: logowanie/rejestracja, widok domyślny (tabela + Test), podstrona wyszukiwarki (mock).
+- BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI).
+- Zakaz przenoszenia ACL i sekretów do przeglądarki.
+
+**Poza tą wersją:** pełny panel produktowy, branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG.
+
+## Powiązanie ze stylem z docs
+
+| Ustalenie | Wiązanie |
+|-----------|----------|
+| Styl **Web (BFF + UI)** | Cienki BFF; brak ACL w React |
+| Cookie HttpOnly | Sesja tylko przez cookie; BFF przekazuje |
+| RSC / client | Server Components domyślnie; `"use client"` przy interakcji |
+| `SPEC-ARCHITEKTURA` | Bez logiki pipeline / ACL w `web` |
+
+**Wyjątek względem stylu globalnego:** brak.
+
+## Wymagania egzekwowalne
+
+### Routing i layout
+
+F-1. `/` — auth (login / register z przełączaniem trybu). Po sukcesie **login lub register** (oba ustawiają cookie sesji) → redirect na dashboard (widok domyślny).
+
+F-2. Brak ważnej sesji na chronionych trasach UI → **redirect na `/`**.
+
+F-3. Po zalogowaniu: layout z prostym **sidebarem** przełączającym:
+- widok **domyślny** (tabela spotkań + Test),
+- widok **wyszukiwarki** (osobna podstrona).
+
+F-4. **Brak** osobnej trasy UI detail spotkania (`/meetings/:id`) w v1 — podgląd wyniku w **tabeli** na widoku domyślnym.
+
+### Widok domyślny
+
+F-5. Tabela spotkań z API (`GET` lista przez BFF), wyłącznie dane już po ACL po stronie `api`.
+
+F-6. Paginacja: select limitu **10 / 25 / 50 / 100** oraz parametr **`page`** (1-based; norma `SPEC-AUTH_I_ACL`); oba wysyłane do API.
+
+F-7. Przycisk **Test** — zawsze widoczny po zalogowaniu (bez flagi UI). Wywołuje BFF → `POST /demo/run-meeting`.
+
+F-8. Po sukcesie enqueue:
+1. UI otwiera **SSE** (przez BFF) dla danego `meetingId` (`SPEC-KOMUNIKACJA`).
+2. Użytkownik **zostaje** na bieżącym widoku.
+3. Tabela **aktualizuje wiersz** (status `pending` → `processing` → `completed` | `failed`; po `completed` — dostępne pola summary / zadań w wierszu lub rozwinięciu).
+4. Przy `failed` — status + komunikat w UI; **bez** redirectu.
+
+F-9. Data-fetching: natywny **`fetch`** (bez React Query / SWR jako wymogu).
+
+### Wyszukiwarka (mock)
+
+F-10. Osobna podstrona dostępna z sidebara.
+
+F-11. UI może zawierać input / listę wyników, ale dane są **statycznym mockiem** (hardcode / fixture frontowy) z jawną adnotacją atrapy.
+
+F-12. **Zakaz** wołania LLM, endpointu search/RAG oraz UC2 z tej podstrony w v1.
+
+### BFF
+
+F-13. Route Handlers w `app/api/*`: proxy auth, meetings (lista/detail API jeśli potrzebne), demo, **SSE**; ustawianie / przekazywanie cookie HttpOnly.
+
+F-14. BFF nie egzekwuje ACL, nie enqueue’uje pg-boss bezpośrednio, nie woła adapterów źródła/LLM.
+
+### Bezpieczeństwo UI
+
+F-15. Zakaz przechowywania access/refresh w `localStorage` / `sessionStorage`.
+
+F-16. Zakaz wrażliwych sekretów w `NEXT_PUBLIC_*` i w bundlu klienta.
+
+F-17. Na produkcji: nie logować pełnego transcriptu w konsoli przeglądarki.
+
+### Render
+
+F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, sidebar, Test, EventSource/SSE, select paginacji).
+
+## Norma: wzorce
+
+### Wymagane
+
+- Next.js App Router + BFF w `app/api/*`.
+- Tailwind CSS + shadcn/ui; layout roboczy bez brandingu produktowego.
+- Sidebar: domyślny ↔ wyszukiwarka.
+- Tabela + SSE po Test (aktualizacja in-place).
+- Mock wyszukiwarki bez backendu AI.
+
+### Nie wolno
+
+- ACL / „dopuszczania po ID” wyłącznie w UI.
+- Osobnej trasy detail UI w v1 jako głównej ścieżki po Test.
+- Redirectu na detail po Test (norma: zostań + SSE).
+- React Query jako wymogu v1.
+- Playwright jako must-have v1.
+- Ukrywania Test za `NEXT_PUBLIC_*`.
+- Prawdziwego search/LLM z podstrony wyszukiwarki.
+
+## Zatwierdzony stack (obszar)
+
+| Element | Wybór |
+|---------|--------|
+| Framework | Next.js (App Router) |
+| Style | Tailwind CSS |
+| Komponenty | shadcn/ui |
+| Data-fetching | `fetch` |
+| SSE (klient) | EventSource (lub równoważne) wobec BFF |
+| Testy UI v1 | smoke `next build` / typecheck (`SPEC-TESTY`) |
+
+Wersje pakietów: zgodne z repo / aktualnym LTS — bez pinowania w tym SPEC.
+
+## Kryteria akceptacji
+
+- [ ] Niezalogowany użytkownik na dashboardzie trafia na `/`.
+- [ ] Sidebar przełącza widok domyślny i wyszukiwarkę; wyszukiwarka nie woła API LLM/search.
+- [ ] Test enqueue’uje demo; SSE aktualizuje wiersz tabeli bez zmiany trasy.
+- [ ] Limit listy tylko z {10,25,50,100}.
+- [ ] Brak sekretów sesji w Web Storage; BFF nie zawiera reguł ACL.
+- [ ] `"use client"` nie obejmuje całych drzew bez potrzeby interakcji.
+
+## Poza tą wersją
+
+- Pełny panel, multi-modułowa nawigacja, branding Vinseo.
+- Osobny widok detail jako strona produktowa.
+- Chat Q&A / prawdziwa wyszukiwarka.
+- Dark mode / PWA / mobile-first polish jako wymóg.
+- E2E Playwright.
