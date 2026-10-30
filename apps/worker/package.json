@@ -9,7 +9,8 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --forceExit"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --forceExit",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.integration.config.cjs --runInBand --forceExit"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

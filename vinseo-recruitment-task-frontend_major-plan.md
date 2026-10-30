@@ -66,6 +66,8 @@
 
 ## MILESTONE — Stub web zaakceptowany pod UI v1
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 1. Duży skok: front startuje od **odbioru** fundamentu backendu, nie od budowy monorepo. Wolno rysować szkielet powierzchni UI/BFF.
 
 **DoD (milestone):**
@@ -75,13 +77,11 @@
 - Powiązanie z Fazą 1 majoru backendu jest spełnione (fundament nie jest tu powielany).
 - Prowadzący prace akceptuje przejście do Fazy 2.
 
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
-
 ---
 
 ## Faza 2 — Szkielet powierzchni UI i BFF
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Przygotowanie szkieletu widoków i cienkiego BFF **pod** późniejsze spięcie z gotowym API (Faza 3 backendu / Faza 3 tego planu). Równolegle do pipeline’u w majorze backendu — bez implementacji pełnej ścieżki Test+SSE na żywym jobie, jeśli API jeszcze nie jest gotowe. Zgodnie z kierunkiem `docs/frontend.md` (layout roboczy, bez brandingu produktowego).
 
@@ -94,7 +94,7 @@
 
 ### Krok 2.1 — Placeholdery auth, sidebar i widoków
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Szkielet `/` (przełączanie login/register), layout po „zalogowaniu” (nawet atrapowo) z sidebarem: widok domyślny (miejsce na tabelę + Test) oraz podstrona wyszukiwarki.
 
@@ -105,7 +105,7 @@
 
 ### Krok 2.2 — Szkielet BFF (proxy)
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Placeholdery Route Handlers pod auth, meetings, demo i SSE. BFF ma pozostać cienkim proxy: cookie HttpOnly, **bez** reguł ACL, **bez** bezpośredniego sterowania kolejką / pipeline.
 
@@ -116,7 +116,7 @@
 
 ### Krok 2.3 — Bazowy layout roboczy
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Prosty, czytelny układ roboczy (bez brandingu produktowego) pod formularz auth, tabelę i mock wyszukiwarki — zgodnie z docs (komponenty UI jako środki, nie cel sam w sobie).
 
@@ -129,6 +129,8 @@
 
 ## MILESTONE — Szkielet UI/BFF gotowy do spięcia z API
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 2. Duży skok: powierzchnia frontu istnieje; brakuje żywego spięcia z sesją, ACL i demo po stronie `api`.
 
 **DoD (milestone):**
@@ -137,8 +139,6 @@
 - Placeholdery widoków i BFF są na miejscu.
 - Kolejny krok to integracja z API (Faza 3), nie przebudowa layoutu od zera.
 - Prowadzący prace akceptuje przejście do Fazy 3 **pod warunkiem** gotowości powierzchni API z majoru backendu (Faza 3 / odpowiadający MILESTONE).
-
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 

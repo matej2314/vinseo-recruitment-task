@@ -285,7 +285,7 @@ Record v1 routes and BFF surface constants so Phase 2 can scaffold views without
 
 ### KROK 1 — Bazowy layout roboczy i tooling UI
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **2.3** (przesunięty rozwojowo) — czytelny layout roboczy bez brandingu; Tailwind już obecny; inicjalizacja shadcn/ui jako środki (nie cel). Odwołania: `docs/frontend.md`, `SPEC-FRONTEND` (stack, F-18).
 
@@ -424,7 +424,7 @@ export function AppShell({ children, title }: AppShellProps) {
 
 ### KROK 2 — Placeholdery auth, sidebar i widoków
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **2.1** — szkielet `/` (login/register), layout po „zalogowaniu” (atrapa) z sidebarem: widok domyślny + wyszukiwarka; brak trasy detail UI. `SPEC-FRONTEND` F-1, F-3, F-4, F-10…F-12 (mock bez wołań API).
 
@@ -762,7 +762,7 @@ export default function SearchPage() {
 
 ### KROK 3 — Szkielet BFF (proxy)
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **2.2** — placeholdery Route Handlers pod auth / meetings / demo / SSE; cienkie proxy w kontrakcie powierzchni; **bez** ACL i **bez** omijania `api`. `SPEC-KOMUNIKACJA` K-6…K-7, `SPEC-FRONTEND` F-13…F-14. Context7: Route Handlers zwracają `Response`; cookies przez `cookies()` / nagłówki — **żywe** ustawianie cookie w Fazie 3; tu stub `501`.
 

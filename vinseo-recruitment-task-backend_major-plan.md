@@ -125,7 +125,7 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 
 ## Faza 2 — Pipeline spotkania
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Ścieżka od mockowego źródła do zwalidowanego, trwale zapisanego streszczenia: job w workerze, redakcja przed wywołaniem portu LLM, fail-closed, idempotencja, enqueue z `api`. Zgodnie z `docs/data_flow.md`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (kontrakt joba / źródła).
 
@@ -139,7 +139,7 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 
 ### Krok 2.1 — Port źródła i atrapa materiałów
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Port pobrania spotkania + atrapa (fixture PL z wtrąceniami EN). Obiekt summary vendora **ignorowany** — kanon powstaje u nas (`docs/llm_i_asystent.md`, `SPEC-PIPELINE`).
 
@@ -150,7 +150,7 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 
 ### Krok 2.2 — Orkiestracja joba `meeting.process`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Sekwencja: fetch → normalize → redact (E+T+P+K) → summarize (port LlmClient, mock UC1) → walidacja wyniku → persist. Statusy: `pending` → `processing` → `completed` | `failed`. Zakaz trwałego zapisu transcript/summary przed wywołaniem LlmClient (`SPEC-PIPELINE`).
 
@@ -170,7 +170,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 2.3 — Idempotencja i enqueue z `api`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Klucz idempotencji (`externalMeetingId` / `fixtureKey`) — update in place. Enqueue joba z `api` (CLI/demo DX może istnieć jako dodatkowa ścieżka). Worker tylko konsumuje.
 
@@ -181,7 +181,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 2.4 — Testy redakcji i demo przepuszczenia spotkania
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Unit testy redakcji E+T+P+K oraz opisane w README demo przepuszczenia przykładowego spotkania na lokalnym Compose + fixture.
 
@@ -194,6 +194,8 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ## MILESTONE — Pipeline etapu 0 działa
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 2. Duży skok: asynchroniczna ścieżka mock → redakcja → mock LLM → walidacja → persist jest domknięta i idempotentna. Wolno budować warstwę sesji i odczytu pod UI.
 
 **DoD (milestone):**
@@ -202,8 +204,6 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 - Spełnione: happy path, idempotencja, fail-closed na wyniku, redakcja przed LLM, demo lokalne.
 - Statusy przetwarzania są gotowe pod kontrakt odczytu / SSE w Fazie 3.
 - Prowadzący prace akceptuje przejście do Fazy 3.
-
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 

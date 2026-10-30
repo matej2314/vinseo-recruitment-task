@@ -1,8 +1,11 @@
 /**
  * Integracja na Postgres `vinseo_test` (SPEC-TESTY T-3 / T-9).
  *
+ * Uruchomienie: `pnpm test:integration` (root lub `@vinseo/worker`).
  * Wymaga: `pnpm db:up` albo `pnpm dev:stack:up` (oba tworzą `vinseo_test`),
  * potem: `DATABASE_URL="$DATABASE_URL_TEST" pnpm db:migrate:deploy`
+ *
+ * Nie wchodzi w domyślne `pnpm test` (unit).
  */
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';

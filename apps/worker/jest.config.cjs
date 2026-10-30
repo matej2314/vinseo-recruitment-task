@@ -3,6 +3,8 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testRegex: '.*\\.spec\\.ts$',
+  // Integracja (Postgres vinseo_test): `pnpm test:integration` / jest.integration.config.cjs
+  testPathIgnorePatterns: ['\\.integration\\.spec\\.ts$'],
   moduleFileExtensions: ['js', 'json', 'ts'],
   transform: {
     '^.+\\.ts$': [

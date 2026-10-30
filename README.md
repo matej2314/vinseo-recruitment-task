@@ -158,7 +158,9 @@ Ponowne `curl` z tym samym `fixtureKey` nie tworzy drugiego wiersza `Meeting`.
 ### Smoke testów
 
 ```bash
-pnpm test   # api + worker (unit)
+pnpm test                 # api + worker (unit; bez Postgres)
+pnpm test:integration     # worker pipeline na vinseo_test (wymaga pnpm db:up + migracji)
+# DATABASE_URL="$DATABASE_URL_TEST" pnpm db:migrate:deploy
 pnpm --filter @vinseo/api test:e2e
 ```
 

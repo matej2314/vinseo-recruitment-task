@@ -46,9 +46,19 @@ Kalendarz i lista gości zostają tam, gdzie są dziś (Workspace / osoba prowad
 | Sytuacja | Zachowanie |
 |----------|------------|
 | Odchodzący pracownik | Dezaktywacja konta + unieważnienie sesji; historia spotkań zostaje w organizacji pod ACL |
-| Spotkanie poufne (`confidential`) | Ta sama ścieżka przetwarzania; dostęp jak niżej (w tym admin) |
+| Spotkanie poufne (`confidential`) | Ta sama ścieżka **włącznie ze streszczeniem AI** (priorytet: summary dla uczestników); dostęp jak niżej (w tym admin). Typy rozróżniamy — patrz niżej. |
 | Osoba / klient bez zgody na nagrywanie | Metadata-only, bez AI |
 | Wyciek ID cudzego spotkania | Odpowiedź jak „nie znaleziono” (bez enumeracji) |
+
+**Poufne — rozróżnienie typów (decyzja na prod, nie osobny kod w etapie 0).** Jedna flaga `confidential` w v1 oznacza „węższy krąg odbiorców”, a nie „wyłącz AI”. Warto jednak rozróżniać przypadki, bo ryzyko jest inne:
+
+| Typ (przykład) | Co chronimy przede wszystkim | Kierunek na prod (do decyzji z firmą) |
+|----------------|------------------------------|----------------------------------------|
+| Wrażliwe ustalenia z klientem / budżet | Wyciek do osób spoza callu | Zostaje pełna ścieżka (capture + AI) + twarde ACL; DPA z vendorem |
+| 1:1 / zarząd | Treść u zewnętrznego notatnika i modelu | Rozważyć: ten sam wynik dla uczestników, ale ostrzejszy vendor / bez FF / inny model — **bez** rezygnacji ze summary, jeśli uczestnicy go potrzebują |
+| Rekrutacja | Dane kandydatów poza HR | Często najwęższy wariant: metadata-only albo brak zewnętrznego capture; summary tylko gdy HR świadomie włączy proces |
+
+Na oddaniu / w pilocie przyjmujemy **wariant A**: pełne przetwarzanie + summary. Szczegółowa polityka per typ — po uzgodnieniu z ops/RODO, bez forka pipeline’u w etapie 0.
 
 ---
 
