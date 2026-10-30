@@ -1,5 +1,5 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -65,9 +65,11 @@ P-5. Status przetwarzania spotkania / joba widoczny dla API:
 
 ### Idempotencja
 
-P-6. Klucz idempotencji: `externalMeetingId` (spójnie z `fixtureKey` na ścieżce mock). Ponowne enqueue / retry **nie** tworzy drugiego rekordu spotkania — **update in place**.
+P-6. Klucz idempotencji: **`externalMeetingId`**. Ponowne enqueue / retry **tego samego** `externalMeetingId` **nie** tworzy drugiego rekordu spotkania — **update in place**.
 
-P-7. Ponowne przetworzenie tego samego klucza musi być bezpieczne względem końcowego stanu domenowego (brak duplikatów spotkań i „podwójnych” kanonicznych summary jako osobnych sukcesów bez nadpisania).
+Zmiana względem wcześniejszego brzmienia P-6 („spójnie z `fixtureKey` na ścieżce mock” w kontekście dema UI): na ścieżce **DEMO/Test** (`POST /demo/run-meeting`) `externalMeetingId` jest ID **runu** (UUID nadane przez API); `fixtureKey` wskazuje wyłącznie **materiał** mocka z katalogu. **Nie** wymaga się `externalMeetingId === fixtureKey`. Idempotencja nadal chroni ponowne przetworzenie tego samego UUID runu — nie wymusza jednego wiersza na cały katalog fixture dla wszystkich użytkowników dema. Semantyka produkcji (ID vendora) i DX (`fixtureKey` ≈ `externalMeetingId` na `/dev/meetings/enqueue`) — **bez zmian** w tym wymaganiu poza jawnym rozdzieleniem ścieżki DEMO/Test.
+
+P-7. Ponowne przetworzenie tego samego klucza (`externalMeetingId`) musi być bezpieczne względem końcowego stanu domenowego (brak duplikatów spotkań i „podwójnych” kanonicznych summary jako osobnych sukcesów bez nadpisania).
 
 ### Fail-closed i retry
 
@@ -134,7 +136,7 @@ P-15. Przy `failed` po Zod: **nie** oznaczać summary jako sukcesu; dopuszczalny
 ## Kryteria akceptacji
 
 - [ ] Przetworzenie mock/fixture kończy się `completed` z transcript + summary + zadaniami po Zod.
-- [ ] Ten sam klucz idempotencji nie tworzy drugiego spotkania.
+- [ ] Ten sam `externalMeetingId` nie tworzy drugiego spotkania; na DEMO/Test `fixtureKey` nie jest kluczem tożsamości wiersza.
 - [ ] Niepoprawny JSON summary: max jeden retry; potem `failed` bez kanonicznego sukcesu w DB.
 - [ ] Brak trwałego zapisu transcriptu/summary w DB przed wywołaniem LlmClient na ścieżce sukcesu.
 - [ ] Segmenty z e-mailem / telefonem / PESEL-like / kartą są zredagowane przed wywołaniem portu LLM (testy jednostkowe E+T+P+K).

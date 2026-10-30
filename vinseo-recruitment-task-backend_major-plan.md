@@ -288,6 +288,68 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ---
 
+## Faza 3.5 — Tożsamość DEMO/Test (multi-tester)
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Zmiana kontraktu ścieżki **DEMO/Test** (`POST /demo/run-meeting`) pod multi-tester na jednej instancji — zgodnie z `SPEC-KOMUNIKACJA` K-5 / `SPEC-PIPELINE` P-6 (po legalizacji aux). Pipeline 1:1 jak produkcja; mocki wyłącznie na porcie źródła.
+
+**Refaktor / zmiana kontraktu względem:** Faza 2 (pipeline / demo lokalne; `WYKONANY`) oraz Faza 3 / Krok 3.3 — Demo enqueue i SSE (`WYKONANY`); MILESTONE „API sesji i ACL gotowe pod front” (`OSIĄGNIĘTY`) — **bez przepisywania** treści źródeł. Cel: nowe `externalMeetingId` (UUID) na każde wywołanie Test, `organizerId` = użytkownik sesji, losowy `fixtureKey` z katalogu **10**; DX i ścieżka produkcyjna poza zakresem tej fazy.
+
+**DoD (faza):**
+
+- Katalog **10** fixture’ów za portem źródła; demo enqueue losuje `fixtureKey` i nadaje UUID runu + `organizerId` sesji.
+- Multi-user Test → osobne wiersze `Meeting`; idempotencja pipeline nadal po `externalMeetingId` (nie po samym fixture na UI Test).
+- Brak zmiany semantyki DX (`POST /dev/meetings/enqueue`) i produkcji (Fireflies / webhook).
+- Testy pokrywają multi-tester / katalog 10 w zakresie `SPEC-TESTY`.
+
+### Krok 3.5.1 — Katalog 10 fixture’ów za portem źródła
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Rozszerzenie / uzupełnienie materiałów mocka do **10** kluczy dostępnych przez port źródła (bez zmiany kontraktu obiektu źródłowego).
+
+**DoD (krok):**
+
+- Katalog obejmuje 10 kluczy; worker/api potrafią pobrać materiał po `fixtureKey`.
+
+### Krok 3.5.2 — Demo enqueue: UUID runu, organizer sesji, losowy fixture
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** `POST /demo/run-meeting` zgodny z K-5: każde wywołanie → nowe `externalMeetingId` (UUID), `organizerId` = user sesji, serwer losuje `fixtureKey` z katalogu 10; payload joba `meeting.process` z UUID runu + wylosowanym `fixtureKey` (`fixtureKey` ≠ tożsamość wiersza).
+
+**DoD (krok):**
+
+- Dwóch użytkowników × Test → dwa spotkania; ponowny Test tego samego usera → nowy wiersz.
+- DX `/dev/meetings/enqueue` bez zmian zachowania w tej fazie.
+
+### Krok 3.5.3 — Testy multi-user DEMO i idempotencja po UUID
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Integracja / API wg `SPEC-TESTY` (T-9/T-10): multi-tester, katalog 10, idempotencja po `externalMeetingId` runu — bez wymogu „jeden fixture = jeden wiersz globalnie” dla UI Test.
+
+**DoD (krok):**
+
+- Asercje multi-user i idempotencji po UUID runu przechodzą w zakresie DoD testów dema.
+
+---
+
+## MILESTONE — DEMO/Test multi-tester bez kolizji ACL
+
+**Opis:** Bramka po Fazie 3.5. Kilku testerów na jednej instancji nie koliduje w ACL; UI Test nie współdzieli jednego globalnego wiersza dema.
+
+**DoD (milestone):**
+
+- Faza 3.5 ma status `WYKONANY`.
+- Kontrakt K-5 (UUID runu, katalog 10, losowanie API, organizer sesji) jest spełniony po stronie `api` / źródła mock.
+- DX i produkcja pozostają poza zakresem tej zmiany.
+
+<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
+
+---
+
 ## Faza 4 — Część A + CI
 
 **Status:** `NIE_ROZPOCZĘTY`
@@ -423,6 +485,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 | `SPEC-ARCHITEKTURA` (A-7 ścieżka A, A-8 ścieżka B `dev:stack`), `SPEC-DANE` | 1 |
 | `SPEC-PIPELINE`, `SPEC-LLM`, częściowo `SPEC-KOMUNIKACJA` (job / źródło) | 2 |
 | `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA` (HTTP/SSE/demo), `SPEC-TESTY`, opcjonalnie `SPEC-OBSERVABILITY` | 3 |
+| `SPEC-KOMUNIKACJA` K-5 / `SPEC-PIPELINE` P-6 / `SPEC-TESTY` (DEMO/Test multi-tester, katalog 10) | 3.5 |
 | `SPEC-TESTY` / `docs/deployment.md` (CI), docs pod Część A | 4 |
 | Domknięcie vs `SPEC-TESTY` + kryteria etapu 0 | 5 |
 | `SPEC-FRONTEND` | poza tym plikiem (major frontu); Faza 1 tylko stub struktury |

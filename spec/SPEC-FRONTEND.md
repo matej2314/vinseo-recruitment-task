@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -53,13 +53,15 @@ F-5. Tabela spotkań z API (`GET` lista przez BFF), wyłącznie dane już po ACL
 
 F-6. Paginacja: select limitu **10 / 25 / 50 / 100** oraz parametr **`page`** (1-based; norma `SPEC-AUTH_I_ACL`); oba wysyłane do API.
 
-F-7. Przycisk **Test** — zawsze widoczny po zalogowaniu (bez flagi UI). Wywołuje BFF → `POST /demo/run-meeting`.
+F-7. Przycisk **Test** — zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk). Wywołuje BFF → `POST /demo/run-meeting`. **Bez** UI wyboru fixture — losowanie mocka po stronie API (katalog 10; `SPEC-KOMUNIKACJA` K-5).
 
 F-8. Po sukcesie enqueue:
-1. UI otwiera **SSE** (przez BFF) dla danego `meetingId` (`SPEC-KOMUNIKACJA`).
+1. UI używa `meetingId` z odpowiedzi (własny run sesji) i otwiera **SSE** (przez BFF) dla tego id (`SPEC-KOMUNIKACJA`).
 2. Użytkownik **zostaje** na bieżącym widoku.
-3. Tabela **aktualizuje wiersz** (status `pending` → `processing` → `completed` | `failed`; po `completed` — dostępne pola summary / zadań w wierszu lub rozwinięciu).
+3. Tabela **aktualizuje / dokłada wiersz** (status `pending` → `processing` → `completed` | `failed`; po `completed` — dostępne pola summary / zadań w wierszu lub rozwinięciu).
 4. Przy `failed` — status + komunikat w UI; **bez** redirectu.
+5. **Multi-tester:** wielu użytkowników na jednej instancji — każdy widzi własne spotkania dema (ACL); brak założenia jednego globalnego wiersza dema współdzielonego między kontami.
+6. **Ponowny Test** tego samego użytkownika dodaje kolejny wiersz (akceptowalne w v1; lista może rosnąć).
 
 F-9. Data-fetching: natywny **`fetch`** (bez React Query / SWR jako wymogu).
 
@@ -129,7 +131,7 @@ Wersje pakietów: zgodne z repo / aktualnym LTS — bez pinowania w tym SPEC.
 - [ ] W trybie register przy mismatch `password` / `passwordConfirm` UI **nie** wysyła submitu rejestracji.
 - [ ] Niezalogowany użytkownik na dashboardzie trafia na `/`.
 - [ ] Sidebar przełącza widok domyślny i wyszukiwarkę; wyszukiwarka nie woła API LLM/search.
-- [ ] Test enqueue’uje demo; SSE aktualizuje wiersz tabeli bez zmiany trasy.
+- [ ] Test enqueue’uje demo; SSE aktualizuje / dokłada wiersz bez zmiany trasy; bez UI wyboru fixture; ponowny Test = kolejny wiersz (F-7/F-8).
 - [ ] Limit listy tylko z {10,25,50,100}.
 - [ ] Brak sekretów sesji w Web Storage; BFF nie zawiera reguł ACL.
 - [ ] `"use client"` nie obejmuje całych drzew bez potrzeby interakcji.

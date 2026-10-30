@@ -1,5 +1,5 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -56,7 +56,10 @@ Prosty sidebar przełącza:
 - **Brak** osobnej strony detail (`/meetings/:id`) w UI v1 — wynik pipeline widać w **wierszu tabeli**.
 - Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) — **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
 - **Przycisk Test** — zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
-- Po Test: `POST` demo → otwarcie **SSE** dla `meetingId` → użytkownik **zostaje** na widoku; tabela **aktualizuje wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail.
+- Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail.
+- **Bez** UI wyboru fixture — losowanie mocka po stronie API (katalog 10).
+- **Multi-tester:** wielu użytkowników na jednej instancji — każdy widzi **własne** spotkania dema (ACL); brak jednego globalnego wiersza współdzielonego między kontami.
+- **Ponowny Test** dodaje kolejny wiersz (akceptowalne w v1 dema; lista może rosnąć).
 - Wylogowanie: BFF/API.
 
 ### 4. Wyszukiwarka (mock)

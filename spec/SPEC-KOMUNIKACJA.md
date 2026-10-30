@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -8,7 +8,7 @@ data_modyfikacji: 2026-10-30
 
 Norma implementacji kontraktów komunikacji v1. Opis powierzchni i przykładowe kształty: `docs/dokumentacja_komunikacji.md`. Warstwy i zakazy procesów: `SPEC-ARCHITEKTURA`. Ten plik egzekwuje *jak* implementować I/O — bez drugiej dokumentacji koncepcyjnej.
 
-Zmiana względem v1 tego SPEC: dodana powierzchnia **SSE** statusu spotkania (po demo / pipeline); UI aktualizuje tabelę bez osobnej trasy detail (`SPEC-FRONTEND`).
+Zmiana względem wcześniejszej normy K-5 / K-10 (utożsamianie idempotencji dema z „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” na `POST /demo/run-meeting`): na ścieżce **DEMO/Test** każde wywołanie dostaje **nowe** `externalMeetingId` (UUID), `organizerId` = user sesji, losowy `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza. DX i produkcja — poza tą zmianą K-5 (decyzja: DX `/dev/meetings/enqueue` bez zmian).
 
 ## Cel / zakres
 
@@ -59,14 +59,17 @@ K-3. Sesja w komunikacji: cookie **HttpOnly**; atrybuty **Secure** / **SameSite*
 
 K-4. Brak uprawnień do istniejącego spotkania: odpowiedź jak **404** (bez wycieku istnienia zasobu). Pełne reguły „kto widzi” (ACL v1: organizator ∨ uczestnik ∨ admin) → `SPEC-AUTH_I_ACL`.
 
-K-5. Demo (`POST /demo/run-meeting`):
+K-5. Demo (`POST /demo/run-meeting`) — ścieżka UI Test:
 
 - wymaga zalogowanego pracownika;
 - **nie** sprawdza ani nie wymaga `DEMO_ENABLED` (flaga poza normą implementacji);
 - wyłącznie **enqueue** `meeting.process` (nie omija workera);
-- idempotencja: ten sam `externalMeetingId` / `fixtureKey` nie tworzy drugiego rekordu spotkania;
-- przykład ciała: `{ "fixtureKey": "demo-client-budget-pl" }`; odpowiedź zawiera m.in. `meetingId`, `jobId`, status początkowy (np. `pending`);
-- po enqueue UI otwiera SSE (`K-5a`) i aktualizuje wiersz tabeli (`SPEC-FRONTEND`) — bez wymogu osobnej nawigacji na detail.
+- **tożsamość runu:** serwer nadaje **nowe** `externalMeetingId` (UUID) na **każde** wywołanie; ustawia `organizerId` = użytkownik sesji; klient **nie** musi podawać unikalnego ID spotkania;
+- **wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów za portem źródła; opcjonalne `fixtureKey` w body — jeśli zostaje w kontrakcie HTTP — serwer może zignorować / nadpisać losowaniem (norma: wybór należy do API demo);
+- **`fixtureKey` ≠ klucz tożsamości wiersza** na DEMO/Test — ten sam klucz może powtórzyć się u wielu użytkowników i runów; każde wywołanie → osobny rekord `Meeting` (lista może rosnąć; multi-tester bez współdzielonego globalnego wiersza);
+- odpowiedź zawiera m.in. `meetingId` (własny run), `jobId`, status początkowy (np. `pending`);
+- po enqueue UI otwiera SSE (`K-5a`) i aktualizuje / dokłada wiersz tabeli (`SPEC-FRONTEND`) — bez wymogu osobnej nawigacji na detail;
+- **poza tą zmianą K-5:** DX `POST /dev/meetings/enqueue` (dotychczasowa idempotencja `fixtureKey` ≈ `externalMeetingId`) oraz ścieżka produkcyjna (Fireflies / webhook) — bez zmiany reguł biznesowych w tym wymaganiu.
 
 K-5a. SSE — `GET /meetings/:id/events` (Nest `@Sse`, Observable `MessageEvent`):
 
@@ -128,17 +131,17 @@ K-10. Payload (kształt logiczny; typ w `packages/contracts`):
 
 ```json
 {
-  "externalMeetingId": "fireflies-or-mock-id",
+  "externalMeetingId": "550e8400-e29b-41d4-a716-446655440000",
   "source": "mock",
-  "fixtureKey": "demo-client-budget-pl",
+  "fixtureKey": "demo-fixture-03",
   "requestId": "correlation-id-from-api"
 }
 ```
 
-W v1 `source: "mock"`. Idempotencja: klucz oparty o `externalMeetingId` (spójnie z `fixtureKey` na ścieżce mock).  
+W v1 `source: "mock"`. Idempotencja joba / spotkania: klucz = **`externalMeetingId`**. Na DEMO/Test: `externalMeetingId` = UUID runu; `fixtureKey` = wylosowany materiał mocka (katalog 10) — **nie** wymaga się `externalMeetingId === fixtureKey`.  
 Przy enqueue z `api` (w tym demo) **`requestId`** z requestu HTTP trafia do payloadu — korelacja z workerem (`SPEC-OBSERVABILITY` O-6).
 
-K-11. Statusy widoczne dla API: `pending` → `processing` → `completed` | `failed`. Ponowne enqueue z tym samym kluczem: bez duplikatu spotkania.
+K-11. Statusy widoczne dla API: `pending` → `processing` → `completed` | `failed`. Ponowne enqueue z tym samym `externalMeetingId`: bez duplikatu spotkania. Kolejne wywołania UI Test **nie** współdzielą jednego `externalMeetingId`.
 
 ### Port źródła spotkań
 
@@ -190,10 +193,11 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 
 - [ ] Wejścia HTTP `api` odrzucają niepoprawne DTO kodem 400 + envelope.
 - [ ] Trasy auth / meetings / demo / SSE działają zgodnie z tabelą K-2; demo enqueue’uje `meeting.process` bez sprawdzania `DEMO_ENABLED`.
+- [ ] DEMO/Test (K-5): każde wywołanie → nowe `externalMeetingId` (UUID) + `organizerId` sesji + losowy `fixtureKey` z katalogu 10; multi-tester → osobne wiersze; `fixtureKey` ≠ tożsamość wiersza.
 - [ ] BFF register: mismatch `passwordConfirm` → 400 bez wołania API; przy OK proxy tylko `{ email, password }` (K-6a); Nest register bez `passwordConfirm`.
 - [ ] SSE wymaga auth+ACL; emituje statusy aż do `completed`/`failed`; BFF proxy’uje strumień.
 - [ ] BFF nie egzekwuje ACL i nie woła adapterów I/O bezpośrednio.
-- [ ] Job ma nazwę `meeting.process` i payload ze źródłem mock + kluczem idempotencji.
+- [ ] Job ma nazwę `meeting.process` i payload z `externalMeetingId` jako kluczem idempotencji (na demie: UUID runu + osobny `fixtureKey`).
 - [ ] Obiekt źródłowy jest walidowany Zod w api i w workerze; niepoprawny kształt nie przechodzi dalej jako sukces.
 - [ ] Brak zapisu / użycia `summary.*` Fireflies jako kanonu.
 - [ ] Brak publicznego HTTP workera dla przeglądarki i braku HTTP odczytu audytu.

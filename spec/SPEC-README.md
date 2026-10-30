@@ -1,5 +1,5 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -28,14 +28,16 @@ SPEC **uszczegóławia** docs; nie zastępuje dokumentacji koncepcyjnej i nie po
 | Plik | Obszar |
 |------|--------|
 | [SPEC-ARCHITEKTURA.md](./SPEC-ARCHITEKTURA.md) | Monolit, procesy `api`/`worker`/`web`, warstwy, `packages/`, config |
-| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss, port źródła |
+| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss, port źródła; **DEMO/Test:** UUID runu vs katalog fixture (K-5) |
 | [SPEC-AUTH_I_ACL.md](./SPEC-AUTH_I_ACL.md) | Auth (JWT+refresh), ACL v1 (organizator/uczestnik/admin), paginacja |
-| [SPEC-PIPELINE.md](./SPEC-PIPELINE.md) | Job `meeting.process`, redakcja E+T+P+K, metadata-only, client-link |
+| [SPEC-PIPELINE.md](./SPEC-PIPELINE.md) | Job `meeting.process`, redakcja E+T+P+K, metadata-only, client-link; idempotencja po `externalMeetingId` (P-6; DEMO ≠ fixture) |
 | [SPEC-LLM.md](./SPEC-LLM.md) | Port LlmClient, UC1 mock, Zod; UC2 poza wersją |
-| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE, mock wyszukiwarki |
+| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE (multi-tester, rosnąca lista), mock wyszukiwarki |
 | [SPEC-DANE.md](./SPEC-DANE.md) | Prisma, organizer, client domain/link, JSON, `audit_log` |
 | [SPEC-OBSERVABILITY.md](./SPEC-OBSERVABILITY.md) | pino, health, katalog `eventType`, correlation |
-| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (w tym SSE), CI / ochrona `main` |
+| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (SSE, multi-user DEMO, katalog 10), CI / ochrona `main` |
+
+**Ślad (2026-10-30):** kontrakt DEMO/Test — tożsamość runu (UUID) vs materiał fixture (katalog 10, losowanie API), multi-tester; zaktualizowane: KOMUNIKACJA, PIPELINE, TESTY, FRONTEND. DX i produkcja poza tą zmianą normy dema.
 
 Ten plik (`SPEC-README.md`) jest spisem technicznym — nie normą obszarową.
 

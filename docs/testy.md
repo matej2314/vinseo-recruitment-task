@@ -1,5 +1,5 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -83,19 +83,22 @@ Przykładowa tabela (rozszerzać w kodzie):
 
 ### Integracja - pipeline
 
-- Dwukrotne przetworzenie tego samego `externalMeetingId` / fixture → **jedno** spotkanie.
+- Dwukrotne przetworzenie **tego samego** `externalMeetingId` → **jedno** spotkanie (idempotencja po tożsamości runu / vendora — nie po samym `fixtureKey` na ścieżce UI Test).
 - Mock summarizera zwracający śmieci → status `failed`, brak kanonicznego summary.
 - Happy path → `completed` + zapisane zadania.
+- Katalog mocków dema obejmuje **10** kluczy; wybór na DEMO/Test jest **losowy po stronie API**.
 
 ### Integracja - API (supertest)
 
 - Login ustawia sesję (cookie); `/auth/me` działa.
 - `GET /meetings/:id` bez ACL → 404.
-- `POST /demo/run-meeting` przy ważnej sesji enqueue’uje job (asercja statusu / obecności joba lub spotkania) — **bez** bramki `DEMO_ENABLED` (flaga usunięta z kontraktu v1).
+- `POST /demo/run-meeting` przy ważnej sesji enqueue’uje job (asercja statusu / obecności joba lub spotkania) — **bez** bramki `DEMO_ENABLED` (flaga usunięta z kontraktu v1); każde wywołanie → nowe `externalMeetingId` (UUID) i `organizerId` sesji.
+- **Multi-tester DEMO:** dwóch użytkowników × Test → **dwa** spotkania; każdy przechodzi SSE / odczyt we **własnym** ACL; brak współdzielonego globalnego wiersza dema.
+- Ścieżka **DX** (`/dev/meetings/enqueue`) — poza tą zmianą normy dema (osobna idempotencja).
 
 ### Integracja - SSE
 
-- Uprawniony użytkownik: `GET /meetings/:id/events` emituje statusy pipeline (ścieżka testowa do statusu terminalnego lub emisja statusu).
+- Uprawniony użytkownik: `GET /meetings/:id/events` emituje statusy pipeline (ścieżka testowa do statusu terminalnego lub emisja statusu) — w tym po własnym `meetingId` z odpowiedzi Test.
 - Brak ACL / brak zasobu → **404** (jak detail).
 
 ### Audyt (`audit_log`)

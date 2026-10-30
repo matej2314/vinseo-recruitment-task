@@ -1,5 +1,5 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -50,14 +50,16 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 |-------|------|
 | **Pipeline** | Sekwencja kroków: pobranie → normalizacja → redakcja → streszczenie → zapis. |
 | **Job** (`meeting.process`) | Zadanie w kolejce pg-boss realizujące pipeline dla jednego zewnętrznego ID spotkania. |
-| **Idempotencja** (idempotency) | Ponowne uruchomienie z tym samym kluczem nie tworzy duplikatu spotkania. |
-| **Klucz idempotencji** (idempotency key) | Zwykle `externalMeetingId` / ID transcriptu vendora (spójnie z `fixtureKey` w demo). |
+| **Idempotencja** (idempotency) | Ponowne uruchomienie z tym samym kluczem tożsamości (`externalMeetingId`) nie tworzy duplikatu spotkania. |
+| **Klucz idempotencji** (idempotency key) | `externalMeetingId` / ID transcriptu vendora. Na DEMO/Test: UUID **runu** nadany przez API — **nie** utożsamiany z `fixtureKey`. |
+| **externalMeetingId** | Tożsamość kanonicznego spotkania / runu w systemie (prod: ID vendora; DEMO/Test: nowe UUID na każde wywołanie Test). |
 | **Redakcja** (redaction) | Maskowanie / filtrowanie danych wrażliwych przed krokiem „na zewnątrz” (nawet przed mockiem summarizera). |
 | **Summarizer** | Port generujący streszczenie i zadania; w v1 mock o kontrakcie jak przyszły LLM. |
 | **Walidacja kontraktu** (schema validation) | Sprawdzenie kształtu wyniku (Zod **w aplikacji**); HTTP DTO: class-validator. |
 | **Quarantine / failed** | Stan po niepoprawnym wyniku modelu lub błędzie kroku - bez zapisu „prawie OK” jako sukcesu. |
-| **Fixture / mock** | Przygotowane dane testowe zastępujące prawdziwe nagrania i vendorów. |
-| **Demo / przycisk Test** | Ścieżka PoC na froncie: BFF → API → enqueue pipeline na fixture → **SSE** aktualizuje wiersz tabeli (bez osobnej strony detail UI). |
+| **Fixture / mock** | Przygotowane dane testowe zastępujące prawdziwe nagrania i vendorów; w demie: katalog **10** kluczy za portem źródła. |
+| **fixtureKey** | Identyfikator **materiału** mocka w katalogu — wskazuje treść źródła. Na ścieżce DEMO/Test **nie** jest kluczem wiersza `Meeting`; ten sam klucz może powtórzyć się u wielu użytkowników i runów. |
+| **Demo / przycisk Test** | Ścieżka PoC: BFF → API → nowe `externalMeetingId` (UUID) + `organizerId` sesji + losowy `fixtureKey` → enqueue → **SSE** aktualizuje wiersz. Multi-tester: osobne wiersze; ponowny Test = kolejny wiersz. |
 | **SSE** (Server-Sent Events) | Strumień `text/event-stream` statusów spotkania (`GET /meetings/:id/events`); ACL jak przy odczycie. |
 
 ## Aplikacja i infrastruktura

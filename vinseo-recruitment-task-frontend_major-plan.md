@@ -233,6 +233,57 @@
 
 ---
 
+## Faza 3.5 — UI Test pod nowy kontrakt DEMO (multi-tester)
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Domknięcie ścieżki użytkownika **Test** pod zaktualizowany kontrakt DEMO/Test (UUID runu, multi-tester, rosnąca lista, bez wyboru fixture w UI) — `SPEC-FRONTEND` F-7/F-8, `docs/frontend.md`.
+
+**Refaktor / zmiana kontraktu względem:** Faza 3 / Krok 3.4 — Test, SSE i aktualizacja wiersza (`WYKONANY`); MILESTONE „Panel v1 działa z API” (`OSIĄGNIĘTY`) — **bez przepisywania** treści źródeł. **Zależność:** Faza **3.5** majoru backendu (tożsamość DEMO/Test) — [`vinseo-recruitment-task-backend_major-plan.md`](./vinseo-recruitment-task-backend_major-plan.md).
+
+**DoD (faza):**
+
+- Po Test: `meetingId` z odpowiedzi = własne spotkanie sesji; SSE/ACL bez współdzielonego globalnego wiersza dema między kontami.
+- Ponowny Test dokłada kolejny wiersz (lista może rosnąć); brak UI wyboru fixture.
+- Zachowanie zgodne z API po Fazie 3.5 backendu.
+
+### Krok 3.5.1 — Test + SSE przy UUID runu i rosnącej liście
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** UI po `POST` demo traktuje każdy sukces jako własny `meetingId`; otwiera SSE dla tego id; tabela aktualizuje / dokłada wiersz; ponowny Test = kolejny wiersz. Bez selektora fixture.
+
+**DoD (krok):**
+
+- Multi-tester (różne sesje) widzi tylko własne runy dema w ACL listy.
+- Brak założenia jednego globalnego wiersza dema w UI.
+
+### Krok 3.5.2 — Spójność z kontraktem API dema (Faza 3.5 backend)
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Weryfikacja, że BFF/UI nie wymuszają starego kontraktu (np. współdzielonego `fixtureKey` jako tożsamości); zależność od backend Fazy 3.5 jest jawna w DoD oddania tej fazy.
+
+**DoD (krok):**
+
+- Ścieżka Test działa na żywym API po kontrakcie K-5; brak regresji względem Fazy 3 UI poza zamierzonym kontraktem dema.
+
+---
+
+## MILESTONE — UI Test multi-tester zgodny z API dema
+
+**Opis:** Bramka po Fazie 3.5 frontu. Przycisk Test respektuje nowy kontrakt DEMO; kilku użytkowników na jednej instancji nie koliduje w widoku.
+
+**DoD (milestone):**
+
+- Faza 3.5 (ten major) ma status `WYKONANY`.
+- Zależność od Fazy 3.5 majoru backendu jest domknięta.
+- Kryteria F-7/F-8 (`SPEC-FRONTEND`) dla multi-tester / rosnącej listy są spełnione.
+
+<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
+
+---
+
 ## Faza 4 — Wkład frontu w bramkę jakości / oddanie
 
 **Status:** `NIE_ROZPOCZĘTY`
@@ -358,6 +409,7 @@
 | Odbiór fundamentu (bez powielania) | 1 ← backend Faza 1 |
 | Szkielet UI/BFF | 2 |
 | `SPEC-FRONTEND` + spięcie z `SPEC-KOMUNIKACJA` / auth | 3 ← zależy od backend Faza 3 |
+| `SPEC-FRONTEND` F-7/F-8 + DEMO/Test multi-tester (K-5) | 3.5 ← zależy od backend Faza 3.5 |
 | `SPEC-TESTY` (smoke web) | 4 |
 | Domknięcie UI etapu 0 | 5 |
 
@@ -368,5 +420,6 @@
 | 1 | Fundament monorepo + stub `web` | Odbiór stubu; mapa widoków |
 | 2 | Pipeline | Szkielet UI/BFF |
 | 3 | Auth, ACL, API, SSE | UI v1 na żywym API |
+| 3.5 | DEMO/Test multi-tester (UUID, katalog 10) | UI Test pod nowy kontrakt dema |
 | 4 | Część A + CI | Smoke web / spójność opisu UI |
 | 5 | Domknięcie backendu / oddanie | Domknięcie UI / oddanie |

@@ -1,5 +1,5 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -8,7 +8,7 @@ data_modyfikacji: 2026-10-30
 
 Normatywny kontrakt komunikacji Firmowego asystenta spotkań w v1. Opisuje **co** wolno wymieniać między procesami i z otoczeniem; *dlaczego* takie granice - w `architektura.md`.
 
-Zmiana względem poprzedniej wersji docs: powierzchnia **SSE** statusu spotkania; UI po Test aktualizuje tabelę (bez osobnej strony detail); usunięta bramka **`DEMO_ENABLED`** (demo = auth + enqueue).
+Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-meeting` dostaje **nowe** `externalMeetingId` (UUID) i `organizerId` sesji; serwer losuje `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza na tej ścieżce. Wcześniejsza reguła „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” **nie** dotyczy UI Test — zostaje przy DX / ogólnej idempotencji po `externalMeetingId`. Produkcja (Fireflies) bez zmiany normy w tej wersji.
 
 ## Powierzchnie w zakresie v1
 
@@ -97,20 +97,17 @@ Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnę
 
 | Metoda | Ścieżka | Opis | Auth |
 |--------|---------|------|------|
-| `POST` | `/demo/run-meeting` | Enqueue tego samego pipeline co ścieżka produkcyjna; źródło = mock/fixture | tak |
+| `POST` | `/demo/run-meeting` | Enqueue tego samego pipeline co ścieżka produkcyjna; źródło = mock z katalogu fixture | tak |
 
 - Wymaga zalogowanego pracownika.
 - **Bez** bramki `DEMO_ENABLED` — endpoint dostępny przy ważnej sesji (flaga usunięta z kontraktu v1).
 - Nie omija workera: tylko **enqueue** joba `meeting.process`.
-- Idempotencja: ten sam `externalMeetingId` / `fixtureKey` nie tworzy drugiego spotkania.
+- **Tożsamość runu:** serwer nadaje **nowe** `externalMeetingId` (UUID) na każde wywołanie oraz ustawia `organizerId` = użytkownik sesji. Klient **nie** musi podawać unikalnego ID spotkania.
+- **Wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów. Opcjonalne `fixtureKey` w body — jeśli pozostaje w kontrakcie HTTP — serwer może je zignorować / nadpisać losowaniem; norma: wybór należy do API demo.
+- **`fixtureKey` ≠ klucz tożsamości wiersza** na ścieżce DEMO/Test. Ten sam klucz fixture może powtórzyć się u wielu użytkowników i runów; każde wywołanie Test → osobny wiersz `Meeting`.
+- Idempotencja pipeline nadal dotyczy **tego samego** `externalMeetingId` (retry joba). DX `POST /dev/meetings/enqueue` (idempotencja `fixtureKey` ≈ `externalMeetingId`) — **poza** tym kontraktem dema, bez zmiany.
 
-**Request (przykład):**
-
-```json
-{
-  "fixtureKey": "demo-client-budget-pl"
-}
-```
+**Request:** ciało może być puste lub zawierać opcjonalne pola ignorowane przy losowaniu; klient nie wskazuje tożsamości spotkania.
 
 **Response (przykład):**
 
@@ -122,7 +119,7 @@ Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnę
 }
 ```
 
-UI po sukcesie **zostaje** na widoku tabeli, otwiera SSE `GET /meetings/:id/events` (przez BFF) i aktualizuje wiersz — bez osobnej nawigacji na detail (`frontend.md`).
+`meetingId` to spotkanie **tego** runu (własne dla sesji). UI po sukcesie **zostaje** na widoku tabeli, otwiera SSE `GET /meetings/:id/events` (przez BFF) i aktualizuje wiersz — bez osobnej nawigacji na detail (`frontend.md`). Wielu testerów na jednej instancji nie współdzieli jednego globalnego wiersza dema.
 
 ### 1.3a SSE — status spotkania
 
@@ -218,27 +215,29 @@ Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 |------|---------|
 | Nazwa joba | `meeting.process` |
 | Enqueue | głównie `api` (w tym demo); worker tylko konsumuje |
-| Idempotencja | klucz oparty o `externalMeetingId` (i spójnie `fixtureKey` w ścieżce mock) |
+| Idempotencja | klucz = `externalMeetingId` (tożsamość spotkania / runu). Na DEMO/Test: UUID nadany przy enqueue; `fixtureKey` to tylko materiał mocka. Na DX / prod mock: dotychczasowa semantyka poza kontraktem UI Test |
 
-**Payload:**
+**Payload (DEMO/Test — przykład):**
 
 ```json
 {
-  "externalMeetingId": "fireflies-or-mock-id",
+  "externalMeetingId": "550e8400-e29b-41d4-a716-446655440000",
   "source": "mock",
-  "fixtureKey": "demo-client-budget-pl",
+  "fixtureKey": "demo-fixture-03",
   "requestId": "correlation-id-from-api"
 }
 ```
 
-`source: "mock"` w v1; docelowo inne wartości adaptera bez zmiany nazwy joba (ew. wersjonowanie payloadu w contracts).  
-**`requestId`:** correlation id z requestu HTTP `api` przy enqueue (wymagane na ścieżce demo / request-driven); worker loguje ten sam id (`observability.md`).
+- `externalMeetingId` — UUID **runu** dema (nie musi równać się `fixtureKey`).
+- `fixtureKey` — wylosowany klucz z katalogu 10; wskazuje treść mocka za portem źródła.
+- `source: "mock"` w v1; docelowo inne wartości adaptera bez zmiany nazwy joba (ew. wersjonowanie payloadu w contracts).
+- **`requestId`:** correlation id z requestu HTTP `api` przy enqueue (wymagane na ścieżce demo / request-driven); worker loguje ten sam id (`observability.md`).
 
 **Statusy przetwarzania** (na spotkaniu / jobie widoczne dla API):
 
 `pending` → `processing` → `completed` | `failed`
 
-Ponowne enqueue z tym samym kluczem idempotencji: brak duplikatu spotkania; kontynuacja / bezpieczny retry zgodnie z implementacją workera.
+Ponowne enqueue z tym samym `externalMeetingId`: brak duplikatu spotkania; kontynuacja / bezpieczny retry zgodnie z implementacją workera. Kolejne wywołania UI Test **nie** współdzielą jednego `externalMeetingId`.
 
 ---
 
@@ -299,13 +298,14 @@ Niepoprawny wynik → status `failed` / quarantine; **nie** zapis jako udane str
 Widok domyślny (tabela) → "Test"
   → BFF POST /api/demo/run-meeting  (cookie)
   → API  POST /demo/run-meeting     (sesja)
-  → enqueue meeting.process         (fixture → mock source)
-  → UI: EventSource → BFF GET /api/meetings/:id/events → API SSE (ACL)
+  → API: nowe externalMeetingId (UUID) + organizerId sesji + losowy fixtureKey (katalog 10)
+  → enqueue meeting.process         (UUID runu + fixture → mock source)
+  → UI: EventSource → BFF GET /api/meetings/:id/events → API SSE (ACL własnego meetingId)
   → worker: fetch mock → normalize → redact → summarize(mock) → Zod → persist
   → SSE: statusy → UI aktualizuje wiersz tabeli (bez zmiany trasy / bez strony detail)
 ```
 
-To jest kanoniczny PoC mechanizmu na froncie - bez omijania granic procesów.
+To jest kanoniczny PoC mechanizmu na froncie - bez omijania granic procesów. Multi-tester: każdy użytkownik widzi własne runy dema (ACL).
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -50,11 +50,19 @@ Przy starcie / sukcesie / failu joba worker zapisuje odpowiadające zdarzenia do
 
 UI uruchamia **ten sam** pipeline, nie osobną „fałszywą” ścieżkę. Po enqueue użytkownik **zostaje** na widoku tabeli; statusy płyną przez **SSE**.
 
+**Kontrakt DEMO/Test (tożsamość runu):**
+
+- Każde wywołanie `POST /demo/run-meeting`: API nadaje **nowe** `externalMeetingId` (UUID) oraz ustawia `organizerId` = zalogowany użytkownik sesji.
+- Treść mocka: serwer **losuje** `fixtureKey` spośród **katalogu 10** fixture’ów za portem źródła. `fixtureKey` wskazuje **materiał** mocka — **nie** jest kluczem tożsamości wiersza `Meeting` na tej ścieżce.
+- **Multi-tester:** kilku użytkowników na jednej instancji — każdy dostaje własne wiersze; ACL (organizator ∨ uczestnik ∨ admin) bez kradzieży cudzych spotkań.
+- **Ponowny Test** tego samego użytkownika: **nowy** wiersz `Meeting` (lista może rosnąć) — to akceptowalne zachowanie v1 dema.
+- Ścieżka **DX** (`POST /dev/meetings/enqueue` i idempotencja `fixtureKey` ≈ `externalMeetingId`) jest **poza tym kontraktem dema** — bez zmiany w tym dokumencie.
+
 ```mermaid
 flowchart LR
   UI[Tabela - Test] --> BFF[BFF POST /api/demo/run-meeting]
   BFF --> API[API POST /demo/run-meeting]
-  API -->|sesja| ENQ[Enqueue meeting.process]
+  API -->|UUID + organizer sesji + losowy fixtureKey| ENQ[Enqueue meeting.process]
   ENQ --> Q[(pg-boss)]
   Q --> W[worker / pipeline]
   W --> DB[(PostgreSQL)]
@@ -64,7 +72,7 @@ flowchart LR
   W -.->|statusy w DB| APIS
 ```
 
-Odpowiedź enqueue: `meetingId`, `jobId`, `status` (zwykle `pending`). UI otwiera SSE i aktualizuje **wiersz tabeli** (bez osobnej strony detail w UI v1).
+Odpowiedź enqueue: `meetingId`, `jobId`, `status` (zwykle `pending`) — `meetingId` to **własne** spotkanie runu. UI otwiera SSE i aktualizuje **wiersz tabeli** (bez osobnej strony detail w UI v1).
 
 API przy demo zapisuje m.in. `demo.run` oraz `job.enqueued` w **`audit_log`**.
 
@@ -143,7 +151,8 @@ stateDiagram-v2
 | Sytuacja | Oczekiwane zachowanie |
 |----------|------------------------|
 | Crash / awaria **przed** wspólnym persist (po Zod) | Brak kanonicznego transcriptu+summary w DB; status joba / spotkania `failed` lub retry pg-boss; dopuszczalne tylko metadane statusu (`pending` / `processing` / `failed`) — **bez** pół-sukcesu „transcript bez summary”; **bez** drugiego wiersza spotkania przy tym samym `externalMeetingId` |
-| Dwukrotny Test z tym samym fixture | Jeden `meetingId`; brak duplikatu biznesowego |
+| Dwukrotny **Test** (DEMO) — nawet przy tym samym wylosowanym `fixtureKey` | **Dwa** wiersze: każde wywołanie ma nowe `externalMeetingId` (UUID); lista użytkownika może rosnąć |
+| Ponowne enqueue **tego samego** `externalMeetingId` (retry / DX / prod) | Co najwyżej jedno kanoniczne spotkanie; brak duplikatu biznesowego po kluczu tożsamości |
 | Niepoprawny JSON z mocka summarizera | max 1 retry „popraw JSON”; potem `failed`; brak kanonicznego summary „na siłę” |
 
 ## 6. Docelowe wejście Fireflies (poza mockiem v1)

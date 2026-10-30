@@ -1,12 +1,12 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Testy
 
-Norma strategii testów v1 i DoD przed merge. Kontekst: `docs/testy.md` (SSE, redakcja E+T+P+K, demo bez `DEMO_ENABLED`). Reguły chronione testami: `SPEC-AUTH_I_ACL`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (SSE), `SPEC-OBSERVABILITY`. UI smoke: `SPEC-FRONTEND`. CI/env: `docs/deployment.md`.
+Norma strategii testów v1 i DoD przed merge. Kontekst: `docs/testy.md` (SSE, redakcja E+T+P+K, demo bez `DEMO_ENABLED`; multi-tester DEMO/Test, katalog 10). Reguły chronione testami: `SPEC-AUTH_I_ACL`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (SSE + K-5), `SPEC-OBSERVABILITY`. UI smoke: `SPEC-FRONTEND`. CI/env: `docs/deployment.md`.
 
 ## Cel / zakres
 
@@ -59,14 +59,18 @@ T-8. **Zod summary (UC1)** — poprawny mock → sukces; brak pól / zły kszta�
 
 ### Integracja — obowiązkowe
 
-T-9. **Pipeline:** dwukrotne przetworzenie tego samego `externalMeetingId` / fixture → **jedno** spotkanie; śmieciowy mock summary → `failed` bez kanonu; happy path → `completed` + zapisane zadania.
+T-9. **Pipeline:** dwukrotne przetworzenie **tego samego** `externalMeetingId` → **jedno** spotkanie (idempotencja po tożsamości runu / vendora — **nie** po samym `fixtureKey` na ścieżce UI Test); śmieciowy mock summary → `failed` bez kanonu; happy path → `completed` + zapisane zadania. Katalog mocków dema obejmuje **10** kluczy; na DEMO/Test wybór jest **losowy po stronie API**.
+
+Zmiana względem wcześniejszego T-9 („ten sam `externalMeetingId` / fixture → jedno spotkanie” jako dowód poprawności UI Test): nie wymaga się „jeden fixture = jeden wiersz globalnie” dla ścieżki `POST /demo/run-meeting`.
 
 T-10. **API (supertest):**
 - login ustawia cookie; `GET /auth/me` działa;
 - `GET /meetings/:id` bez ACL → **404**;
-- `POST /demo/run-meeting` (z sesją) enqueue’uje job / tworzy spotkanie — **bez** asercji na `DEMO_ENABLED`.
+- `POST /demo/run-meeting` (z sesją) enqueue’uje job / tworzy spotkanie — **bez** asercji na `DEMO_ENABLED`; każde wywołanie → nowe `externalMeetingId` (UUID) i `organizerId` sesji (`SPEC-KOMUNIKACJA` K-5);
+- **multi-tester DEMO:** dwóch użytkowników × Test → **dwa** spotkania; każdy przechodzi odczyt / SSE we **własnym** ACL;
+- ścieżka **DX** (`/dev/meetings/enqueue`) — poza tą zmianą normy dema.
 
-T-11. **SSE:** przy uprawnionym użytkowniku strumień / zdarzenia statusu dla `meetingId` (co najmniej dojście do terminalnego statusu na ścieżce testowej lub emisja statusu); bez ACL → **404**. (Implementacja klienta testowego: supertest/stream lub równoważne wobec Nest `@Sse`.)
+T-11. **SSE:** przy uprawnionym użytkowniku strumień / zdarzenia statusu dla `meetingId` z odpowiedzi Test (co najmniej dojście do terminalnego statusu na ścieżce testowej lub emisja statusu); bez ACL → **404**. (Implementacja klienta testowego: supertest/stream lub równoważne wobec Nest `@Sse`.)
 
 T-12. **Audyt:** po deny ACL → `meeting.access.denied` bez treści spotkania; po fail Zod/job → odpowiedni `eventType`; writer nie utrwala raw transcriptu.
 
@@ -112,9 +116,9 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 ## Kryteria akceptacji
 
 - [ ] `pnpm test` (lub CI) odpala unit ACL, redakcji, Zod.
-- [ ] Integracja pipeline: idempotencja + fail Zod + happy path.
-- [ ] Integracja API: cookie auth, 404 ACL, demo enqueue bez `DEMO_ENABLED`.
-- [ ] Integracja SSE: happy path statusów lub emisji + 404 bez ACL.
+- [ ] Integracja pipeline: idempotencja po `externalMeetingId` + fail Zod + happy path; katalog 10 / losowy wybór na DEMO.
+- [ ] Integracja API: cookie auth, 404 ACL, demo enqueue bez `DEMO_ENABLED`; multi-user Test → osobne wiersze (T-10).
+- [ ] Integracja SSE: happy path statusów lub emisji (własny `meetingId`) + 404 bez ACL.
 - [ ] Audyt: deny + fail summary/job; brak transcriptu w payloadzie.
 - [ ] PR czerwony przy failu wymaganych testów; `main` chroniony.
 
