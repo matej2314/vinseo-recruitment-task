@@ -1,0 +1,24 @@
+# Ścieżka A: tylko Postgres (bazy `vinseo` + `vinseo_test`). Wejście: `pnpm db:up`.
+# Nie mylić ze ścieżką B (`docker-compose.dev.yml` / `pnpm dev:stack:up`).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vinseo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vinseo
+      POSTGRES_PASSWORD: vinseo
+      POSTGRES_DB: vinseo
+    ports:
+      - "5432:5432"
+    volumes:
+      - vinseo_pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/01-init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vinseo -d vinseo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vinseo_pg_data:

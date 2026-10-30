@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -35,7 +35,7 @@ T-1. Runner: **Jest** we workspaces (`apps/api`, `apps/worker`; web: smoke / lek
 
 T-2. HTTP API: **supertest** + `@nestjs/testing`.
 
-T-3. Integracja: osobna baza PostgreSQL testowa (Compose / override, np. `vinseo_test`); lokalnie typowo **`pnpm db:up`** (ścieżka A, A-7). Pełny stack B (`dev:stack:up` / A-8) **nie** jest wymagany do DoD ani CI v1. Migracje Prisma na `DATABASE_URL_TEST` przed suite; **zakaz** współdzielenia bazy z dev bez izolacji.
+T-3. Integracja: osobna baza PostgreSQL testowa (`vinseo_test` na tym samym serwerze co `vinseo`); lokalnie typowo **`pnpm db:up`** → `docker-compose.db.yml` (ścieżka A, A-7). Pełny stack B (`dev:stack:up` / A-8) **nie** jest wymagany do DoD ani CI v1. Migracje Prisma na `DATABASE_URL_TEST` przed suite; **zakaz** współdzielenia bazy runtime (`vinseo` / `DATABASE_URL`) z suite bez izolacji.
 
 T-4. Wyłącznie fixture / mock — bez prawdziwych nagrań i danych klientów.
 
@@ -105,7 +105,7 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 |---------|--------|
 | Runner | Jest |
 | API HTTP | supertest + `@nestjs/testing` |
-| DB test | PostgreSQL (Compose via `pnpm db:up` / ścieżka A) + Prisma; stack B nie jest bramką CI |
+| DB test | PostgreSQL `vinseo_test` (`docker-compose.db.yml` via `pnpm db:up` / ścieżka A) + Prisma; stack B nie jest bramką CI |
 | CI | GitHub Actions (PR + `workflow_dispatch`) |
 | Web | smoke build / typecheck |
 

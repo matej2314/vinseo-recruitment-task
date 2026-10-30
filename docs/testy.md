@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -42,12 +42,12 @@ Frontend (`web`): bez Playwright w v1; co najwyżej lekkie testy jednostkowe czy
 | Runner | **Jest** (wszystkie apps; migracja ze Vitest w scaffoldzie Nest) |
 | HTTP API | **supertest** + `@nestjs/testing` |
 | Asercje kontraktu summary | Zod (parse w teście / oczekiwany sukces lub fail) |
-| Baza | Osobna baza **testowa** w Docker Compose (nie produkcyjna, nie współdzielona z dev bez izolacji); lokalnie typowo `pnpm db:up` (ścieżka A). Pełny `compose.dev` **nie** jest bramką CI/DoD testów |
+| Baza | Osobna baza **testowa** `vinseo_test` (nie produkcyjna, nie współdzielona z runtime `vinseo` bez izolacji); lokalnie typowo `pnpm db:up` → `docker-compose.db.yml` (ścieżka A). Pełny `compose.dev` **nie** jest bramką CI/DoD testów |
 
 ## Baza testowa
 
-- W `docker-compose` (lub override): usługa Postgres z osobną bazą / osobnym kontenerem pod testy (np. DB name `meeting_memory_test` / `vinseo_test`).
-- Przed suite integracyjnym lokalnie: `pnpm db:up`, potem migracje Prisma na `DATABASE_URL_TEST`.
+- Ścieżka A (`docker-compose.db.yml`): jeden Postgres, dwie bazy — `vinseo` (runtime lokalny) i `vinseo_test` (integracje). Wejście: `pnpm db:up`.
+- Przed suite integracyjnym lokalnie: `pnpm db:up`, potem migracje Prisma na `DATABASE_URL_TEST` (nie na `DATABASE_URL`).
 - Migracje Prisma odpalane na bazę testową przed suite integracyjnym.
 - **Bez** prawdziwych nagrań i danych klientów - wyłącznie fixture / mock.
 - Testy jednostkowe ACL i redakcji **nie wymagają** bazy.

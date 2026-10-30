@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -71,7 +71,7 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **packages/contracts** | Wspólne typy / kształty kontraktów między api, worker i web; **bez Zod**. |
 | **Prisma** | ORM i migracje; schemat w rootowym `prisma/`. |
 | **PostgreSQL** | Jedyna baza stanu aplikacji, kolejek pg-boss i tabeli `audit_log`. |
-| **Docker Compose — ścieżka A** | Rootowy `docker-compose.yml` tylko pod Postgres (+ DB testowa). Wejście: `pnpm db:up` / `db:down` / `db:logs`. Procesy app na hoście (`dev:*`). |
+| **Docker Compose — ścieżka A** | Rootowy `docker-compose.db.yml` tylko pod Postgres (bazy `vinseo` + `vinseo_test`). Wejście: `pnpm db:up` / `db:down` / `db:logs`. Procesy app na hoście (`dev:*`). |
 | **Compose dev stack — ścieżka B** | `docker-compose.dev.yml` + `docker/dev/Dockerfile`: Postgres oraz `api`/`worker`/`web` w kontenerach; bind mount kodu; wolumeny na `node_modules`. Wejście: `pnpm dev:stack:up` / `down` / `logs`. Obowiązkowe DX Fazy 1; nie mylić z Compose produkcyjnym na VPS. |
 | **pg-boss** | Kolejka jobów w Postgresie (bez osobnego Redisa w v1). |
 | **Dziennik audytu** (`audit_log`) | Tabela w Postgresie na kluczowe zdarzenia biznesowe (auth, ACL, joby, demo, błędy walidacji summary); retencja 90 dni; odczyt v1 tylko ops/DB, bez HTTP. |

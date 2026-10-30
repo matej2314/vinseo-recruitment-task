@@ -61,7 +61,7 @@ Stub **nie** egzekwuje ACL, **nie** woła pg-boss, **nie** woła adapterów — 
 
 ### KROK 1 — Potwierdzenie gotowości stubu
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **1.1** — stub uruchamialny w układzie repo; brak blokady „najpierw przebuduj monorepo”. Odwołania: `docs/architektura_katalogi_pliki.md`, major frontu Faza 1.
 
@@ -96,7 +96,7 @@ Stub **nie** egzekwuje ACL, **nie** woła pg-boss, **nie** woła adapterów — 
 
 ### KROK 2 — Mapa widoków v1 i granic BFF
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **1.2** — mapa widoków i granic BFF zgodna z `docs/frontend.md` / `SPEC-FRONTEND` / `SPEC-KOMUNIKACJA`; świadomie poza v1 nazwane. Utrwalenie w kodzie jako stałe tras (bez logiki ACL).
 
@@ -195,7 +195,7 @@ export const bffForbidden = [
 
 ### KROK 3 — Gotowość warstwy web do rozbudowy
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Spełnić major **1.3** — warstwa web gotowa na layout i handlery BFF bez otwierania Fazy 1 backendu. Minimalny kontrakt env pod późniejszy proxy (bez sekretów w `NEXT_PUBLIC_*`).
 

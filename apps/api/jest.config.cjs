@@ -14,6 +14,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@nestjs/config$': '<rootDir>/test/nestjs-config-shim.cjs',
+    '^@vinseo/contracts$':
+      '<rootDir>/../../packages/contracts/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };

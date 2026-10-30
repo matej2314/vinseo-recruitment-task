@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -149,7 +149,7 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 | Kontrakty współdzielone | `packages/` (typy; bez Zod) |
 | Walidacja HTTP | class-validator + class-transformer |
 | Walidacja wyniku AI / summary | Zod w aplikacji |
-| LLM | Jeden provider (roboczo GPT-5.2); UC1 summarize + UC2 ask później |
+| LLM | Jeden port `LlmClient` (podstawowo Gemini 3.5 Flash-Lite; opcjonalnie Haiku 5.5 po testach — `koszty_i_warianty.md`); UC1 summarize + UC2 ask później |
 | Testy | Jest |
 
 ## Anty-patterny, których unikamy (architektonicznie)

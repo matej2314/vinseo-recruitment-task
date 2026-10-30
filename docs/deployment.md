@@ -1,5 +1,5 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -12,7 +12,7 @@ data_modyfikacji: 2026-10-30
 
 | Środowisko | Cel | Skład |
 |------------|-----|--------|
-| **local (A)** | Dev na hoście | `docker-compose.yml` → Postgres; `pnpm db:up`; procesy `api`/`worker`/`web` na hoście (`pnpm dev:*`) |
+| **local (A)** | Dev na hoście | `docker-compose.db.yml` → Postgres (bazy `vinseo` + `vinseo_test`); `pnpm db:up`; procesy `api`/`worker`/`web` na hoście (`pnpm dev:*`) |
 | **local (B)** | Dev w kontenerach | `docker-compose.dev.yml` → Postgres + `api`/`worker`/`web`; bind mount kodu + wolumeny `node_modules`; `pnpm dev:stack:up` (**obowiązkowe DX Fazy 1**) |
 | **ci** | Testy na PR / dispatch | Compose z bazą testową (`db:up` lub równoważne); Jest; bez pełnego `compose.dev` jako bramki |
 | **production** | VPS | Compose produkcyjny: `web`, `api`, `worker`, Postgres; reverse proxy **Nginx** + TLS (osobne od `compose.dev`) |
@@ -108,7 +108,7 @@ Szczegóły komend - root `README` projektu. Dwie ścieżki DX (skrypty root `pa
 
 ### Ścieżka A — baza w Compose, appki na hoście
 
-1. `pnpm db:up` — `docker-compose.yml` (Postgres + DB testowa). Zatrzymanie: `pnpm db:down`; logi: `pnpm db:logs`.
+1. `pnpm db:up` — `docker-compose.db.yml` (Postgres: `vinseo` + `vinseo_test`). Zatrzymanie: `pnpm db:down`; logi: `pnpm db:logs`.
 2. Migracje: `pnpm db:generate` + `pnpm db:migrate` (dev).
 3. Procesy: `pnpm dev:api`, `pnpm dev:worker`, `pnpm dev:web`.
 4. Demo: zalogowany pracownik → Test / `POST /demo/run-meeting` (+ SSE).

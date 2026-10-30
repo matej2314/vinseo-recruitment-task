@@ -1,5 +1,5 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -59,7 +59,7 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 ├── spec/                             # artefakty Spec-Driven Development (osobno od docs)
 ├── .github/
 │   └── workflows/                    # PR tests, workflow_dispatch, ...
-├── docker-compose.yml                # ścieżka A: tylko Postgres (+ volume); kolejka = pg-boss w DB
+├── docker-compose.db.yml             # ścieżka A: tylko Postgres (`vinseo` + `vinseo_test`); kolejka = pg-boss w DB
 ├── docker-compose.dev.yml            # ścieżka B: Postgres + api/worker/web (bind mount)
 ├── docker/
 │   ├── postgres/                     # init DB testowej
@@ -81,7 +81,7 @@ Rootowe skrypty: ścieżka A — `pnpm db:up` / `db:down` / `db:logs` + `dev:api
 | `apps/web` | App Router, BFF w `app/api/*`, dashboard (sidebar: tabela+Test / mock wyszukiwarka), cookie HttpOnly wg auth | Reguły ACL do treści spotkań; Zod „źródło prawdy” dla całego monorepo |
 | `packages/contracts` | Współdzielone **typy** i kształty kontraktów między api / worker / web | Zod, bcrypt, Prisma Client, logika redakcji, reguły ACL |
 | `prisma/` | Jedyny schemat i migracje dla całej instalacji (w tym model `audit_log`) | Osobne schema per aplikacja; treść transcriptu w tabeli audytu |
-| `docker-compose.yml` + skrypty `db:*` | Ścieżka A / CI: lokalny Postgres (w tym DB testowa); `pnpm db:up` | Sekretów w compose; zastępowania `compose.dev` |
+| `docker-compose.db.yml` + skrypty `db:*` | Ścieżka A / CI: lokalny Postgres (`vinseo` + `vinseo_test`); `pnpm db:up` | Sekretów w compose; zastępowania `compose.dev` |
 | `docker-compose.dev.yml` + `docker/dev/` + `dev:stack:*` | Ścieżka B (obowiązkowa): Postgres + procesy app w kontenerach, bind mount kodu, wolumeny zależności | Obrazów produkcyjnych VPS; równoległego `db:up` na tych samych portach |
 | `docs/` | Dokumentacja koncepcyjna i architektoniczna | Normy egzekwowalne SPEC (to `spec/`) |
 | `spec/` | Artefakty SDD / SPEC uzgodnione w procesie projektu | Zastępowanie treści z `docs/` |

@@ -18,7 +18,7 @@
 
 ## Faza 1 — Odbiór fundamentu i stubu `web`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Potwierdzenie, że po **Fazie 1 majoru backendu** stub `apps/web` i układ monorepo pozwalają bezpiecznie rozbudować UI v1 — bez ponownego tworzenia struktury repo, workspaces ani szkieletów `api`/`worker`. Mapowanie widoków i granic BFF względem `api` według docs/SPEC.
 
@@ -31,7 +31,7 @@
 
 ### Krok 1.1 — Potwierdzenie gotowości stubu po fundamencie backendu
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Sprawdzenie, że lokalizacja i minimalny start `apps/web` z Fazy 1 majoru backendu są wystarczające jako baza pod UI v1. Ewentualne drobne doprecyzowanie placeholderów tras **w obrębie istniejącego stubu** — bez powielania prac monorepo.
 
@@ -42,7 +42,7 @@
 
 ### Krok 1.2 — Mapa widoków v1 i granic BFF
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Ustalenie (opisowo, względem docs/SPEC): `/` auth, layout ze sidebarem (domyślny vs wyszukiwarka), brak trasy detail UI, rola BFF jako proxy (cookie, bez ACL, bez bezpośredniego enqueue kolejki).
 
@@ -53,7 +53,7 @@
 
 ### Krok 1.3 — Gotowość warstwy web do rozbudowy
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Warstwa web w stubie jest gotowa na dodanie layoutu roboczego i handlerów BFF w kolejnych fazach (zależności UI w obrębie istniejącej aplikacji web — bez ruszania fundamentu opisanego w majorze backendu).
 

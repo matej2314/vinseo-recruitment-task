@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -54,7 +54,8 @@ A-5. `apps/web` nie zawiera egzekucji ACL do treści spotkań ani orkiestracji p
 
 A-6. Konfiguracja `api` i `worker`: na starcie procesu **fail-closed** — brak lub niepoprawne wymagane zmienne środowiskowe → proces **nie** startuje. Zakaz odczytu `process.env` ad hoc w use case’ach, redakcji, ACL i adapterach (poza warstwą config).
 
-A-7. Ścieżka A (host): root `package.json` **musi** udostępniać skrypty `db:up` / `db:down` (opcjonalnie `db:logs`) opakowujące `docker-compose.yml` (tylko Postgres) oraz `dev:api` / `dev:worker` / `dev:web` na hoście. Opis: `docs/deployment.md`, root `README.md`.
+A-7. Ścieżka A (host): root `package.json` **musi** udostępniać skrypty `db:up` / `db:down` (opcjonalnie `db:logs`) opakowujące `docker-compose.db.yml` (tylko Postgres; bazy `vinseo` + `vinseo_test`) oraz `dev:api` / `dev:worker` / `dev:web` na hoście. Opis: `docs/deployment.md`, root `README.md`.
+Zmiana względem: wcześniejsza nazwa pliku `docker-compose.yml` (ta sama semantyka ścieżki A).
 
 A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istnieje `docker-compose.dev.yml` oraz `docker/dev/Dockerfile` (obraz bazowy Node+pnpm, **nie** prod). Compose podnosi Postgres + `api` + `worker` + `web` z **bind mountem** kodu monorepo i **wolumenami** na `node_modules` / store pnpm. Root `package.json` **musi** mieć skrypty `dev:stack:up` / `dev:stack:down` / `dev:stack:logs` (bez usuwania ani zmiany semantyki skryptów z A-7). `DATABASE_URL` w kontenerach wskazuje usługę `postgres`. Zakaz równoległego A+B na tych samych portach. CI v1 **nie** wymaga pełnego stacku B jako bramki testów (`SPEC-TESTY`).
 
@@ -96,7 +97,7 @@ A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istniej
 | Monorepo | **pnpm workspaces** |
 | API / worker | NestJS (osobne procesy / entry) |
 | Web | Next.js (App Router) + BFF |
-| DB | PostgreSQL (lokalnie A: `pnpm db:up`; B: usługa w `docker-compose.dev.yml`) |
+| DB | PostgreSQL (lokalnie A: `docker-compose.db.yml` / `pnpm db:up`; B: usługa w `docker-compose.dev.yml`) |
 | Local DX stack B | `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `pnpm dev:stack:*` (obowiązkowe) |
 | ORM / migracje | Prisma (schemat w rootcie `prisma/`; skrypty `db:generate` / `db:migrate` / `db:migrate:deploy`) |
 | Kolejka | pg-boss (w Postgresie; bez Redis jako brokera v1) |

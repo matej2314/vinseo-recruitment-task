@@ -8,6 +8,7 @@ export const workerEnvSchema = z.object({
   WORKER_LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
+  LLM_MOCK_MODE: z.enum(['happy', 'invalid']).default('happy'),
 });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;

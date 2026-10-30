@@ -37,7 +37,7 @@
 
 ### KROK 1 — Port źródła i atrapa materiałów
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Pobranie mockowego materiału po `externalMeetingId` / `fixtureKey`; kanon **bez** `summary.*` vendora — major 2.1, `SPEC-PIPELINE` P-3, `SPEC-KOMUNIKACJA` K-12…K-14.
 
@@ -246,7 +246,7 @@ export class MeetingSourceModule {}
 
 ### KROK 2 — Redakcja E+T+P+K (pure) + unit testy
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Czysta redakcja przed LLM; testy jednostkowe — major 2.2.1 + część 2.4; `SPEC-PIPELINE` P-10…P-12; `SPEC-TESTY` T-7.
 
@@ -421,7 +421,7 @@ Dodaj w `apps/worker/jest.config.cjs` (jak w api z FAZY 1) oraz skrypt `test` �
 
 ### KROK 3 — LlmClient mock, Zod UC1, orkiestracja `meeting.process`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Happy path → `completed` z kanonem po Zod; fail-closed; brak pół-sukcesu w DB przed LLM — major 2.2 / 2.2.2; `SPEC-PIPELINE` P-1…P-9; `SPEC-LLM`.
 
@@ -835,7 +835,7 @@ export class MeetingProcessWorker implements OnModuleInit {
 
 ### KROK 4 — Idempotencja i enqueue DX z `api`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** Ten sam klucz = jedno spotkanie; enqueue ze ścieżki `api` (DX bez sesji) — major 2.3; `SPEC-PIPELINE` P-6/P-7; `SPEC-KOMUNIKACJA` K-9/K-10.  
 **Nie** implementujemy `POST /demo/run-meeting` (Faza 3).
@@ -1019,7 +1019,7 @@ W `AppModule`: `MeetingsModule.register()` zamiast `MeetingsModule`.
 
 ### KROK 5 — Demo lokalne + testy pipeline (domknięcie)
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Cel:** README z demo przepuszczenia spotkania; testy redakcji (już KROK 2) + integracja pipeline — major 2.4; `SPEC-TESTY` T-7…T-9.
 

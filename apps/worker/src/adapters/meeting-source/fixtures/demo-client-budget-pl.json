@@ -1,0 +1,43 @@
+{
+  "externalId": "demo-client-budget-pl",
+  "title": "Budżet kampanii Q4 — Client X",
+  "startedAt": "2026-10-15T09:00:00.000Z",
+  "participants": [
+    {
+      "email": "anna.kowalska@vinseo.example",
+      "displayName": "Anna Kowalska",
+      "internal": true
+    },
+    {
+      "email": "jan.nowak@client-x.example",
+      "displayName": "Jan Nowak",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Anna Kowalska",
+      "text": "Cześć, ustalmy budget na kampanię Brand Lift. Mój mail roboczy to anna.budget@vinseo.example na wszelki wypadek.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Jan Nowak",
+      "text": "OK. Jak coś, dzwońcie pod +48 600 100 200. PESEL testowy do formalności: 44051401359.",
+      "startMs": 12000
+    },
+    {
+      "speaker": "Anna Kowalska",
+      "text": "Dzięki. Karta firmowa do refundacji testowej: 4111111111111111 — nie używać w prod.",
+      "startMs": 24000
+    },
+    {
+      "speaker": "Jan Nowak",
+      "text": "Final decision: budget 50k PLN na Brand Lift w listopadzie. Action: Anna przygotuje brief do piątku.",
+      "startMs": 36000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY — MUST BE IGNORED",
+    "action_items": ["ignore-me"]
+  }
+}

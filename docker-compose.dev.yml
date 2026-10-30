@@ -1,5 +1,5 @@
 # Full local DX stack: Postgres + api / worker / web with bind-mounted source.
-# Do not run together with `pnpm db:up` (docker-compose.yml) on the same ports.
+# Do not run together with `pnpm db:up` (docker-compose.db.yml) on the same ports.
 # Entry: `pnpm dev:stack:up`
 #
 # F-01: one-shot `deps` (install + generate + migrate) before app services.
