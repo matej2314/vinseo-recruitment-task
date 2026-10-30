@@ -42,9 +42,8 @@ export function appendUpstreamSetCookies(
   target: Headers,
   upstream: Headers,
 ): void {
-  const getSetCookie = (
-    upstream as Headers & { getSetCookie?: () => string[] }
-  ).getSetCookie;
+  const getSetCookie = (upstream as Headers & { getSetCookie?: () => string[] })
+    .getSetCookie;
   const lines =
     typeof getSetCookie === "function"
       ? getSetCookie.call(upstream)
@@ -119,7 +118,7 @@ export async function bffProxyJson(init: BffProxyInit): Promise<Response> {
       headers,
       body: init.body,
       cache: "no-store",
-      // Cookie sesji Nest — nie śledź redirectów auth między hostami
+      // Cookie sesji Nest - nie śledź redirectów auth między hostami
       redirect: "manual",
     },
   );

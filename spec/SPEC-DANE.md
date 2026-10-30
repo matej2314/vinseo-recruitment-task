@@ -1,10 +1,10 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Dane (Prisma / PostgreSQL)
+# SPEC - Dane (Prisma / PostgreSQL)
 
 Norma modelu danych i persystencji. Kontekst: `docs/architektura.md`, `docs/architektura_katalogi_pliki.md`, `docs/bezpieczenstwo_i_rodo.md`. Sesja/refresh: `SPEC-AUTH_I_ACL`. Pipeline persist: `SPEC-PIPELINE`. Katalog zdarzeń audytu: `SPEC-OBSERVABILITY`.
 
@@ -25,7 +25,7 @@ Norma modelu danych i persystencji. Kontekst: `docs/architektura.md`, `docs/arch
 | Prisma w rootcie | Brak `schema.prisma` per aplikacja |
 | Infra / repo | Prisma Client poza controllerami (`SPEC-ARCHITEKTURA`) |
 | `audit_log` ≠ event sourcing | Append kluczowych zdarzeń; bez payloadu transcriptu |
-| ACL v1 | Organizator / uczestnik / admin — nie membership |
+| ACL v1 | Organizator / uczestnik / admin - nie membership |
 
 **Wyjątek względem stylu globalnego:** brak.
 
@@ -41,7 +41,7 @@ D-3. Jedyny ORM aplikacji: **Prisma**. Zakaz drugiego ORM / osobnej schemy per p
 
 ### Identyfikatory
 
-D-4. Klucze główne domenowe — **UUID** (`String @id @default(uuid())` lub natywne `@db.Uuid` — jedna spójna konwencja w schemacie):
+D-4. Klucze główne domenowe - **UUID** (`String @id @default(uuid())` lub natywne `@db.Uuid` - jedna spójna konwencja w schemacie):
 
 | Model (logiczny) | PK |
 |------------------|-----|
@@ -54,7 +54,9 @@ D-4. Klucze główne domenowe — **UUID** (`String @id @default(uuid())` lub na
 | RefreshToken | UUID |
 | AuditLog | UUID |
 
-D-5. `externalMeetingId` (oraz spójnie `fixtureKey` na ścieżce demo): **string** biznesowy, **unikalny** — nie mylić z PK `Meeting.id`.
+D-5. `externalMeetingId`: **string** biznesowy, **unikalny** w modelu `Meeting` - nie mylić z PK `Meeting.id`. Tożsamość kanonicznego spotkania / runu (prod: ID vendora; DEMO/Test: UUID **runu** nadane przez API).
+
+Zmiana względem wcześniejszego D-5 („`externalMeetingId` oraz spójnie `fixtureKey` na ścieżce demo” jako jeden unikalny string tożsamości): na ścieżce **DEMO/Test** (`POST /demo/run-meeting`) `fixtureKey` wskazuje wyłącznie **materiał** mocka z katalogu i **nie** jest kluczem unikalności wiersza `Meeting` - ten sam `fixtureKey` może powtórzyć się u wielu użytkowników i runów (`SPEC-KOMUNIKACJA` K-5, `SPEC-PIPELINE` P-6). Unikalność w DB dotyczy wyłącznie `externalMeetingId`. Semantyka DX (`POST /dev/meetings/enqueue`, gdzie `fixtureKey` ≈ `externalMeetingId`) oraz produkcji - **bez zmian** w tym wymaganiu poza jawnym rozdzieleniem ścieżki DEMO/Test.
 
 D-6. Identyfikatory wewnętrzne pg-boss: według biblioteki; poza modelem domenowym Prisma (tabele jobów mogą współdzielić DB).
 
@@ -66,34 +68,34 @@ D-7. Obowiązkowe byty logiczne:
 |-----|------|
 | **User** | Pracownik: e-mail (unikalny), hash hasła (bcrypt), rola (pracownik / admin) |
 | **Client** | Klient agencji; **`emailDomain` unikalne** (matching bez HubSpot) |
-| **Project** | Projekt powiązany z klientem — **pod przyszłą fazę**; nie źródło ACL v1 |
-| **ProjectMembership** | User ↔ Project — **pod przyszłą fazę**; **zakaz** użycia w `access` v1 |
+| **Project** | Projekt powiązany z klientem - **pod przyszłą fazę**; nie źródło ACL v1 |
+| **ProjectMembership** | User ↔ Project - **pod przyszłą fazę**; **zakaz** użycia w `access` v1 |
 | **Meeting** | Spotkanie: metadane faktu + treść + statusy (pola poniżej) |
 | **MeetingParticipant** | Relacja **User ↔ Meeting** (uczestnictwo wewnętrzne pod ACL) |
 | **RefreshToken** | Hash refresh, `userId`, `familyId`, wygaśnięcie, used/revoked (`SPEC-AUTH_I_ACL`) |
 | **AuditLog** | Zdarzenia audytu (pola szczegółowe katalogu → OBSERVABILITY) |
 
-D-7a. **Meeting** — pola wymagane / normatywne:
+D-7a. **Meeting** - pola wymagane / normatywne:
 
 | Pole | Norma |
 |------|--------|
 | `organizerId` | FK → User (organizator; ścieżka ACL v1) |
-| `startedAt` / czas trwania (`durationSeconds` lub `endedAt`) | Fakt callu — **zostaje** przy erase |
-| `title` | Fakt callu — **zostaje** przy erase |
-| `processingStatus` | Fakt / stan pipeline — **zostaje** przy erase |
-| `clientId` | Opcjonalne FK → Client — **zostaje** przy erase |
+| `startedAt` / czas trwania (`durationSeconds` lub `endedAt`) | Fakt callu - **zostaje** przy erase |
+| `title` | Fakt callu - **zostaje** przy erase |
+| `processingStatus` | Fakt / stan pipeline - **zostaje** przy erase |
+| `clientId` | Opcjonalne FK → Client - **zostaje** przy erase |
 | `clientLinkStatus` | Enum: `internal` \| `matched` \| `unmatched` |
 | `confidential` | Boolean, default false |
-| `transcriptSegments` / `summary` | Treść — **null** po erase |
-| `externalParticipants` (JSON) | Metadane zewnętrznych (e-mail poza domeną firmy) — **czyszczone** przy erase |
+| `transcriptSegments` / `summary` | Treść - **null** po erase |
+| `externalParticipants` (JSON) | Metadane zewnętrznych (e-mail poza domeną firmy) - **czyszczone** przy erase |
 
-Uczestnicy zewnętrzni (bez konta): JSON / metadane na spotkaniu — **bez** osobnego modelu „ExternalParticipant” w v1.
+Uczestnicy zewnętrzni (bez konta): JSON / metadane na spotkaniu - **bez** osobnego modelu „ExternalParticipant” w v1.
 
 Zmiana względem D-7 v1: `ProjectMembership` nie jest „podstawą ACL zespołu”; ACL = organizator + `MeetingParticipant` + admin (`SPEC-AUTH_I_ACL`).
 
 ### JSON: segmenty i summary
 
-D-8. **Segmenty transcriptu:** kolumna **JSON** na rekordzie spotkania (lub jednym powiązanym rekordzie 1:1 ze spotkaniem) — tablica obiektów zgodnych z portem źródła (`speaker`, `text`, `startMs`, …). **Zakaz** osobnej tabeli segmentów w v1.
+D-8. **Segmenty transcriptu:** kolumna **JSON** na rekordzie spotkania (lub jednym powiązanym rekordzie 1:1 ze spotkaniem) - tablica obiektów zgodnych z portem źródła (`speaker`, `text`, `startMs`, …). **Zakaz** osobnej tabeli segmentów w v1.
 
 D-9. **Summary kanoniczne:** przechowywane jako JSON (na `Meeting` lub 1:1) zawierające co najmniej kształt po Zod: `shortSummary`, `decisions`, **`actionItems` jako JSON** (tablica obiektów `assignee` / `description` / `dueDate`). **Zakaz** osobnej tabeli action items w v1.
 
@@ -103,13 +105,13 @@ D-10. Zapis summary jako sukcesu wyłącznie po walidacji Zod (`SPEC-PIPELINE` /
 
 D-11. Tabela `audit_log` w tym samym schemacie Postgres.
 
-D-12. **Zakaz** umieszczania pełnej treści transcriptu, pełnego promptu LLM ani pełnego summary jako pola audytu. Dozwolone: `eventType`, id zasobu, `userId` (gdy dotyczy), `requestId` / correlation, timestamp, ewentualnie krótki kod wyniku — katalog typów → `SPEC-OBSERVABILITY`.
+D-12. **Zakaz** umieszczania pełnej treści transcriptu, pełnego promptu LLM ani pełnego summary jako pola audytu. Dozwolone: `eventType`, id zasobu, `userId` (gdy dotyczy), `requestId` / correlation, timestamp, ewentualnie krótki kod wyniku - katalog typów → `SPEC-OBSERVABILITY`.
 
 D-12a. Przy erase treści spotkania: powiązane rekordy audytu **anonimizowane** (norma produktowa; endpoint erase poza must-have etapu 0).
 
 ### Dostęp z kodu
 
-D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytoriów / serwisów aplikacji — **nie** z controllerów HTTP ani z czystej redakcji (`SPEC-PIPELINE`).
+D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytoriów / serwisów aplikacji - **nie** z controllerów HTTP ani z czystej redakcji (`SPEC-PIPELINE`).
 
 ## Norma: wzorce
 
@@ -144,7 +146,7 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 ## Kryteria akceptacji
 
 - [ ] `prisma/schema.prisma` pokrywa byty z D-7 / D-7a; migracja aplikuje się na czystą Postgres (oraz upgrade z poprzedniej migracji etapu 0).
-- [ ] `externalMeetingId` unikalne; ponowne demo nie tworzy drugiego `Meeting` (idempotencja + D-5).
+- [ ] `externalMeetingId` unikalne w schemacie; ponowne enqueue / retry **tego samego** `externalMeetingId` nie tworzy drugiego `Meeting` (D-5 + P-6). Na DEMO/Test: każde wywołanie Test → nowe UUID runu → osobny wiersz; `fixtureKey` nie jest kluczem tożsamości wiersza (K-5).
 - [ ] Segmenty i action items są w JSON; brak migracji tworzących tabele segment/action_item w v1.
 - [ ] `RefreshToken` przechowuje hash; plaintext refresh nie leży w kolumnie.
 - [ ] Wiersze `audit_log` w review/testach nie zawierają pełnego transcriptu.
@@ -156,6 +158,6 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 - Seed Prisma, pełna archiwizacja spotkań.
 - Normalizacja segmentów / action items do osobnych tabel.
 - HTTP erase + job retencji prod (polityka w docs).
-- Pełny katalog `eventType` — `SPEC-OBSERVABILITY`.
+- Pełny katalog `eventType` - `SPEC-OBSERVABILITY`.
 - Indeksy pod przyszły RAG / full-text.
 - Membership jako ACL.

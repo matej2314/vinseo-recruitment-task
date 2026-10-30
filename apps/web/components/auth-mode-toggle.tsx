@@ -16,9 +16,9 @@ type AuthFormState =
   | { readonly status: "error"; readonly message: string };
 
 /**
- * Auth UI v1 — SPEC-FRONTEND F-1.
+ * Auth UI v1 - SPEC-FRONTEND F-1.
  * Start: login; CTA; linki tekstowe; register: passwordConfirm + match przed submit.
- * Sesja tylko przez cookie HttpOnly z BFF — bez localStorage/sessionStorage.
+ * Sesja tylko przez cookie HttpOnly z BFF - bez localStorage/sessionStorage.
  */
 export function AuthModeToggle() {
   const router = useRouter();

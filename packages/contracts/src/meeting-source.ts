@@ -1,4 +1,4 @@
-export type MeetingSourceKind = 'mock';
+export type MeetingSourceKind = "mock";
 
 export interface SourceParticipant {
   readonly email: string | null;
@@ -12,7 +12,7 @@ export interface SourceSegment {
   readonly startMs: number;
 }
 
-/** Port źródła (K-12) — bez pól summary vendora. */
+/** Port źródła (K-12) - bez pól summary vendora. */
 export interface MeetingSourcePayload {
   readonly externalId: string;
   readonly title: string;

@@ -1,10 +1,10 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Auth i ACL
+# SPEC - Auth i ACL
 
 Norma implementacji uwierzytelniania pracowników oraz kontroli dostępu do spotkań. Kontekst produktowy: `docs/dokumentacja_koncepcyjna.md`, `docs/architektura.md` (sesja JWT+refresh). Kontrakty HTTP / SSE: `SPEC-KOMUNIKACJA` (refresh, paginacja listy). Warstwy: `SPEC-ARCHITEKTURA`. Persistencja tokenów: `SPEC-DANE`.
 
@@ -28,15 +28,15 @@ Norma implementacji uwierzytelniania pracowników oraz kontroli dostępu do spot
 
 **Wyjątek względem stylu globalnego:** brak.
 
-## Wymagania — auth
+## Wymagania - auth
 
 AU-1. Konta wyłącznie dla **pracowników**. Rejestracja v1: **otwarta** (endpoint dostępny bez zaproszenia).
 
-AU-2. Identyfikator logowania: **e-mail** — **unikalny** w bazie (konflikt przy duplikacie → błąd klienta, np. 409).
+AU-2. Identyfikator logowania: **e-mail** - **unikalny** w bazie (konflikt przy duplikacie → błąd klienta, np. 409).
 
 AU-3. Hasło przy rejestracji / zmianie (gdy dotyczy): minimum **12** znaków, co najmniej **1** wielka litera, **1** cyfra, **1** znak specjalny. Egzekucja w walidacji DTO / Zod aplikacji przed zapisem.
 
-AU-4. Przed zapisem hasła: **bcrypt**. Przy logowaniu: porównanie z hashem — nigdy plaintext w DB ani w logach.
+AU-4. Przed zapisem hasła: **bcrypt**. Przy logowaniu: porównanie z hashem - nigdy plaintext w DB ani w logach.
 
 AU-5. Model sesji v1:
 
@@ -62,30 +62,31 @@ AU-7. Tabela refresh (Prisma, szczegóły pól → `SPEC-DANE` w zakresie potrze
 
 AU-8. Ciało odpowiedzi auth **nie** musi zwracać sekretów tokenów w JSON, jeśli są wyłącznie w cookie Set-Cookie.
 
-## Wymagania — ACL
+## Wymagania - ACL
 
-AC-1. Odczyt spotkania i artefaktów (lista elementów, detail, transcript / summary / zadania w detail) tylko gdy zachodzi **co najmniej jedno** (**ACL v1**):
+AC-1. Odczyt spotkania i artefaktów (lista elementów — w tym projekcja `summary` / `failureReason` na liście; detail; transcript / pełniejsze artefakty w detail) tylko gdy zachodzi **co najmniej jedno** (**ACL v1**):
 
 1. użytkownik jest **organizatorem** spotkania (`Meeting.organizerId`), albo  
 2. użytkownik jest **uczestnikiem** wewnętrznym (`MeetingParticipant`), albo  
-3. użytkownik ma rolę **admin** — widzi **wszystkie** spotkania (w tym `confidential`).
+3. użytkownik ma rolę **admin** - widzi **wszystkie** spotkania (w tym `confidential`).
 
-Zmiana względem wcześniejszej reguły z membership projektu/klienta: **`ProjectMembership` nie przyznaje odczytu w tej wersji** (kolejna faza produktowa — docs). `clientId` / `clientLinkStatus` to metadane, nie ACL.
+Zmiana względem wcześniejszej reguły z membership projektu/klienta: **`ProjectMembership` nie przyznaje odczytu w tej wersji** (kolejna faza produktowa - docs). `clientId` / `clientLinkStatus` to metadane, nie ACL.
+Doprecyzowanie względem wcześniejszego brzmienia „summary … w detail”: w v1 `summary` / `failureReason` są też w elemencie listy (`SPEC-KOMUNIKACJA` K-2a) — nadal wyłącznie po ACL listy (AC-4), bez transcriptu na liście.
 
-AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę, detail, SSE oraz — gdy powstaną — wyszukiwanie i asystent (UC2).
+AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę, detail, SSE oraz - gdy powstaną - wyszukiwanie i asystent (UC2).
 
-AC-3. `GET /meetings/:id`: spotkanie nie istnieje **lub** brak ACL → odpowiedź **404** (identyczny kształt na zewnątrz — bez wycieku istnienia).
+AC-3. `GET /meetings/:id`: spotkanie nie istnieje **lub** brak ACL → odpowiedź **404** (identyczny kształt na zewnątrz - bez wycieku istnienia).
 
 AC-4. `GET /meetings`: zwraca **wyłącznie** spotkania dozwolone regułą AC-1 (nigdy pełny zbiór z filtrowaniem tylko na froncie).
 
-AC-5. Paginacja listy — **backend**:
+AC-5. Paginacja listy - **backend**:
 
 | Parametr | Norma |
 |----------|--------|
 | `limit` | Dozwolone wartości: **10, 25, 50, 100** (select na froncie; inne wartości → **400**) |
 | `page` | Numer strony **1-based** (query); **zakaz** paginacji cursor w v1 |
 
-Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `hasMore` — spójnie w contracts).
+Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `hasMore` - spójnie w contracts).
 
 ## Norma: wzorce
 
@@ -117,7 +118,7 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 | Access token | `@nestjs/jwt` (JWT) |
 | Refresh store | PostgreSQL + Prisma |
 | HTTP guards | Nest guard / opcjonalnie Passport JWT z extractorem cookie |
-| Walidacja wejścia auth | class-validator (DTO) — spójnie z `SPEC-KOMUNIKACJA` |
+| Walidacja wejścia auth | class-validator (DTO) - spójnie z `SPEC-KOMUNIKACJA` |
 
 ## Kryteria akceptacji
 

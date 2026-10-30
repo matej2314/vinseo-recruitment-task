@@ -1,10 +1,10 @@
 ---
-wersja: 3
+wersja: 5
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — jak czytać
+# SPEC - jak czytać
 
 Zestaw **norm implementacji** Firmowego asystenta spotkań. Język: polski. Katalog: `spec/` w rootcie projektu.
 
@@ -12,8 +12,8 @@ Zestaw **norm implementacji** Firmowego asystenta spotkań. Język: polski. Kata
 
 | Warstwa | Rola |
 |---------|------|
-| **`docs/`** | Wspólne rozumienie systemu: koncepcja, architektura, kontrakty I/O, przepływy, testy, deploy — *dlaczego / jak system jest pomyślany*. |
-| **`spec/SPEC-*.md`** | Norma przy pisaniu kodu w obszarze: wzorce, wolno/nie wolno, stack, kryteria weryfikowalne — *co obowiązuje przy implementacji*. |
+| **`docs/`** | Wspólne rozumienie systemu: koncepcja, architektura, kontrakty I/O, przepływy, testy, deploy - *dlaczego / jak system jest pomyślany*. |
+| **`spec/SPEC-*.md`** | Norma przy pisaniu kodu w obszarze: wzorce, wolno/nie wolno, stack, kryteria weryfikowalne - *co obowiązuje przy implementacji*. |
 
 SPEC **uszczegóławia** docs; nie zastępuje dokumentacji koncepcyjnej i nie powinna jej redefiniować. Przy driftcie najpierw uzgodnij prawdę w docs, potem zaktualizuj SPEC.
 
@@ -28,18 +28,20 @@ SPEC **uszczegóławia** docs; nie zastępuje dokumentacji koncepcyjnej i nie po
 | Plik | Obszar |
 |------|--------|
 | [SPEC-ARCHITEKTURA.md](./SPEC-ARCHITEKTURA.md) | Monolit, procesy `api`/`worker`/`web`, warstwy, `packages/`, config |
-| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss, port źródła; **DEMO/Test:** UUID runu vs katalog fixture (K-5) |
-| [SPEC-AUTH_I_ACL.md](./SPEC-AUTH_I_ACL.md) | Auth (JWT+refresh), ACL v1 (organizator/uczestnik/admin), paginacja |
+| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss, port źródła; **DEMO/Test:** UUID runu vs katalog fixture (K-5); lista z `summary`/`failureReason` (K-2a) |
+| [SPEC-AUTH_I_ACL.md](./SPEC-AUTH_I_ACL.md) | Auth (JWT+refresh), ACL v1 (organizator/uczestnik/admin), paginacja; summary na liście po ACL |
 | [SPEC-PIPELINE.md](./SPEC-PIPELINE.md) | Job `meeting.process`, redakcja E+T+P+K, metadata-only, client-link; idempotencja po `externalMeetingId` (P-6; DEMO ≠ fixture) |
 | [SPEC-LLM.md](./SPEC-LLM.md) | Port LlmClient, UC1 mock, Zod; UC2 poza wersją |
-| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE (multi-tester, rosnąca lista), mock wyszukiwarki |
-| [SPEC-DANE.md](./SPEC-DANE.md) | Prisma, organizer, client domain/link, JSON, `audit_log` |
+| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE (multi-tester, rosnąca lista), podgląd wyniku z listy po reloadzie |
+| [SPEC-DANE.md](./SPEC-DANE.md) | Prisma, organizer, client domain/link, JSON, `audit_log`; D-5: unikalność `externalMeetingId` (DEMO ≠ `fixtureKey`) |
 | [SPEC-OBSERVABILITY.md](./SPEC-OBSERVABILITY.md) | pino, health, katalog `eventType`, correlation |
-| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (SSE, multi-user DEMO, katalog 10), CI / ochrona `main` |
+| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (SSE, multi-user DEMO, katalog 10, projekcja listy), CI / ochrona `main` |
 
-**Ślad (2026-10-30):** kontrakt DEMO/Test — tożsamość runu (UUID) vs materiał fixture (katalog 10, losowanie API), multi-tester; zaktualizowane: KOMUNIKACJA, PIPELINE, TESTY, FRONTEND. DX i produkcja poza tą zmianą normy dema.
+**Ślad (2026-10-30):** kontrakt DEMO/Test - tożsamość runu (UUID) vs materiał fixture (katalog 10, losowanie API), multi-tester; zaktualizowane: KOMUNIKACJA, PIPELINE, TESTY, FRONTEND, **DANE (D-5)**. DX i produkcja poza tą zmianą normy dema.
 
-Ten plik (`SPEC-README.md`) jest spisem technicznym — nie normą obszarową.
+**Ślad (2026-10-30, lista):** projekcja `summary` / `failureReason` na `GET /meetings` (K-2a) + UI po reloadzie; zaktualizowane: KOMUNIKACJA, FRONTEND, AUTH_I_ACL, TESTY (+ docs komunikacji / frontend / data_flow / testy).
+
+Ten plik (`SPEC-README.md`) jest spisem technicznym - nie normą obszarową.
 
 ## Kolejność czytania (praktyczna)
 

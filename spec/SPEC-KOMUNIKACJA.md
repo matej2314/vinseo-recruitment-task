@@ -1,14 +1,16 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Komunikacja (powierzchnie I/O)
+# SPEC - Komunikacja (powierzchnie I/O)
 
-Norma implementacji kontraktów komunikacji v1. Opis powierzchni i przykładowe kształty: `docs/dokumentacja_komunikacji.md`. Warstwy i zakazy procesów: `SPEC-ARCHITEKTURA`. Ten plik egzekwuje *jak* implementować I/O — bez drugiej dokumentacji koncepcyjnej.
+Norma implementacji kontraktów komunikacji v1. Opis powierzchni i przykładowe kształty: `docs/dokumentacja_komunikacji.md`. Warstwy i zakazy procesów: `SPEC-ARCHITEKTURA`. Ten plik egzekwuje *jak* implementować I/O - bez drugiej dokumentacji koncepcyjnej.
 
-Zmiana względem wcześniejszej normy K-5 / K-10 (utożsamianie idempotencji dema z „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” na `POST /demo/run-meeting`): na ścieżce **DEMO/Test** każde wywołanie dostaje **nowe** `externalMeetingId` (UUID), `organizerId` = user sesji, losowy `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza. DX i produkcja — poza tą zmianą K-5 (decyzja: DX `/dev/meetings/enqueue` bez zmian).
+Zmiana względem wcześniejszej normy K-5 / K-10 (utożsamianie idempotencji dema z „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” na `POST /demo/run-meeting`): na ścieżce **DEMO/Test** każde wywołanie dostaje **nowe** `externalMeetingId` (UUID), `organizerId` = user sesji, losowy `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza. DX i produkcja - poza tą zmianą K-5 (decyzja: DX `/dev/meetings/enqueue` bez zmian).
+
+Zmiana względem wcześniejszej projekcji `GET /meetings` (element listy bez wyniku UC1): lista **musi** zawierać `summary` oraz `failureReason` (K-2a) — UI v1 podgląda wynik w tabeli bez trasy detail (`SPEC-FRONTEND`).
 
 ## Cel / zakres
 
@@ -50,44 +52,52 @@ K-2. Trasy v1 (semantyka jak w docs; ścieżki bazowe):
 | `POST` | `/auth/logout` | tak | kończy sesję; czyści cookie |
 | `GET` | `/auth/me` | tak | bieżący użytkownik |
 | `POST` | `/auth/refresh` | refresh cookie | rotacja tokenów (`SPEC-AUTH_I_ACL`) |
-| `GET` | `/meetings` | tak | lista spotkań po ACL; paginacja `limit` + **`page`** (`SPEC-AUTH_I_ACL`) |
-| `GET` | `/meetings/:id` | tak | detail po ACL (API; UI v1 nie ma osobnej strony detail) |
+| `GET` | `/meetings` | tak | lista spotkań po ACL; paginacja `limit` + **`page`** (`SPEC-AUTH_I_ACL`); kształt elementu: K-2a |
+| `GET` | `/meetings/:id` | tak | detail po ACL (API; UI v1 nie ma osobnej strony detail); rozszerza K-2a o pola dodatkowe |
 | `GET` | `/meetings/:id/events` | tak | **SSE** statusów pipeline dla spotkania (ACL jak detail) |
 | `POST` | `/demo/run-meeting` | tak | enqueue joba `meeting.process` (mock/fixture); **bez** bramki env `DEMO_ENABLED` |
+
+K-2a. Element listy `GET /meetings` (DTO / `packages/contracts`, spójnie z `docs/dokumentacja_komunikacji.md`):
+- zawiera metadane wiersza (m.in. `id`, `title`, `startedAt`, `processingStatus`, …) **oraz** `summary: unknown | null` i `failureReason: string | null`;
+- `summary` = kanon UC1 po sukcesie / `null` gdy brak; `failureReason` przy `failed` (lub `null`);
+- **zakaz** pełnego transcriptu w elemencie listy;
+- detail **rozszerza** listę (np. `externalParticipants`), nie jest jedynym miejscem z `summary` / `failureReason` w v1.
+Zmiana względem: wcześniejsza praktyka / opis docs z summary wyłącznie w detail — obowiązuje projekcja wyniku także na liście (pod tabelę UI).
 
 K-3. Sesja w komunikacji: cookie **HttpOnly**; atrybuty **Secure** / **SameSite** według środowiska. Ciało odpowiedzi logowania **nie** musi duplikować sekretu sesji w JSON. Szczegóły hashowania i reguł ACL → `SPEC-AUTH_I_ACL`.
 
 K-4. Brak uprawnień do istniejącego spotkania: odpowiedź jak **404** (bez wycieku istnienia zasobu). Pełne reguły „kto widzi” (ACL v1: organizator ∨ uczestnik ∨ admin) → `SPEC-AUTH_I_ACL`.
 
-K-5. Demo (`POST /demo/run-meeting`) — ścieżka UI Test:
+K-5. Demo (`POST /demo/run-meeting`) - ścieżka UI Test:
 
 - wymaga zalogowanego pracownika;
 - **nie** sprawdza ani nie wymaga `DEMO_ENABLED` (flaga poza normą implementacji);
 - wyłącznie **enqueue** `meeting.process` (nie omija workera);
 - **tożsamość runu:** serwer nadaje **nowe** `externalMeetingId` (UUID) na **każde** wywołanie; ustawia `organizerId` = użytkownik sesji; klient **nie** musi podawać unikalnego ID spotkania;
-- **wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów za portem źródła; opcjonalne `fixtureKey` w body — jeśli zostaje w kontrakcie HTTP — serwer może zignorować / nadpisać losowaniem (norma: wybór należy do API demo);
-- **`fixtureKey` ≠ klucz tożsamości wiersza** na DEMO/Test — ten sam klucz może powtórzyć się u wielu użytkowników i runów; każde wywołanie → osobny rekord `Meeting` (lista może rosnąć; multi-tester bez współdzielonego globalnego wiersza);
+- **wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów za portem źródła; opcjonalne `fixtureKey` w body - jeśli zostaje w kontrakcie HTTP - serwer może zignorować / nadpisać losowaniem (norma: wybór należy do API demo);
+- **`fixtureKey` ≠ klucz tożsamości wiersza** na DEMO/Test - ten sam klucz może powtórzyć się u wielu użytkowników i runów; każde wywołanie → osobny rekord `Meeting` (lista może rosnąć; multi-tester bez współdzielonego globalnego wiersza);
 - odpowiedź zawiera m.in. `meetingId` (własny run), `jobId`, status początkowy (np. `pending`);
-- po enqueue UI otwiera SSE (`K-5a`) i aktualizuje / dokłada wiersz tabeli (`SPEC-FRONTEND`) — bez wymogu osobnej nawigacji na detail;
-- **poza tą zmianą K-5:** DX `POST /dev/meetings/enqueue` (dotychczasowa idempotencja `fixtureKey` ≈ `externalMeetingId`) oraz ścieżka produkcyjna (Fireflies / webhook) — bez zmiany reguł biznesowych w tym wymaganiu.
+- po enqueue UI otwiera SSE (`K-5a`) i aktualizuje / dokłada wiersz tabeli (`SPEC-FRONTEND`) - bez wymogu osobnej nawigacji na detail;
+- **poza tą zmianą K-5:** DX `POST /dev/meetings/enqueue` (dotychczasowa idempotencja `fixtureKey` ≈ `externalMeetingId`) oraz ścieżka produkcyjna (Fireflies / webhook) - bez zmiany reguł biznesowych w tym wymaganiu.
 
-K-5a. SSE — `GET /meetings/:id/events` (Nest `@Sse`, Observable `MessageEvent`):
+K-5a. SSE - `GET /meetings/:id/events` (Nest `@Sse`, Observable `MessageEvent`):
 
 - wymaga sesji; brak ACL / brak zasobu → **404** (jak detail);
 - strumień zdarzeń ze zmianami `processingStatus`: `pending` | `processing` | `completed` | `failed`;
-- payload zdarzenia (kształt logiczny): co najmniej `meetingId`, `processingStatus`; przy `completed` wolno dołączyć skrót pól listy/summary potrzebnych do odświeżenia wiersza tabeli;
+- payload zdarzenia (kształt logiczny): co najmniej `meetingId`, `processingStatus`; przy `completed` wolno / należy dołączyć pola potrzebne do wiersza (`title`, `summary`); przy `failed` wolno / należy dołączyć `failureReason` — spójnie z K-2a (live update bez osobnego GET detail);
 - zamknięcie strumienia po statusie terminalnym (`completed` | `failed`) lub disconnect klienta;
 - BFF wystawia równoważny endpoint (np. `GET /api/meetings/:id/events`) proxy’ujący strumień z przekazywaniem cookie.
+Zmiana względem: wcześniejsza K-5a bez jawnego `failureReason` w evencie przy `failed`.
 
 ### BFF (`apps/web`, `app/api/*`)
 
-K-6. BFF **wolno:** przyjmować żądania UI (w tym Test i SSE), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu; walidować pola **wyłącznie UI** przy rejestracji (`passwordConfirm` — K-6a) **bez** ACL treści ani reguł domenowych poza tą bramką.
+K-6. BFF **wolno:** przyjmować żądania UI (w tym Test i SSE), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu; walidować pola **wyłącznie UI** przy rejestracji (`passwordConfirm` - K-6a) **bez** ACL treści ani reguł domenowych poza tą bramką.
 
-K-6a. BFF `POST /api/auth/register` — wyjątek względem domyślnej reguły „semantyka ciał BFF jak HTTP API” (zmiana względem wcześniejszego mapowania 1:1 dla wszystkich auth):
+K-6a. BFF `POST /api/auth/register` - wyjątek względem domyślnej reguły „semantyka ciał BFF jak HTTP API” (zmiana względem wcześniejszego mapowania 1:1 dla wszystkich auth):
 - ciało BFF **wymaga** `email`, `password`, `passwordConfirm`;
 - przed proxy: `password === passwordConfirm`; przy mismatch → HTTP **400** + envelope (K-8), **bez** wołania Nest `POST /auth/register`;
-- przy OK: proxy do API wyłącznie `{ email, password }` — `passwordConfirm` **nie** trafia do `api`;
-- Nest `POST /auth/register` bez zmian semantyki (e-mail + hasło; K-2) — bez wymogu `passwordConfirm` po stronie API;
+- przy OK: proxy do API wyłącznie `{ email, password }` - `passwordConfirm` **nie** trafia do `api`;
+- Nest `POST /auth/register` bez zmian semantyki (e-mail + hasło; K-2) - bez wymogu `passwordConfirm` po stronie API;
 - login BFF (`POST /api/auth/login`) bez `passwordConfirm` (jak API).
 
 K-7. BFF **nie wolno:** egzekwować ACL treści spotkań; enqueue’ować pg-boss bezpośrednio; wołać adapterów źródła / LlmClient z pominięciem `api` + `worker`.
@@ -99,7 +109,7 @@ Mapowanie (prefiks `/api` po stronie BFF dozwolony):
 | `POST /api/demo/run-meeting` | `POST /demo/run-meeting` |
 | `GET /api/meetings`, `GET /api/meetings/:id` | odpowiadające trasy |
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
-| `/api/auth/*` | `/auth/*` (w tym `refresh`; register: strip `passwordConfirm` — K-6a) |
+| `/api/auth/*` | `/auth/*` (w tym `refresh`; register: strip `passwordConfirm` - K-6a) |
 
 ### Envelope błędów
 
@@ -138,8 +148,8 @@ K-10. Payload (kształt logiczny; typ w `packages/contracts`):
 }
 ```
 
-W v1 `source: "mock"`. Idempotencja joba / spotkania: klucz = **`externalMeetingId`**. Na DEMO/Test: `externalMeetingId` = UUID runu; `fixtureKey` = wylosowany materiał mocka (katalog 10) — **nie** wymaga się `externalMeetingId === fixtureKey`.  
-Przy enqueue z `api` (w tym demo) **`requestId`** z requestu HTTP trafia do payloadu — korelacja z workerem (`SPEC-OBSERVABILITY` O-6).
+W v1 `source: "mock"`. Idempotencja joba / spotkania: klucz = **`externalMeetingId`**. Na DEMO/Test: `externalMeetingId` = UUID runu; `fixtureKey` = wylosowany materiał mocka (katalog 10) - **nie** wymaga się `externalMeetingId === fixtureKey`.  
+Przy enqueue z `api` (w tym demo) **`requestId`** z requestu HTTP trafia do payloadu - korelacja z workerem (`SPEC-OBSERVABILITY` O-6).
 
 K-11. Statusy widoczne dla API: `pending` → `processing` → `completed` | `failed`. Ponowne enqueue z tym samym `externalMeetingId`: bez duplikatu spotkania. Kolejne wywołania UI Test **nie** współdzielą jednego `externalMeetingId`.
 
@@ -149,7 +159,7 @@ K-12. Minimalny kontrakt obiektu źródłowego (jak w docs): `externalId`, `titl
 
 K-13. Typy kształtu wolno trzymać w `packages/contracts`. **Walidacja runtime (Zod) kontraktu źródła: w `apps/api` oraz `apps/worker`.** Zakaz Zod w `packages/` (`SPEC-ARCHITEKTURA`).
 
-K-14. Po stronie pipeline wynik streszczenia ma osobny kontrakt (Zod w aplikacji); **nie** pochodzi z `summary.*` Fireflies — szczegóły zapisu/fail-closed → `SPEC-PIPELINE` / `SPEC-LLM`. Tu obowiązuje: **nie zapisywać ani nie używać** `summary.*` vendora jako kanonu ani wejścia do DB.
+K-14. Po stronie pipeline wynik streszczenia ma osobny kontrakt (Zod w aplikacji); **nie** pochodzi z `summary.*` Fireflies - szczegóły zapisu/fail-closed → `SPEC-PIPELINE` / `SPEC-LLM`. Tu obowiązuje: **nie zapisywać ani nie używać** `summary.*` vendora jako kanonu ani wejścia do DB.
 
 K-15. Mapowanie Fireflies → port (tabela w `docs/dokumentacja_komunikacji.md`) obowiązuje przy przyszłej podmianie adaptera. W v1: **mock** za portem. Webhook FF / OAuth Google: **poza implementacją v1** (brak normatywnego endpointu webhooka w kodzie MVP).
 
@@ -158,7 +168,7 @@ K-15. Mapowanie Fireflies → port (tabela w `docs/dokumentacja_komunikacji.md`)
 ### Wymagane
 
 - DTO + ValidationPipe / class-validator na wejściach HTTP `api`.
-- BFF jako cienkie proxy (cookie, statusy, SSE) bez reguł domenowych — z wyjątkiem walidacji UI-only `passwordConfirm` na register (K-6a).
+- BFF jako cienkie proxy (cookie, statusy, SSE) bez reguł domenowych - z wyjątkiem walidacji UI-only `passwordConfirm` na register (K-6a).
 - Nazwany job `meeting.process` + klucz idempotencji.
 - SSE statusu spotkania (`@Sse` / `text/event-stream`) z ACL jak przy odczycie.
 - Anti-corruption: mock/adapter mapuje na **port źródła**, nie na surowy schemat vendora w use case’ach.
@@ -193,6 +203,7 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 
 - [ ] Wejścia HTTP `api` odrzucają niepoprawne DTO kodem 400 + envelope.
 - [ ] Trasy auth / meetings / demo / SSE działają zgodnie z tabelą K-2; demo enqueue’uje `meeting.process` bez sprawdzania `DEMO_ENABLED`.
+- [ ] Element listy `GET /meetings` zawiera `summary` i `failureReason` (K-2a); detail rozszerza listę, nie jest jedynym źródłem wyniku w v1.
 - [ ] DEMO/Test (K-5): każde wywołanie → nowe `externalMeetingId` (UUID) + `organizerId` sesji + losowy `fixtureKey` z katalogu 10; multi-tester → osobne wiersze; `fixtureKey` ≠ tożsamość wiersza.
 - [ ] BFF register: mismatch `passwordConfirm` → 400 bez wołania API; przy OK proxy tylko `{ email, password }` (K-6a); Nest register bez `passwordConfirm`.
 - [ ] SSE wymaga auth+ACL; emituje statusy aż do `completed`/`failed`; BFF proxy’uje strumień.

@@ -1,9 +1,9 @@
-# Vinseo — Firmowy asystent spotkań
+# Vinseo - Firmowy asystent spotkań
 
 Zadanie rekrutacyjne: **Mid Fullstack Developer** (Vinseo).  
-Cel produktu: po spotkaniu mieć transkrypcję (PL, mówcy), krótkie streszczenie, listę ustaleń i zadań oraz (w kolejnych etapach) pytania do historii spotkań ze wskazaniem źródła — przy kontroli dostępu i ograniczeniu wynoszenia danych klientów.
+Cel produktu: po spotkaniu mieć transkrypcję (PL, mówcy), krótkie streszczenie, listę ustaleń i zadań oraz (w kolejnych etapach) pytania do historii spotkań ze wskazaniem źródła - przy kontroli dostępu i ograniczeniu wynoszenia danych klientów.
 
-**Stan repo (Faza 2 — pipeline):** monorepo pnpm z `apps/api`, `apps/worker`, `apps/web` (stub), `packages/contracts`, Prisma + migracje, Compose A/B. Worker przetwarza `meeting.process` (mock źródła → redakcja → mock LLM + Zod → persist); enqueue DX: `POST /dev/meetings/enqueue`. Auth/ACL / `POST /demo/run-meeting` / pełne UI — kolejne fazy.
+**Stan repo (Faza 2 - pipeline):** monorepo pnpm z `apps/api`, `apps/worker`, `apps/web` (stub), `packages/contracts`, Prisma + migracje, Compose A/B. Worker przetwarza `meeting.process` (mock źródła → redakcja → mock LLM + Zod → persist); enqueue DX: `POST /dev/meetings/enqueue`. Auth/ACL / `POST /demo/run-meeting` / pełne UI - kolejne fazy.
 
 ---
 
@@ -28,7 +28,7 @@ Szczegóły koncepcji, RODO, kosztów i etapów: katalog [`docs/`](./docs/README
 |--------|--------|
 | API | NestJS (`apps/api`) |
 | Worker | Osobny proces Nest (`apps/worker`) |
-| Frontend | Next.js (`apps/web`) — obecnie **stub**; BFF/dashboard w kolejnych fazach |
+| Frontend | Next.js (`apps/web`) - obecnie **stub**; BFF/dashboard w kolejnych fazach |
 | DB | PostgreSQL + Prisma 7 (adapter `pg`) |
 | Kolejka | pg-boss (ta sama baza; api enqueue, worker `work`) |
 | Kontrakty typów | `packages/contracts` (bez Zod w paczce) |
@@ -58,7 +58,7 @@ Szczegóły koncepcji, RODO, kosztów i etapów: katalog [`docs/`](./docs/README
    [web - BFF + panel]   ← Faza frontu / po stubie
 ```
 
-- **API** enqueue DX bez sesji (`POST /dev/meetings/enqueue`); ACL/auth — Faza 3.  
+- **API** enqueue DX bez sesji (`POST /dev/meetings/enqueue`); ACL/auth - Faza 3.  
 - **Worker** konsumuje `meeting.process`.  
 - Przed wywołaniem LlmClient: redakcja PII (E+T+P+K).
 
@@ -68,9 +68,9 @@ Szczegóły koncepcji, RODO, kosztów i etapów: katalog [`docs/`](./docs/README
 
 ```text
 apps/
-  api/                 # Nest — HTTP, health; (później auth, ACL, demo)
-  worker/              # Nest — ApplicationContext; (później pipeline)
-  web/                 # Next — stub strony startowej
+  api/                 # Nest - HTTP, health; (później auth, ACL, demo)
+  worker/              # Nest - ApplicationContext; (później pipeline)
+  web/                 # Next - stub strony startowej
 packages/
   contracts/           # wspólne typy (m.in. statusy, client-link, job payload)
 prisma/
@@ -78,20 +78,20 @@ prisma/
   migrations/          # init_etap0 + align_acl_v1_client_link
 docs/                  # dokumentacja produktowa / architektoniczna
 spec/                  # normy implementacji
-docker-compose.db.yml  # ścieżka A — Postgres (`vinseo` + `vinseo_test`)
-docker-compose.dev.yml # ścieżka B — Postgres + api + worker + web
+docker-compose.db.yml  # ścieżka A - Postgres (`vinseo` + `vinseo_test`)
+docker-compose.dev.yml # ścieżka B - Postgres + api + worker + web
 docker/dev/            # Dockerfile stacku B
 ```
 
 ---
 
-## Uruchomienie (scaffold — po Fazie 1)
+## Uruchomienie (scaffold - po Fazie 1)
 
 Wymagania: **Node ≥ 22**, **pnpm**, **Docker**.
 
 **Nie** uruchamiaj ścieżki A i B jednocześnie na tych samych portach (5432 / 3000 / 3001). Najpierw `pnpm db:down` albo `pnpm dev:stack:down`.
 
-### Ścieżka A — Postgres w Compose, appki na hoście
+### Ścieżka A - Postgres w Compose, appki na hoście
 
 ```bash
 # 1. Zależności
@@ -100,7 +100,7 @@ pnpm install
 # 2. Env
 cp .env.example .env
 
-# 3. Postgres (skrypty root — A-7)
+# 3. Postgres (skrypty root - A-7)
 pnpm db:up
 # pnpm db:logs   # opcjonalnie
 # pnpm db:down   # zatrzymanie
@@ -116,11 +116,11 @@ pnpm dev:worker   # log: Worker application context started
 pnpm dev:web      # stub Next (domyślnie :3000)
 ```
 
-### Ścieżka B — pełny stack w kontenerach (obowiązkowe DX)
+### Ścieżka B - pełny stack w kontenerach (obowiązkowe DX)
 
 ```bash
 pnpm install          # na hoście opcjonalne; kontenery i tak instalują w wolumenach
-cp .env.example .env  # DATABASE_URL z localhost jest OK — compose nadpisuje hostem `postgres`
+cp .env.example .env  # DATABASE_URL z localhost jest OK - compose nadpisuje hostem `postgres`
 
 pnpm dev:stack:up     # docker-compose.dev.yml: postgres + deps + api + worker + web
 # pnpm dev:stack:logs
@@ -153,7 +153,7 @@ Sprawdź w DB / Prisma Studio: jedno spotkanie, `processingStatus=completed`, `s
 
 Ponowne `curl` z tym samym `fixtureKey` nie tworzy drugiego wiersza `Meeting`.
 
-`POST /demo/run-meeting` + UI Test + SSE (z sesją) — **Faza 3**. W `production` trasa DX `/dev/meetings/enqueue` nie jest rejestrowana.
+`POST /demo/run-meeting` + UI Test + SSE (z sesją) - **Faza 3**. W `production` trasa DX `/dev/meetings/enqueue` nie jest rejestrowana.
 
 ### Smoke testów
 
@@ -192,7 +192,7 @@ pnpm --filter @vinseo/api test:e2e
 - **workflow_dispatch** → ręczne testy z wyborem brancha.
 - Branch **`main`**: tylko PR (branch protection).
 
-Automatyczny CD na VPS — poza v1; checklista w [`docs/deployment.md`](./docs/deployment.md).
+Automatyczny CD na VPS - poza v1; checklista w [`docs/deployment.md`](./docs/deployment.md).
 
 ---
 

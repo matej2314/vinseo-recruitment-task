@@ -70,7 +70,7 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 └── README.md
 ```
 
-Rootowe skrypty: ścieżka A — `pnpm db:up` / `db:down` / `db:logs` + `dev:api` / `dev:worker` / `dev:web`. Ścieżka B — `pnpm dev:stack:up` / `dev:stack:down` / `dev:stack:logs`. Migracje: `pnpm db:generate` / `db:migrate` / `db:migrate:deploy`. Szczegóły: `deployment.md`, root `README.md`.
+Rootowe skrypty: ścieżka A - `pnpm db:up` / `db:down` / `db:logs` + `dev:api` / `dev:worker` / `dev:web`. Ścieżka B - `pnpm dev:stack:up` / `dev:stack:down` / `dev:stack:logs`. Migracje: `pnpm db:generate` / `db:migrate` / `db:migrate:deploy`. Szczegóły: `deployment.md`, root `README.md`.
 
 ## Zasady rozmieszczenia
 

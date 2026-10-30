@@ -1,7 +1,7 @@
-# Vinseo Recruitment Task — feature plan (backend Faza 3: auth, ACL, API pod UI)
+# Vinseo Recruitment Task - feature plan (backend Faza 3: auth, ACL, API pod UI)
 
 **Lokalizacja:** `feature-plans/vinseo-recruitment-task_feature_plan_backend-faza-3-auth-acl-api.md`  
-**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` — Faza 3 (pełna, kroki 3.1–3.4) → MILESTONE „API sesji i ACL gotowe pod front”.  
+**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` - Faza 3 (pełna, kroki 3.1–3.4) → MILESTONE „API sesji i ACL gotowe pod front”.  
 **Źródła:** `docs/dokumentacja_komunikacji.md`, `docs/architektura_katalogi_pliki.md`, `docs/frontend.md` (kontrakt API), `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA`, `SPEC-TESTY`, `SPEC-DANE`, `SPEC-ARCHITEKTURA`, `SPEC-OBSERVABILITY` (audit deny / katalog eventType).  
 **Pass rozwojowy (sesja):** config JWT/cookie → auth → access → odczyt meetings → demo+SSE (+ `organizerId` w enqueue) → testy (+ opcjonalny audit deny).
 
@@ -15,15 +15,15 @@
 |------|---------|
 | Wycinek | Auth cookie HttpOnly, ACL v1, lista/detail meetings, `POST /demo/run-meeting`, SSE `/meetings/:id/events`, testy T-6/T-10/T-11 (+ T-12 deny) |
 | Major | Faza 3, kroki 3.1–3.4 |
-| Poza zakresem | BFF / UI (`apps/web`); Faza 4 CI/Część A; pełne eventy audytu poza deny (reszta Faza 5); Passport (opcjonalny w SPEC — tu custom guard) |
+| Poza zakresem | BFF / UI (`apps/web`); Faza 4 CI/Część A; pełne eventy audytu poza deny (reszta Faza 5); Passport (opcjonalny w SPEC - tu custom guard) |
 | HOW (wywiad) | Cookie: `ma_access`, `ma_refresh`; refresh TTL 7 dni; `SameSite=Lax`, `Secure`←`COOKIE_SECURE`; SSE = poll DB ~1 s; audit deny w KROK 6 |
-| Po implementacji (informacyjnie) | Major: Faza 3 → `WYKONANY`; MILESTONE „API sesji i ACL gotowe pod front” → `OSIĄGNIĘTY` — **edycja major poza tym skillem** |
+| Po implementacji (informacyjnie) | Major: Faza 3 → `WYKONANY`; MILESTONE „API sesji i ACL gotowe pod front” → `OSIĄGNIĘTY` - **edycja major poza tym skillem** |
 
 ---
 
 ## Założenia
 
-- Stack Nest 12 w `apps/api`; Prisma w rootcie (modele `User`, `RefreshToken`, `Meeting`, `MeetingParticipant`, `AuditLog` już istnieją — **bez migracji schematu** w tym wycinku).
+- Stack Nest 12 w `apps/api`; Prisma w rootcie (modele `User`, `RefreshToken`, `Meeting`, `MeetingParticipant`, `AuditLog` już istnieją - **bez migracji schematu** w tym wycinku).
 - Warstwy: cienkie controllery → use case / serwis → Prisma; ACL wyłącznie w `apps/api/src/access` (`SPEC-ARCHITEKTURA`, `SPEC-AUTH_I_ACL`).
 - Access JWT TTL **15 min** (`signOptions.expiresIn: '15m'`); refresh opaque, hash w DB, rotacja + revoke rodziny przy reuse (`AU-5`…`AU-7`).
 - Cookie: `ma_access` (JWT), `ma_refresh` (opaque); HttpOnly; Path `/`; SameSite `lax`; Secure z config.
@@ -34,13 +34,13 @@
 
 ---
 
-## FAZA 1 — Auth, ACL i kontrakty API pod UI
+## FAZA 1 - Auth, ACL i kontrakty API pod UI
 
-### KROK 1 — Config sesji + typy kontraktów HTTP
+### KROK 1 - Config sesji + typy kontraktów HTTP
 
 **Status:** `WYKONANY`
 
-**Cel:** Fail-closed env pod JWT/cookie oraz współdzielone typy odpowiedzi — fundament pod auth/meetings (`SPEC-AUTH_I_ACL` AU-5, `SPEC-KOMUNIKACJA` K-3/K-8, `docs/deployment.md`).
+**Cel:** Fail-closed env pod JWT/cookie oraz współdzielone typy odpowiedzi - fundament pod auth/meetings (`SPEC-AUTH_I_ACL` AU-5, `SPEC-KOMUNIKACJA` K-3/K-8, `docs/deployment.md`).
 
 **Artefakty:**
 
@@ -51,7 +51,7 @@
   `packages/contracts/src/http-error.ts`  
   `apps/api/src/auth/auth-cookies.ts`
 
-#### Refaktor — `env.schema.ts`
+#### Refaktor - `env.schema.ts`
 
 **teraz:**
 
@@ -89,7 +89,7 @@ export const apiEnvSchema = z.object({
 });
 ```
 
-#### Refaktor — `main.ts` (cookie-parser + ValidationPipe bez zmian semantyki)
+#### Refaktor - `main.ts` (cookie-parser + ValidationPipe bez zmian semantyki)
 
 **teraz:**
 
@@ -132,7 +132,7 @@ async function bootstrap(): Promise<void> {
 }
 ```
 
-#### Refaktor — zależności `apps/api/package.json`
+#### Refaktor - zależności `apps/api/package.json`
 
 Dodać do `dependencies`:
 
@@ -146,7 +146,7 @@ Dodać do `devDependencies`:
 
 (`bcrypt` już jest w dependencies.)
 
-#### Nowy plik — nazwy cookie
+#### Nowy plik - nazwy cookie
 
 `apps/api/src/auth/auth-cookies.ts`:
 
@@ -157,7 +157,7 @@ export const REFRESH_COOKIE = 'ma_refresh' as const;
 export const ACCESS_TTL_SECONDS = 15 * 60;
 ```
 
-#### Nowy plik — kontrakty auth
+#### Nowy plik - kontrakty auth
 
 `packages/contracts/src/auth-api.ts`:
 
@@ -175,7 +175,7 @@ export interface AuthSessionResponse {
 }
 ```
 
-#### Nowy plik — kontrakty meetings HTTP
+#### Nowy plik - kontrakty meetings HTTP
 
 `packages/contracts/src/meetings-api.ts`:
 
@@ -225,7 +225,7 @@ export const MEETING_LIST_LIMITS = [10, 25, 50, 100] as const;
 export type MeetingListLimit = (typeof MEETING_LIST_LIMITS)[number];
 ```
 
-#### Nowy plik — envelope błędu (typ)
+#### Nowy plik - envelope błędu (typ)
 
 `packages/contracts/src/http-error.ts`:
 
@@ -238,7 +238,7 @@ export interface HttpErrorBody {
 }
 ```
 
-#### Refaktor — `packages/contracts/src/index.ts`
+#### Refaktor - `packages/contracts/src/index.ts`
 
 **teraz:**
 
@@ -273,15 +273,15 @@ export * from './http-error.js';
 - `validateApiEnv` wymaga `JWT_SECRET` (≥32) i czyta `COOKIE_SECURE` / `REFRESH_TTL_DAYS`.
 - `cookie-parser` w bootstrapie.
 - Typy kontraktów budują się (`pnpm --filter @vinseo/contracts build`).
-- `.env` / `.env.example` już mają `JWT_SECRET` i `COOKIE_SECURE` — bez sekretów w planie/repo.
+- `.env` / `.env.example` już mają `JWT_SECRET` i `COOKIE_SECURE` - bez sekretów w planie/repo.
 
 ---
 
-### KROK 2 — Moduł auth (register / login / logout / me / refresh)
+### KROK 2 - Moduł auth (register / login / logout / me / refresh)
 
 **Status:** `WYKONANY`
 
-**Cel:** Sesja pracownika cookie HttpOnly + rotacja refresh — major 3.1, `SPEC-AUTH_I_ACL` AU-1…AU-8, `SPEC-KOMUNIKACJA` K-2 auth.
+**Cel:** Sesja pracownika cookie HttpOnly + rotacja refresh - major 3.1, `SPEC-AUTH_I_ACL` AU-1…AU-8, `SPEC-KOMUNIKACJA` K-2 auth.
 
 **Artefakty (nowe w `apps/api/src/auth/`):**
 
@@ -297,9 +297,9 @@ export * from './http-error.js';
 - `decorators/current-user.decorator.ts`
 - `types/auth-user.ts`
 
-Zmiana: `apps/api/src/app.module.ts` — import `AuthModule`.
+Zmiana: `apps/api/src/app.module.ts` - import `AuthModule`.
 
-#### Nowy plik — typ użytkownika w request
+#### Nowy plik - typ użytkownika w request
 
 `apps/api/src/auth/types/auth-user.ts`:
 
@@ -313,7 +313,7 @@ export interface AuthenticatedUser {
 }
 ```
 
-#### Nowy plik — DTO register
+#### Nowy plik - DTO register
 
 `apps/api/src/auth/dto/register.dto.ts`:
 
@@ -338,7 +338,7 @@ export class RegisterDto {
 }
 ```
 
-#### Nowy plik — DTO login
+#### Nowy plik - DTO login
 
 `apps/api/src/auth/dto/login.dto.ts`:
 
@@ -355,7 +355,7 @@ export class LoginDto {
 }
 ```
 
-#### Nowy plik — bcrypt
+#### Nowy plik - bcrypt
 
 `apps/api/src/auth/password.service.ts`:
 
@@ -377,7 +377,7 @@ export class PasswordService {
 }
 ```
 
-#### Nowy plik — refresh store (hash + rodzina)
+#### Nowy plik - refresh store (hash + rodzina)
 
 `apps/api/src/auth/refresh-token.service.ts`:
 
@@ -478,7 +478,7 @@ export class RefreshTokenService {
 }
 ```
 
-#### Nowy plik — ustawianie / czyszczenie cookie
+#### Nowy plik - ustawianie / czyszczenie cookie
 
 `apps/api/src/auth/auth-cookie.service.ts`:
 
@@ -531,7 +531,7 @@ export class AuthCookieService {
 }
 ```
 
-#### Nowy plik — AuthService
+#### Nowy plik - AuthService
 
 `apps/api/src/auth/auth.service.ts`:
 
@@ -680,7 +680,7 @@ export class AuthService {
 }
 ```
 
-#### Nowy plik — JwtAuthGuard (cookie `ma_access`)
+#### Nowy plik - JwtAuthGuard (cookie `ma_access`)
 
 `apps/api/src/auth/guards/jwt-auth.guard.ts`:
 
@@ -737,7 +737,7 @@ export class JwtAuthGuard implements CanActivate {
 }
 ```
 
-#### Nowy plik — `@CurrentUser()`
+#### Nowy plik - `@CurrentUser()`
 
 `apps/api/src/auth/decorators/current-user.decorator.ts`:
 
@@ -757,7 +757,7 @@ export const CurrentUser = createParamDecorator(
 );
 ```
 
-#### Nowy plik — AuthController
+#### Nowy plik - AuthController
 
 `apps/api/src/auth/auth.controller.ts`:
 
@@ -828,7 +828,7 @@ export class AuthController {
 }
 ```
 
-#### Nowy plik — AuthModule
+#### Nowy plik - AuthModule
 
 `apps/api/src/auth/auth.module.ts`:
 
@@ -870,7 +870,7 @@ import { RefreshTokenService } from './refresh-token.service.js';
 export class AuthModule {}
 ```
 
-#### Refaktor — `app.module.ts`
+#### Refaktor - `app.module.ts`
 
 **teraz:**
 
@@ -897,7 +897,7 @@ imports: [
 
 (+ import `AuthModule` z `./auth/auth.module.js`).
 
-#### Testy (szkic — pełne w KROK 6)
+#### Testy (szkic - pełne w KROK 6)
 
 Unit: `PasswordService` hash/compare; opcjonalnie walidacja `RegisterDto` (słabe hasło → 400).
 
@@ -910,11 +910,11 @@ Unit: `PasswordService` hash/compare; opcjonalnie walidacja `RegisterDto` (słab
 
 ---
 
-### KROK 3 — Moduł access (ACL v1)
+### KROK 3 - Moduł access (ACL v1)
 
 **Status:** `WYKONANY`
 
-**Cel:** Jedna decyzja „czy U może czytać M” — major 3.2 / AC-1…AC-2; bez `ProjectMembership`.
+**Cel:** Jedna decyzja „czy U może czytać M” - major 3.2 / AC-1…AC-2; bez `ProjectMembership`.
 
 **Artefakty:**
 
@@ -922,7 +922,7 @@ Unit: `PasswordService` hash/compare; opcjonalnie walidacja `RegisterDto` (słab
 - `apps/api/src/access/meeting-access.service.spec.ts`
 - `apps/api/src/access/access.module.ts`
 
-#### Nowy plik — MeetingAccessService
+#### Nowy plik - MeetingAccessService
 
 `apps/api/src/access/meeting-access.service.ts`:
 
@@ -999,7 +999,7 @@ export class MeetingAccessService {
 }
 ```
 
-#### Nowy plik — AccessModule
+#### Nowy plik - AccessModule
 
 `apps/api/src/access/access.module.ts`:
 
@@ -1017,7 +1017,7 @@ import { MeetingAccessService } from './meeting-access.service.js';
 export class AccessModule {}
 ```
 
-#### Nowy plik — unit testy ACL (T-6)
+#### Nowy plik - unit testy ACL (T-6)
 
 `apps/api/src/access/meeting-access.service.spec.ts`:
 
@@ -1081,7 +1081,7 @@ describe('MeetingAccessService (ACL v1)', () => {
     await expect(
       svc.canReadMeeting(user({ id: 'stranger' }), meetingId),
     ).resolves.toBe('deny');
-    // brak join ProjectMembership w select — tylko organizer + participants
+    // brak join ProjectMembership w select - tylko organizer + participants
     expect(findUnique).toHaveBeenCalledWith({
       where: { id: meetingId },
       select: {
@@ -1122,11 +1122,11 @@ describe('MeetingAccessService (ACL v1)', () => {
 
 ---
 
-### KROK 4 — Odczyt spotkań (lista + detail, deny→404)
+### KROK 4 - Odczyt spotkań (lista + detail, deny→404)
 
 **Status:** `WYKONANY`
 
-**Cel:** `GET /meetings`, `GET /meetings/:id` z ACL i paginacją — major 3.2, AC-3…AC-5, K-2/K-4.
+**Cel:** `GET /meetings`, `GET /meetings/:id` z ACL i paginacją - major 3.2, AC-3…AC-5, K-2/K-4.
 
 **Artefakty:**
 
@@ -1134,9 +1134,9 @@ describe('MeetingAccessService (ACL v1)', () => {
 - `apps/api/src/meetings/list-meetings.use-case.ts`
 - `apps/api/src/meetings/get-meeting.use-case.ts`
 - `apps/api/src/meetings/meetings.controller.ts`
-- Refaktor: `meetings.module.ts`, `app.module` już ma Meetings — dopiąć AccessModule + AuthModule
+- Refaktor: `meetings.module.ts`, `app.module` już ma Meetings - dopiąć AccessModule + AuthModule
 
-#### Nowy plik — query DTO
+#### Nowy plik - query DTO
 
 `apps/api/src/meetings/dto/list-meetings-query.dto.ts`:
 
@@ -1158,7 +1158,7 @@ export class ListMeetingsQueryDto {
 }
 ```
 
-#### Nowy plik — ListMeetingsUseCase
+#### Nowy plik - ListMeetingsUseCase
 
 `apps/api/src/meetings/list-meetings.use-case.ts`:
 
@@ -1213,7 +1213,7 @@ export class ListMeetingsUseCase {
 }
 ```
 
-#### Nowy plik — GetMeetingUseCase
+#### Nowy plik - GetMeetingUseCase
 
 `apps/api/src/meetings/get-meeting.use-case.ts`:
 
@@ -1272,7 +1272,7 @@ export class GetMeetingUseCase {
 }
 ```
 
-#### Nowy plik — MeetingsController (odczyt + miejsce na SSE w KROK 5)
+#### Nowy plik - MeetingsController (odczyt + miejsce na SSE w KROK 5)
 
 `apps/api/src/meetings/meetings.controller.ts`:
 
@@ -1312,7 +1312,7 @@ export class MeetingsController {
 }
 ```
 
-#### Refaktor — `meetings.module.ts`
+#### Refaktor - `meetings.module.ts`
 
 **teraz:** providers tylko `EnqueueMeetingProcessUseCase`; controllers tylko DevEnqueue (nie-prod).
 
@@ -1362,11 +1362,11 @@ export class MeetingsModule {
 
 ---
 
-### KROK 5 — Demo enqueue z sesją + SSE statusów
+### KROK 5 - Demo enqueue z sesją + SSE statusów
 
 **Status:** `WYKONANY`
 
-**Cel:** `POST /demo/run-meeting` + `GET /meetings/:id/events` — major 3.3, K-5 / K-5a. Enqueue ustawia `organizerId`.
+**Cel:** `POST /demo/run-meeting` + `GET /meetings/:id/events` - major 3.3, K-5 / K-5a. Enqueue ustawia `organizerId`.
 
 **Artefakty:**
 
@@ -1378,7 +1378,7 @@ export class MeetingsModule {
   `apps/api/src/meetings/meeting-events.service.ts`  
 - Rozszerzenie `MeetingsController` o `@Sse(':id/events')`
 
-#### Refaktor — EnqueueMeetingProcessUseCase (`organizerId`)
+#### Refaktor - EnqueueMeetingProcessUseCase (`organizerId`)
 
 **teraz (fragment create):**
 
@@ -1426,7 +1426,7 @@ const meeting = await this.prisma.meeting.upsert({
 
 DX `DevEnqueueController` bez zmian semantyki (bez `organizerId` OK).
 
-#### Nowy plik — DTO demo
+#### Nowy plik - DTO demo
 
 `apps/api/src/demo/dto/run-meeting.dto.ts`:
 
@@ -1440,7 +1440,7 @@ export class RunMeetingDto {
 }
 ```
 
-#### Nowy plik — DemoController
+#### Nowy plik - DemoController
 
 `apps/api/src/demo/demo.controller.ts`:
 
@@ -1486,7 +1486,7 @@ export class DemoController {
 }
 ```
 
-#### Nowy plik — DemoModule
+#### Nowy plik - DemoModule
 
 `apps/api/src/demo/demo.module.ts`:
 
@@ -1504,10 +1504,10 @@ import { DemoController } from './demo.controller.js';
 export class DemoModule {}
 ```
 
-Uwaga implementacyjna: uniknąć podwójnej rejestracji `MeetingsModule` — preferowane: `MeetingsModule.register()` eksportuje `EnqueueMeetingProcessUseCase`, a `DemoModule` importuje ten sam dynamic module **albo** przenieść enqueue do wspólnego providera rejestrowanego raz w `AppModule`. W implementacji: w `AppModule` jeden `MeetingsModule.register()` + `DemoModule` importuje tylko token przez `forwardRef` / eksport z Meetings — **nie** wołać `register()` drugi raz. Poprawny kształt:
+Uwaga implementacyjna: uniknąć podwójnej rejestracji `MeetingsModule` - preferowane: `MeetingsModule.register()` eksportuje `EnqueueMeetingProcessUseCase`, a `DemoModule` importuje ten sam dynamic module **albo** przenieść enqueue do wspólnego providera rejestrowanego raz w `AppModule`. W implementacji: w `AppModule` jeden `MeetingsModule.register()` + `DemoModule` importuje tylko token przez `forwardRef` / eksport z Meetings - **nie** wołać `register()` drugi raz. Poprawny kształt:
 
 ```typescript
-// demo.module.ts — po eksporcie Enqueue z MeetingsModule
+// demo.module.ts - po eksporcie Enqueue z MeetingsModule
 @Module({
   imports: [AuthModule, MeetingsModule], // jeśli Meetings staje się zwykłym @Module
   controllers: [DemoController],
@@ -1520,10 +1520,10 @@ export class DemoModule {}
 Prostszy wariant w tym kroku (zalecany):
 
 1. `MeetingsModule` = zwykły moduł z `MeetingsController` + use case’y + export enqueue.
-2. `DevMeetingsModule` osobno (DevEnqueue) — import w `AppModule` gdy nie-prod.
+2. `DevMeetingsModule` osobno (DevEnqueue) - import w `AppModule` gdy nie-prod.
 3. `DemoModule` importuje `MeetingsModule` + `AuthModule`.
 
-#### Nowy plik — MeetingEventsService (SSE poll)
+#### Nowy plik - MeetingEventsService (SSE poll)
 
 `apps/api/src/meetings/meeting-events.service.ts`:
 
@@ -1614,9 +1614,9 @@ export class MeetingEventsService {
 }
 ```
 
-Uwaga: przy pierwszym ticku wyemitować bieżący status nawet bez zmiany (`startWith` + brak filtra „tylko delta” na pierwszym evencie — `distinctUntilChanged` przepuszcza pierwszy). Po terminalu — ostatni event + domknięcie (`takeWhile(..., true)`).
+Uwaga: przy pierwszym ticku wyemitować bieżący status nawet bez zmiany (`startWith` + brak filtra „tylko delta” na pierwszym evencie - `distinctUntilChanged` przepuszcza pierwszy). Po terminalu - ostatni event + domknięcie (`takeWhile(..., true)`).
 
-#### Refaktor — dopisek SSE w `MeetingsController`
+#### Refaktor - dopisek SSE w `MeetingsController`
 
 Dodać:
 
@@ -1636,7 +1636,7 @@ async eventsStream(
 }
 ```
 
-**Kolejność tras Nest:** zarejestrować `@Sse(':id/events')` **obok** `@Get(':id')` — obie parametryczne; ścieżka `events` jest sufiksem, Nest rozróżnia pełną ścieżkę. Unikać kolizji z `@Get(':id')` przez jawny segment `events`.
+**Kolejność tras Nest:** zarejestrować `@Sse(':id/events')` **obok** `@Get(':id')` - obie parametryczne; ścieżka `events` jest sufiksem, Nest rozróżnia pełną ścieżkę. Unikać kolizji z `@Get(':id')` przez jawny segment `events`.
 
 Dodać `MeetingEventsService` do providers `MeetingsModule`.  
 `AppModule`: import `DemoModule` (+ ewentualny `DevMeetingsModule`).
@@ -1644,7 +1644,7 @@ Dodać `MeetingEventsService` do providers `MeetingsModule`.
 #### Biblioteki / API
 
 - Context7 Nest SSE: `@Sse()`, `Observable<MessageEvent>`, `data` serializowane do JSON.
-- Polling ~1 s — założenie HOW (bez LISTEN/NOTIFY).
+- Polling ~1 s - założenie HOW (bez LISTEN/NOTIFY).
 
 #### DoD (krok)
 
@@ -1654,11 +1654,11 @@ Dodać `MeetingEventsService` do providers `MeetingsModule`.
 
 ---
 
-### KROK 6 — Testy auth/ACL/demo/SSE + opcjonalny audit deny
+### KROK 6 - Testy auth/ACL/demo/SSE + opcjonalny audit deny
 
 **Status:** `WYKONANY`
 
-**Cel:** Pokrycie T-6 (już w KROK 3), T-10, T-11; T-12 dla `meeting.access.denied` — major 3.4 / 3.4.1.
+**Cel:** Pokrycie T-6 (już w KROK 3), T-10, T-11; T-12 dla `meeting.access.denied` - major 3.4 / 3.4.1.
 
 **Artefakty:**
 
@@ -1669,7 +1669,7 @@ Dodać `MeetingEventsService` do providers `MeetingsModule`.
   `apps/api/test/auth-acl.e2e-spec.ts` (lub współlokalizowane `*.spec.ts` z DB testową)  
   Rozszerzenie setupu: `JWT_SECRET`, `COOKIE_SECURE=false`, `DATABASE_URL` ← `DATABASE_URL_TEST`
 
-#### Nowy plik — AuditWriter (minimalny)
+#### Nowy plik - AuditWriter (minimalny)
 
 `apps/api/src/audit/audit-writer.service.ts`:
 
@@ -1702,7 +1702,7 @@ export class AuditWriterService {
 }
 ```
 
-#### Nowy plik — AuditModule
+#### Nowy plik - AuditModule
 
 `apps/api/src/audit/audit.module.ts`:
 
@@ -1720,7 +1720,7 @@ import { AuditWriterService } from './audit-writer.service.js';
 export class AuditModule {}
 ```
 
-#### Refaktor — deny → audit (fragment `GetMeetingUseCase`)
+#### Refaktor - deny → audit (fragment `GetMeetingUseCase`)
 
 **zamień na** (przy deny):
 
@@ -1742,9 +1742,9 @@ if (decision === 'deny') {
 
 Analogicznie w `MeetingEventsService.stream` przed 404. **Zakaz** treści transcriptu w audycie.
 
-Jeśli czas nie pozwala na pełny katalog O-11 (login success/failure, `demo.run`, `job.enqueued`) — w DoD / README odroczyć do major Fazy 5; **deny ACL musi** być pokryty testem w tym kroku (T-12 częściowo).
+Jeśli czas nie pozwala na pełny katalog O-11 (login success/failure, `demo.run`, `job.enqueued`) - w DoD / README odroczyć do major Fazy 5; **deny ACL musi** być pokryty testem w tym kroku (T-12 częściowo).
 
-#### Nowy plik — integracja API (szkic pełnego suite)
+#### Nowy plik - integracja API (szkic pełnego suite)
 
 `apps/api/test/auth-acl.e2e-spec.ts`:
 
@@ -1892,13 +1892,13 @@ describe('Auth + ACL + demo (e2e)', () => {
 
 **Uwagi testowe:**
 
-- Kod HTTP sukcesu Nest dla `@Post` bez `@HttpCode` = **201**. Jeśli wolisz 200 — ustaw `@HttpCode(200)` w controllerach; testy muszą być spójne.
-- SSE happy-path (emisja statusu): gdy czas pozwala — test z `pending`→ update DB → oczekiwanie eventa; inaczej jawnie odnotować w DoD jako częściowe (major 3.4 „SSE wg dostępnego czasu”). Minimum: 404 bez ACL (powyżej).
-- E2e podnosi pg-boss przez `AppModule` — wymaga Postgres testowego (`pnpm db:up`). Przy flakach izolować DemoModule mockiem `PgBossService` w osobnym suite.
+- Kod HTTP sukcesu Nest dla `@Post` bez `@HttpCode` = **201**. Jeśli wolisz 200 - ustaw `@HttpCode(200)` w controllerach; testy muszą być spójne.
+- SSE happy-path (emisja statusu): gdy czas pozwala - test z `pending`→ update DB → oczekiwanie eventa; inaczej jawnie odnotować w DoD jako częściowe (major 3.4 „SSE wg dostępnego czasu”). Minimum: 404 bez ACL (powyżej).
+- E2e podnosi pg-boss przez `AppModule` - wymaga Postgres testowego (`pnpm db:up`). Przy flakach izolować DemoModule mockiem `PgBossService` w osobnym suite.
 
 #### DoD (krok)
 
-- Unit ACL (KROK 3) + e2e: cookie/`me`, deny→404, demo enqueue, SSE deny→404 — zielone.
+- Unit ACL (KROK 3) + e2e: cookie/`me`, deny→404, demo enqueue, SSE deny→404 - zielone.
 - `meeting.access.denied` w `audit_log` bez treści spotkania.
 - Luki (pełne SSE happy / pełny katalog auth.* audit) **nazwane** do Fazy 5, jeśli nie domknięte.
 
@@ -1933,6 +1933,6 @@ decisions and refresh rotation inside the trusted Nest api process.
 |---------------|-------------------|
 | Faza 3 | `WYKONANY` |
 | Kroki 3.1–3.4 | `WYKONANY` |
-| MILESTONE — API sesji i ACL gotowe pod front | `OSIĄGNIĘTY` |
+| MILESTONE - API sesji i ACL gotowe pod front | `OSIĄGNIĘTY` |
 | Faza 4+ | bez zmian w tej sesji |
 | Audit poza deny / pełne SSE happy (jeśli odroczone) | jawna lista → Faza 5 |

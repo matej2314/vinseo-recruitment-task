@@ -1,5 +1,5 @@
 /**
- * Powierzchnia BFF ↔ API — SPEC-KOMUNIKACJA K-6…K-7, docs/dokumentacja_komunikacji.md §2.
+ * Powierzchnia BFF ↔ API - SPEC-KOMUNIKACJA K-6…K-7, docs/dokumentacja_komunikacji.md §2.
  * BFF: proxy + cookie; bez ACL, bez enqueue poza wywołaniem api (Faza 3).
  */
 export type BffMethod = "GET" | "POST";
@@ -28,12 +28,14 @@ export const bffSurface: readonly BffSurfaceRoute[] = [
     method: "GET",
     bffPath: "/api/meetings/[id]/events",
     apiPath: "/meetings/:id/events",
-    notes: "SSE text/event-stream — żywy proxy w Fazie 3",
+    notes: "SSE text/event-stream - żywy proxy w Fazie 3",
   },
   {
     method: "POST",
     bffPath: "/api/demo/run-meeting",
     apiPath: "/demo/run-meeting",
+    notes:
+      "Body puste lub opcjonalne; UI nie wymaga fixtureKey - losowanie po stronie API (K-5)",
   },
 ] as const;
 

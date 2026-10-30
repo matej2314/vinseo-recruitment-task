@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -24,41 +24,42 @@ Opis warstwy `apps/web` Firmowego asystenta spotkań: zakres UI w etapie 0 / v1 
 | Data-fetching | **`fetch`** | Bez React Query jako wymogu v1 |
 | Render | RSC domyślnie; `"use client"` przy interakcji | Formularz auth, sidebar, Test, SSE, select limitu |
 
-**Bez brandingu** produktowego w v1 — czytelny, prosty layout roboczy.
+**Bez brandingu** produktowego w v1 - czytelny, prosty layout roboczy.
 
 ## Widoki (v1)
 
-### 1. Strona główna `/` — auth
+### 1. Strona główna `/` - auth
 
 - Jeden wspólny komponent **logowanie / rejestracja** z klasycznym przełączaniem trybu (różne pola i CTA wg trybu).
 - **Tryb startowy:** login.
-- **CTA submit:** login — „Zaloguj się”; register — „Zarejestruj się”.
+- **CTA submit:** login - „Zaloguj się”; register - „Zarejestruj się”.
 - **Pod formularzem** tekstowe buttony przełączające tryb (bez innego, konkurencyjnego mechanizmu):
   - w trybie login: „Nie masz konta? Zarejestruj się!”
   - w trybie register: „Masz już konto? Zaloguj się!”
-- W trybie **register:** drugie pole hasła (powtórz) — `passwordConfirm`; **wymagana** zgodność z pierwszym polem **przed** submitem (UI nie wysyła rejestracji przy mismatch).
+- W trybie **register:** drugie pole hasła (powtórz) - `passwordConfirm`; **wymagana** zgodność z pierwszym polem **przed** submitem (UI nie wysyła rejestracji przy mismatch).
 - Po sukcesie **login lub register**: od razu cookie sesji → **redirect** na dashboard (widok domyślny).
-- Sesja: cookie **HttpOnly** (access JWT 15 min + refresh — `SPEC-AUTH_I_ACL`); **zakaz** `localStorage` / `sessionStorage` na sekrety.
+- Sesja: cookie **HttpOnly** (access JWT 15 min + refresh - `SPEC-AUTH_I_ACL`); **zakaz** `localStorage` / `sessionStorage` na sekrety.
 - Brak sesji na chronionych trasach → redirect na `/`.
 
-### 2. Layout po zalogowaniu — sidebar
+### 2. Layout po zalogowaniu - sidebar
 
 Prosty sidebar przełącza:
 
 | Widok | Opis |
 |-------|------|
 | **Domyślny** | Tabela spotkań + przycisk Test |
-| **Wyszukiwarka** | Osobna podstrona — **statyczny mock** (bez LLM / search API) |
+| **Wyszukiwarka** | Osobna podstrona - **statyczny mock** (bez LLM / search API) |
 
-### 3. Widok domyślny — tabela + Test
+### 3. Widok domyślny - tabela + Test
 
 - Lista spotkań z API (już po ACL v1: organizator / uczestnik / admin); paginacja backendowa: select limitu **10 / 25 / 50 / 100** + parametr **`page`** (1-based).
-- **Brak** osobnej strony detail (`/meetings/:id`) w UI v1 — wynik pipeline widać w **wierszu tabeli**.
-- Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) — **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
-- **Przycisk Test** — zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
-- Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail.
-- **Bez** UI wyboru fixture — losowanie mocka po stronie API (katalog 10).
-- **Multi-tester:** wielu użytkowników na jednej instancji — każdy widzi **własne** spotkania dema (ACL); brak jednego globalnego wiersza współdzielonego między kontami.
+- **Brak** osobnej strony detail (`/meetings/:id`) w UI v1 - wynik pipeline widać w **wierszu tabeli**.
+- Element listy z API niesie m.in. `processingStatus`, **`summary`** oraz **`failureReason`** (`dokumentacja_komunikacji.md`). Kolumna podglądu (skrót summary / komunikat błędu) budowana z tych pól — **także po odświeżeniu strony** (nie tylko ze stanu SSE). Zmiana względem wcześniejszego założenia „summary tylko w detail / ephemeralnie z SSE”.
+- Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) - **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
+- **Przycisk Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
+- Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail. SSE nie jest jedynym źródłem treści kolumny wyniku — po reloadzie wystarczy `GET` listy.
+- **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10).
+- **Multi-tester:** wielu użytkowników na jednej instancji - każdy widzi **własne** spotkania dema (ACL); brak jednego globalnego wiersza współdzielonego między kontami.
 - **Ponowny Test** dodaje kolejny wiersz (akceptowalne w v1 dema; lista może rosnąć).
 - Wylogowanie: BFF/API.
 
@@ -99,7 +100,7 @@ apps/web/
 
 ## Testy frontu (v1)
 
-Zgodnie z `testy.md`: bez Playwright jako must-have; smoke build / typecheck. Regresje ACL i pipeline — po stronie api/worker.
+Zgodnie z `testy.md`: bez Playwright jako must-have; smoke build / typecheck. Regresje ACL i pipeline - po stronie api/worker.
 
 ## Świadomie poza v1 (frontend)
 

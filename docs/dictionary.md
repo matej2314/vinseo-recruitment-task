@@ -18,9 +18,9 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Pracownik** (employee / internal user) | Użytkownik z kontem (e-mail + hasło); jedyny typ konta w v1. |
 | **Klient** (client) | Firma lub osoba, dla której agencja prowadzi działania; w systemie: rekord z domeną e-mail do matchingu; powiązanie spotkań przez opcjonalne `clientId`. |
 | **Domena klienta** (`emailDomain`) | Domena z e-maili zewnętrznych uczestników używana do automatycznego matchingu (bez HubSpot). |
-| **Status linku klienta** (`clientLinkStatus`) | `internal` \| `matched` \| `unmatched` — wynik próby powiązania spotkania z `Client`. |
+| **Status linku klienta** (`clientLinkStatus`) | `internal` \| `matched` \| `unmatched` - wynik próby powiązania spotkania z `Client`. |
 | **Projekt** (project) | Jednostka pracy przy kliencie; w schemacie pod przyszłość; **nie** egzekwuje ACL v1. |
-| **Zespół projektu** (project team) | Membership User↔Project — **kolejna faza** ACL (onboarding historii); Workspace nie ma grup klienckich. |
+| **Zespół projektu** (project team) | Membership User↔Project - **kolejna faza** ACL (onboarding historii); Workspace nie ma grup klienckich. |
 | **Organizator** (organizer) | Pracownik będący organizatorem wydarzenia; ścieżka ACL v1. |
 | **Uczestnik zewnętrzny** | E-mail poza domeną firmy; tylko metadane (bez konta). |
 | **Spotkanie poufne** (`confidential`) | Flaga ręczna (1:1, rekrutacja, zarząd itd.). |
@@ -51,14 +51,14 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Pipeline** | Sekwencja kroków: pobranie → normalizacja → redakcja → streszczenie → zapis. |
 | **Job** (`meeting.process`) | Zadanie w kolejce pg-boss realizujące pipeline dla jednego zewnętrznego ID spotkania. |
 | **Idempotencja** (idempotency) | Ponowne uruchomienie z tym samym kluczem tożsamości (`externalMeetingId`) nie tworzy duplikatu spotkania. |
-| **Klucz idempotencji** (idempotency key) | `externalMeetingId` / ID transcriptu vendora. Na DEMO/Test: UUID **runu** nadany przez API — **nie** utożsamiany z `fixtureKey`. |
+| **Klucz idempotencji** (idempotency key) | `externalMeetingId` / ID transcriptu vendora. Na DEMO/Test: UUID **runu** nadany przez API - **nie** utożsamiany z `fixtureKey`. |
 | **externalMeetingId** | Tożsamość kanonicznego spotkania / runu w systemie (prod: ID vendora; DEMO/Test: nowe UUID na każde wywołanie Test). |
 | **Redakcja** (redaction) | Maskowanie / filtrowanie danych wrażliwych przed krokiem „na zewnątrz” (nawet przed mockiem summarizera). |
 | **Summarizer** | Port generujący streszczenie i zadania; w v1 mock o kontrakcie jak przyszły LLM. |
 | **Walidacja kontraktu** (schema validation) | Sprawdzenie kształtu wyniku (Zod **w aplikacji**); HTTP DTO: class-validator. |
 | **Quarantine / failed** | Stan po niepoprawnym wyniku modelu lub błędzie kroku - bez zapisu „prawie OK” jako sukcesu. |
 | **Fixture / mock** | Przygotowane dane testowe zastępujące prawdziwe nagrania i vendorów; w demie: katalog **10** kluczy za portem źródła. |
-| **fixtureKey** | Identyfikator **materiału** mocka w katalogu — wskazuje treść źródła. Na ścieżce DEMO/Test **nie** jest kluczem wiersza `Meeting`; ten sam klucz może powtórzyć się u wielu użytkowników i runów. |
+| **fixtureKey** | Identyfikator **materiału** mocka w katalogu - wskazuje treść źródła. Na ścieżce DEMO/Test **nie** jest kluczem wiersza `Meeting`; ten sam klucz może powtórzyć się u wielu użytkowników i runów. |
 | **Demo / przycisk Test** | Ścieżka PoC: BFF → API → nowe `externalMeetingId` (UUID) + `organizerId` sesji + losowy `fixtureKey` → enqueue → **SSE** aktualizuje wiersz. Multi-tester: osobne wiersze; ponowny Test = kolejny wiersz. |
 | **SSE** (Server-Sent Events) | Strumień `text/event-stream` statusów spotkania (`GET /meetings/:id/events`); ACL jak przy odczycie. |
 
@@ -73,8 +73,8 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **packages/contracts** | Wspólne typy / kształty kontraktów między api, worker i web; **bez Zod**. |
 | **Prisma** | ORM i migracje; schemat w rootowym `prisma/`. |
 | **PostgreSQL** | Jedyna baza stanu aplikacji, kolejek pg-boss i tabeli `audit_log`. |
-| **Docker Compose — ścieżka A** | Rootowy `docker-compose.db.yml` tylko pod Postgres (bazy `vinseo` + `vinseo_test`). Wejście: `pnpm db:up` / `db:down` / `db:logs`. Procesy app na hoście (`dev:*`). |
-| **Compose dev stack — ścieżka B** | `docker-compose.dev.yml` + `docker/dev/Dockerfile`: Postgres oraz `api`/`worker`/`web` w kontenerach; bind mount kodu; wolumeny na `node_modules`. Wejście: `pnpm dev:stack:up` / `down` / `logs`. Obowiązkowe DX Fazy 1; nie mylić z Compose produkcyjnym na VPS. |
+| **Docker Compose - ścieżka A** | Rootowy `docker-compose.db.yml` tylko pod Postgres (bazy `vinseo` + `vinseo_test`). Wejście: `pnpm db:up` / `db:down` / `db:logs`. Procesy app na hoście (`dev:*`). |
+| **Compose dev stack - ścieżka B** | `docker-compose.dev.yml` + `docker/dev/Dockerfile`: Postgres oraz `api`/`worker`/`web` w kontenerach; bind mount kodu; wolumeny na `node_modules`. Wejście: `pnpm dev:stack:up` / `down` / `logs`. Obowiązkowe DX Fazy 1; nie mylić z Compose produkcyjnym na VPS. |
 | **pg-boss** | Kolejka jobów w Postgresie (bez osobnego Redisa w v1). |
 | **Dziennik audytu** (`audit_log`) | Tabela w Postgresie na kluczowe zdarzenia biznesowe (auth, ACL, joby, demo, błędy walidacji summary); retencja 90 dni; odczyt v1 tylko ops/DB, bez HTTP. |
 | **Logi techniczne** (pino) | Strukturalne logi procesu na stdout - diagnostyka; nie zamiennik `audit_log`. |

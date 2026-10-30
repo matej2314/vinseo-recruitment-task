@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-product-launch-pl",
+  "title": "Product launch war room",
+  "startedAt": "2026-10-21T09:45:00.000Z",
+  "participants": [
+    {
+      "email": "bartek.pm@vinseo.example",
+      "displayName": "Bartek PM",
+      "internal": true
+    },
+    {
+      "email": "product@client-x.example",
+      "displayName": "Product Owner",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Bartek PM",
+      "text": "Go-live 28 października. Hotline +48 503 444 555.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Product Owner",
+      "text": "Decision: soft launch PL-only. Action: Bartek zamyka checklistę QA.",
+      "startMs": 11000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

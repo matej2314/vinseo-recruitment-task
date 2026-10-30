@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-qbr-client-pl",
+  "title": "QBR Client Alpha",
+  "startedAt": "2026-10-23T12:00:00.000Z",
+  "participants": [
+    {
+      "email": "igor.am@vinseo.example",
+      "displayName": "Igor AM",
+      "internal": true
+    },
+    {
+      "email": "ceo@client-alpha.example",
+      "displayName": "CEO Alpha",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Igor AM",
+      "text": "Q3 ROI +18%. Slajdy na igor.qbr@vinseo.example.",
+      "startMs": 0
+    },
+    {
+      "speaker": "CEO Alpha",
+      "text": "Decision: zwiększamy retainer o 10%. Action: Igor przygotuje propozycję.",
+      "startMs": 20000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

@@ -16,7 +16,7 @@ HTTP / BFF  →  aplikacja (use case / serwisy)  →  porty
                          infrastruktura (adapters: DB, kolejka, mocki vendorów)
 ```
 
-v1: **bez** bogatej warstwy klas domenowych (encje DDD, domain events „wszędzie”) — wystarczają use case’y + porty (`spec/SPEC-ARCHITEKTURA.md`).
+v1: **bez** bogatej warstwy klas domenowych (encje DDD, domain events „wszędzie”) - wystarczają use case’y + porty (`spec/SPEC-ARCHITEKTURA.md`).
 
 - Jedna organizacja, jedna instalacja, **jedna baza PostgreSQL** (stan domenowy, pg-boss oraz tabela audytu **`audit_log`** - trwały ślad kluczowych zdarzeń biznesowych; to nie jest event sourcing ani zamiennik logów procesu).
 - Trzy procesy runtime: **`api`**, **`worker`**, **`web`** - wspólny kod kontraktów w monorepo, bez rozbijania na mikroserwisy per capability.
@@ -77,7 +77,7 @@ Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątkó
 | **worker** | Joby pg-boss, kroki pipeline, wywołania portów (mock źródła / mock summary) | Publicznego API dla przeglądarki; decyzji „czy user X może to zobaczyć” przy serwowaniu UI |
 | **web** | Cookie HttpOnly, BFF, sidebar (tabela+Test / mock wyszukiwarka) | Reguł uprawnień do treści spotkań |
 
-Lokalnie te same trzy procesy mogą biec **na hoście** (`pnpm db:up` + `dev:*`) albo w **kontenerach developerskich** (`docker-compose.dev.yml` / `pnpm dev:stack:up` — bind mount kodu). Granice odpowiedzialności procesów się nie zmieniają. Szczegóły: `deployment.md`.
+Lokalnie te same trzy procesy mogą biec **na hoście** (`pnpm db:up` + `dev:*`) albo w **kontenerach developerskich** (`docker-compose.dev.yml` / `pnpm dev:stack:up` - bind mount kodu). Granice odpowiedzialności procesów się nie zmieniają. Szczegóły: `deployment.md`.
 
 ## Współdzielenie: `packages/`
 
@@ -103,7 +103,7 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 - Hasła: **bcrypt** przed zapisem; przy rejestracji min. **12** znaków, ≥1 wielka, ≥1 cyfra, ≥1 specjalny.
 - Sesja: **access JWT (TTL 15 min)** + **refresh** (hash w PostgreSQL); oba w cookie **HttpOnly** (BFF przekazuje); rotacja `POST /auth/refresh`. Treść sekretna nie w `localStorage` / `sessionStorage`. Szczegóły: `spec/SPEC-AUTH_I_ACL.md`.
 - Tylko pracownicy firmy mają konta (zgodnie z koncepcją produktu).
-- Lista spotkań: paginacja backendowa — `limit` ∈ {10,25,50,100} oraz **`page`** (nie cursor).
+- Lista spotkań: paginacja backendowa - `limit` ∈ {10,25,50,100} oraz **`page`** (nie cursor).
 
 ### Integracje zewnętrzne
 
@@ -118,7 +118,7 @@ Odczyt spotkania i artefaktów (transkrypt, streszczenie, zadania) tylko gdy zac
 2. użytkownik jest **uczestnikiem** wewnętrznym spotkania (`MeetingParticipant` → `User`), albo  
 3. rola **administracyjna** (operacje serwisowe; także spotkania `confidential`).
 
-`clientId` / status linku klienta służą do metadanych, filtrów i erase — **nie** przyznają ACL w v1.  
+`clientId` / status linku klienta służą do metadanych, filtrów i erase - **nie** przyznają ACL w v1.  
 `Project` / `ProjectMembership` mogą istnieć w schemacie pod **kolejną fazę** (zespół klienta); **nie** egzekwują dostępu w v1. Grupy Google Workspace (działy / „wszyscy”) nie mapują się na ACL.
 
 ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF i UI nie są źródłem prawdy uprawnień.
@@ -129,7 +129,7 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 2. Enqueue job (klucz idempotencji: zewnętrzne ID spotkania / transcriptu).
 3. Worker: pobranie → normalizacja → **redakcja (E+T+P+K)** → **UC1 summarizeMeeting** (LlmClient mock/prod) → walidacja Zod → zapis. Bez użycia `summary` z Fireflies.
 4. Ponowne uruchomienie tego samego klucza: **update in place**, bez drugiego rekordu spotkania.
-5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** wywołaniem LlmClient; po udanym Zod — persist. Niepoprawne summary **nie** trafia do bazy jako sukces (quarantine / failed; max 1 retry JSON).
+5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** wywołaniem LlmClient; po udanym Zod - persist. Niepoprawne summary **nie** trafia do bazy jako sukces (quarantine / failed; max 1 retry JSON).
 
 ## Granica „na zewnątrz” i redakcja
 
@@ -149,7 +149,7 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 | Kontrakty współdzielone | `packages/` (typy; bez Zod) |
 | Walidacja HTTP | class-validator + class-transformer |
 | Walidacja wyniku AI / summary | Zod w aplikacji |
-| LLM | Jeden port `LlmClient` (podstawowo Gemini 3.5 Flash-Lite; opcjonalnie Haiku 5.5 po testach — `koszty_i_warianty.md`); UC1 summarize + UC2 ask później |
+| LLM | Jeden port `LlmClient` (podstawowo Gemini 3.5 Flash-Lite; opcjonalnie Haiku 5.5 po testach - `koszty_i_warianty.md`); UC1 summarize + UC2 ask później |
 | Testy | Jest |
 
 ## Anty-patterny, których unikamy (architektonicznie)

@@ -2,7 +2,10 @@ import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { MeetingSourcePayload } from '@vinseo/contracts';
+import {
+  DEMO_FIXTURE_KEYS,
+  type MeetingSourcePayload,
+} from '@vinseo/contracts';
 
 import type {
   FetchMeetingSourceInput,
@@ -10,9 +13,9 @@ import type {
 } from './meeting-source.port.js';
 import { meetingSourcePayloadSchema } from './meeting-source.zod.js';
 
-const FIXTURES: Record<string, string> = {
-  'demo-client-budget-pl': 'demo-client-budget-pl.json',
-};
+const FIXTURES: Record<string, string> = Object.fromEntries(
+  DEMO_FIXTURE_KEYS.map((key) => [key, `${key}.json`]),
+);
 
 /**
  * Szukamy fixture niezależnie od tego, czy Nest ma cwd = `apps/worker`

@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-media-plan-pl",
+  "title": "Media plan Q1",
+  "startedAt": "2026-10-22T14:00:00.000Z",
+  "participants": [
+    {
+      "email": "zuza.media@vinseo.example",
+      "displayName": "Zuza Media",
+      "internal": true
+    },
+    {
+      "email": "marketing@client-y.example",
+      "displayName": "Marketing Lead",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Zuza Media",
+      "text": "Mix: 60% video, 40% display. Budget draft 120k PLN.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Marketing Lead",
+      "text": "Decision: akceptujemy mix. Action: Zuza wysyła IO do domu mediowego.",
+      "startMs": 16000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

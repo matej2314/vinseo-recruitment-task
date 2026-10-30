@@ -7,7 +7,7 @@ type AppShellProps = {
 };
 
 /**
- * Ramka robocza v1 — bez brandingu produktowego (docs/frontend.md).
+ * Ramka robocza v1 - bez brandingu produktowego (docs/frontend.md).
  * RSC; bez logiki sesji (Faza 3).
  */
 export function AppShell({ children, title, centered = false }: AppShellProps) {

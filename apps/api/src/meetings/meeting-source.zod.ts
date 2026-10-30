@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Kształt źródła (K-12) — kopia kontraktu Zod z workera; bez Zod w packages/. */
+/** Kształt źródła (K-12) - kopia kontraktu Zod z workera; bez Zod w packages/. */
 export const sourceParticipantSchema = z.object({
   email: z.string().email().nullable(),
   displayName: z.string().min(1),

@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-retainer-review-pl",
+  "title": "Retainer review - Client Z",
+  "startedAt": "2026-10-17T11:00:00.000Z",
+  "participants": [
+    {
+      "email": "marek.lis@vinseo.example",
+      "displayName": "Marek Lis",
+      "internal": true
+    },
+    {
+      "email": "cfo@client-z.example",
+      "displayName": "Ewa CFO",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Marek Lis",
+      "text": "Retainer 40k PLN miesięcznie - karta testowa 5500000000000004 tylko do dema.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Ewa CFO",
+      "text": "Decision: przedłużamy na Q1. Action: Marek wysyła aneks.",
+      "startMs": 12000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

@@ -22,7 +22,7 @@ Zasady:
 - Żadnych sekretów w git (`.env` lokalnie / na serwerze; w CI - GitHub Secrets gdy potrzebne).
 - Demo (`POST /demo/run-meeting`) wymaga sesji pracownika; **brak** osobnej flagi `DEMO_ENABLED` w kontrakcie v1 (na prod ograniczać dostęp sieciowo / kontami, nie wyłącznikiem env).
 - Health: publicznie głównie api (+ web); health workera - sieć wewnętrzna / localhost (patrz `observability.md`).
-- **Nie** uruchamiać ścieżki A i B jednocześnie na tych samych portach (5432 / 3000 / 3001) — najpierw `pnpm db:down` albo `pnpm dev:stack:down`.
+- **Nie** uruchamiać ścieżki A i B jednocześnie na tych samych portach (5432 / 3000 / 3001) - najpierw `pnpm db:down` albo `pnpm dev:stack:down`.
 
 ## Topologia produkcji (docelowa)
 
@@ -106,21 +106,21 @@ Automatyzacja tej listy w Actions - TODO poza v1.
 
 Szczegóły komend - root `README` projektu. Dwie ścieżki DX (skrypty root `package.json`):
 
-### Ścieżka A — baza w Compose, appki na hoście
+### Ścieżka A - baza w Compose, appki na hoście
 
-1. `pnpm db:up` — `docker-compose.db.yml` (Postgres: `vinseo` + `vinseo_test`). Zatrzymanie: `pnpm db:down`; logi: `pnpm db:logs`.
+1. `pnpm db:up` - `docker-compose.db.yml` (Postgres: `vinseo` + `vinseo_test`). Zatrzymanie: `pnpm db:down`; logi: `pnpm db:logs`.
 2. Migracje: `pnpm db:generate` + `pnpm db:migrate` (dev).
 3. Procesy: `pnpm dev:api`, `pnpm dev:worker`, `pnpm dev:web`.
 4. Demo: zalogowany pracownik → Test / `POST /demo/run-meeting` (+ SSE).
 
-### Ścieżka B — pełny stack w kontenerach (**obowiązkowa implementacja Fazy 1**)
+### Ścieżka B - pełny stack w kontenerach (**obowiązkowa implementacja Fazy 1**)
 
 1. `cp .env.example .env` (jeśli brak).
-2. `pnpm dev:stack:up` — `docker-compose.dev.yml`: Postgres + `api` + `worker` + `web`; kod z bind mountu; zależności w wolumenach Docker; obraz bazowy `docker/dev/Dockerfile`.
+2. `pnpm dev:stack:up` - `docker-compose.dev.yml`: Postgres + `api` + `worker` + `web`; kod z bind mountu; zależności w wolumenach Docker; obraz bazowy `docker/dev/Dockerfile`.
 3. Logi: `pnpm dev:stack:logs`; stop: `pnpm dev:stack:down`.
 4. W kontenerach `DATABASE_URL` wskazuje host `postgres` (nadpisanie w compose); migracje odpala serwis `api` przy starcie (`db:migrate:deploy`).
 
-`compose.dev` **nie** zastępuje obrazów produkcyjnych z checklisty VPS — to wyłącznie DX z hot-reload.
+`compose.dev` **nie** zastępuje obrazów produkcyjnych z checklisty VPS - to wyłącznie DX z hot-reload.
 
 ## Świadomie poza v1
 

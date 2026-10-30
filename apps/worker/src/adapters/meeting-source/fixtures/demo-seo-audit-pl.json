@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-seo-audit-pl",
+  "title": "SEO audit wrap-up",
+  "startedAt": "2026-10-19T13:00:00.000Z",
+  "participants": [
+    {
+      "email": "tomek.seo@vinseo.example",
+      "displayName": "Tomek SEO",
+      "internal": true
+    },
+    {
+      "email": "web@client-y.example",
+      "displayName": "Web Owner",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Tomek SEO",
+      "text": "Core Web Vitals: LCP 3.1s. Telefon techniczny +48 602 111 222.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Web Owner",
+      "text": "Decision: sprint techniczny w listopadzie. Action: Tomek priorytetyzuje crawl budget.",
+      "startMs": 14000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

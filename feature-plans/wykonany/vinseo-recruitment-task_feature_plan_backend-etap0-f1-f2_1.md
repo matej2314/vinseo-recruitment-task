@@ -1,8 +1,8 @@
-# Vinseo Recruitment Task — feature plan (backend etap 0, plik 1/2)
+# Vinseo Recruitment Task - feature plan (backend etap 0, plik 1/2)
 
 **Lokalizacja:** `feature-plans/vinseo-recruitment-task_feature_plan_backend-etap0-f1-f2_1.md`  
 **Zestaw:** plik `_1` = **FAZA 1**; plik `_2` = **FAZA 2** (osobny plik).  
-**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` — Faza 1 (pełna) → ślad: MILESTONE „Fundament monorepo gotowy”.  
+**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` - Faza 1 (pełna) → ślad: MILESTONE „Fundament monorepo gotowy”.  
 **Źródła:** `docs/` (`architektura_katalogi_pliki.md`, `architektura.md`, `deployment.md`, `plan_wdrozenia_etapy.md`), `spec/SPEC-ARCHITEKTURA.md`, `SPEC-DANE.md`, `SPEC-TESTY.md` (runner Jest).  
 **Pass rozwojowy (sesja):** Vitest→Jest przy szkielecie `api` (nie dopiero przy smoke); brak przenosin między fazami major.
 
@@ -18,17 +18,17 @@
 | Major | Faza 1, kroki 1.1–1.5 (+ 1.2.1 ścieżka A, 1.2.2 ścieżka B) + dopisek modelu pod ACL v1 |
 | Poza zakresem tego pliku | Pipeline `meeting.process`, redakcja, LLM, enqueue demo (→ plik `_2` / major Faza 2); auth/ACL HTTP (major Faza 3); erase UI / HubSpot / real Workspace; pełne UI |
 | Ustalenie DX enqueue | W Fazie 2 (plik `_2`): enqueue z `api` bez sesji cookie; `POST /demo/run-meeting` zostaje na Fazę 3 |
-| Po implementacji (informacyjnie) | Major: Faza 1 → `WYKONANY`; MILESTONE „Fundament monorepo gotowy” → `OSIĄGNIĘTY` — **edycja major poza tym skillem** |
+| Po implementacji (informacyjnie) | Major: Faza 1 → `WYKONANY`; MILESTONE „Fundament monorepo gotowy” → `OSIĄGNIĘTY` - **edycja major poza tym skillem** |
 
 ---
 
 ## Założenia (stack z projektu / SPEC)
 
-- Monorepo **pnpm workspaces**; procesy `apps/api`, `apps/worker`, `apps/web`; typy w `packages/contracts` (**bez Zod** w `packages/`) — `SPEC-ARCHITEKTURA`.
+- Monorepo **pnpm workspaces**; procesy `apps/api`, `apps/worker`, `apps/web`; typy w `packages/contracts` (**bez Zod** w `packages/`) - `SPEC-ARCHITEKTURA`.
 - NestJS 12 (scaffold `apps/api`), Next.js 16 stub `apps/web`, TypeScript `strict`.
-- PostgreSQL + **Prisma 7** w rootcie `prisma/` + `prisma.config.ts`; klient z **adapterem** `@prisma/adapter-pg` (Context7 / docs Prisma 7) — osobny `PrismaService` w `api` i `worker`, bez pakietu Zod/runtime w `packages/`.
-- Walidacja env: `@nestjs/config` + **Zod** (`validate` / fail-closed) — `SPEC-ARCHITEKTURA` C-1…C-3.
-- Testy: **Jest** + supertest (`SPEC-TESTY` T-1) — migracja ze Vitest w scaffoldzie.
+- PostgreSQL + **Prisma 7** w rootcie `prisma/` + `prisma.config.ts`; klient z **adapterem** `@prisma/adapter-pg` (Context7 / docs Prisma 7) - osobny `PrismaService` w `api` i `worker`, bez pakietu Zod/runtime w `packages/`.
+- Walidacja env: `@nestjs/config` + **Zod** (`validate` / fail-closed) - `SPEC-ARCHITEKTURA` C-1…C-3.
+- Testy: **Jest** + supertest (`SPEC-TESTY` T-1) - migracja ze Vitest w scaffoldzie.
 - Nazwa paczki kontraktów: `@vinseo/contracts`.
 - Typowanie: granice publiczne jawne; branded id tam, gdzie stringi domenowe byłyby wymienne (`typescript-practices`); zakaz `any` jako skrótu.
 - Lokalny Postgres ścieżka A: `pnpm db:up` / `db:down` / `db:logs` (A-7).
@@ -36,9 +36,9 @@
 
 ---
 
-## FAZA 1 — Fundament monorepo i szkielet procesów
+## FAZA 1 - Fundament monorepo i szkielet procesów
 
-### KROK 1 — Root workspaces, drzewo procesów, `packages/contracts`
+### KROK 1 - Root workspaces, drzewo procesów, `packages/contracts`
 
 **Status:** `WYKONANY`
 
@@ -49,9 +49,9 @@
 - Nowe: `pnpm-workspace.yaml`, `packages/contracts/package.json`, `packages/contracts/tsconfig.json`, `packages/contracts/src/index.ts`, `packages/contracts/src/ids.ts`, `packages/contracts/src/processing-status.ts`, `packages/contracts/src/meeting-source.ts`, `packages/contracts/src/jobs.ts`
 - Zmiana: root `package.json`, `.gitignore`
 - Usunięcie: `apps/api/pnpm-workspace.yaml`, `apps/web/pnpm-workspace.yaml` (zagnieżdżone workspaces scaffoldu)
-- Doprecyzowanie nazw: `apps/api` → `"name": "@vinseo/api"`; `apps/web` → `"name": "@vinseo/web"` (w `package.json` appów — fragment w tym kroku lub KROK 3)
+- Doprecyzowanie nazw: `apps/api` → `"name": "@vinseo/api"`; `apps/web` → `"name": "@vinseo/web"` (w `package.json` appów - fragment w tym kroku lub KROK 3)
 
-#### Implementacja — nowe pliki (kompletne)
+#### Implementacja - nowe pliki (kompletne)
 
 `pnpm-workspace.yaml`:
 
@@ -173,7 +173,7 @@ export interface SourceSegment {
   readonly startMs: number;
 }
 
-/** Port źródła (K-12) — bez pól summary vendora. */
+/** Port źródła (K-12) - bez pól summary vendora. */
 export interface MeetingSourcePayload {
   readonly externalId: string;
   readonly title: string;
@@ -208,7 +208,7 @@ export * from './meeting-source.js';
 export * from './jobs.js';
 ```
 
-#### Refaktor — root `package.json`
+#### Refaktor - root `package.json`
 
 **Teraz:** skrypt `test` placeholder, brak workspaces, `"type": "commonjs"`.
 
@@ -219,7 +219,7 @@ export * from './jobs.js';
   "name": "vinseo-recruitment-task",
   "version": "1.0.0",
   "private": true,
-  "description": "Firmowy asystent spotkań — monorepo (api / worker / web)",
+  "description": "Firmowy asystent spotkań - monorepo (api / worker / web)",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=22"
@@ -245,9 +245,9 @@ export * from './jobs.js';
 }
 ```
 
-*(Wersja `packageManager` dopasuj do lokalnie używanej pnpm ≥9; scaffold web ma pnpm 12 — jeśli zostajecie przy 12, wpisz tę samą w root.)*
+*(Wersja `packageManager` dopasuj do lokalnie używanej pnpm ≥9; scaffold web ma pnpm 12 - jeśli zostajecie przy 12, wpisz tę samą w root.)*
 
-#### Refaktor — `.gitignore`
+#### Refaktor - `.gitignore`
 
 **Teraz:** tylko `Workflow.md`, `ZADANIE_Mid_FullStack.md`, `DECISIONS.md`.
 
@@ -280,7 +280,7 @@ apps/*/pnpm-lock.yaml
 
 #### Biblioteki / API
 
-- pnpm workspaces — układ z `docs/architektura_katalogi_pliki.md`.
+- pnpm workspaces - układ z `docs/architektura_katalogi_pliki.md`.
 - Brak Zod w `packages/contracts` (`SPEC-ARCHITEKTURA`).
 
 #### Testy
@@ -296,18 +296,18 @@ apps/*/pnpm-lock.yaml
 
 ---
 
-### KROK 2 — Lokalne Postgres (Compose) i env
+### KROK 2 - Lokalne Postgres (Compose) i env
 
 **Status:** `WYKONANY`
 
-**Cel:** Powtarzalna baza lokalna + baza testowa; kolejka pg-boss w tej samej instalacji Postgres (bez osobnego brokera) — major 1.2, `docs/deployment.md`, `SPEC-ARCHITEKTURA`.
+**Cel:** Powtarzalna baza lokalna + baza testowa; kolejka pg-boss w tej samej instalacji Postgres (bez osobnego brokera) - major 1.2, `docs/deployment.md`, `SPEC-ARCHITEKTURA`.
 
 **Artefakty:**
 
 - Nowe: `docker-compose.yml` (nadpisanie pustego pliku), `.env.example`
-- Zmiana: (opcjonalnie) krótka nota w README dopiero w KROK 5 — tu tylko pliki env/Compose
+- Zmiana: (opcjonalnie) krótka nota w README dopiero w KROK 5 - tu tylko pliki env/Compose
 
-#### Implementacja — nowe pliki (kompletne)
+#### Implementacja - nowe pliki (kompletne)
 
 `docker-compose.yml`:
 
@@ -343,7 +343,7 @@ SELECT 'CREATE DATABASE vinseo_test'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vinseo_test')\gexec
 ```
 
-*(Jeśli `\gexec` w init sprawia problemy w Alpine — zamień na proste `CREATE DATABASE vinseo_test;` w skrypcie init; przy re-init volume’u baza powstanie raz.)*
+*(Jeśli `\gexec` w init sprawia problemy w Alpine - zamień na proste `CREATE DATABASE vinseo_test;` w skrypcie init; przy re-init volume’u baza powstanie raz.)*
 
 Wariant prostszy (zalecany w planie, jeśli `\gexec` zawodny):
 
@@ -362,7 +362,7 @@ DATABASE_URL_TEST=postgresql://vinseo:vinseo@localhost:5432/vinseo_test?schema=p
 # api
 API_PORT=3001
 LOG_LEVEL=debug
-# Placeholdery pod Fazę 3 (wymagane dopiero gdy auth startuje; w Fazie 1 waliduj tylko to, co proces faktycznie czyta — patrz envSchema w KROK 3)
+# Placeholdery pod Fazę 3 (wymagane dopiero gdy auth startuje; w Fazie 1 waliduj tylko to, co proces faktycznie czyta - patrz envSchema w KROK 3)
 JWT_SECRET=change-me-dev-jwt-secret-min-32-chars!!
 COOKIE_SECURE=false
 
@@ -386,18 +386,18 @@ WORKER_LOG_LEVEL=debug
 
 ---
 
-### KROK 3 — Szkielety Nest `api` + `worker`, stub `web`, Jest
+### KROK 3 - Szkielety Nest `api` + `worker`, stub `web`, Jest
 
 **Status:** `WYKONANY`
 
-**Cel:** Uruchamialne dwa procesy Nest + minimalny stub Next; zwalidowany config fail-closed; runner **Jest** zamiast Vitest — major 1.3 + przesunięcie migracji testów; `SPEC-ARCHITEKTURA` A-1, A-6, C-*.
+**Cel:** Uruchamialne dwa procesy Nest + minimalny stub Next; zwalidowany config fail-closed; runner **Jest** zamiast Vitest - major 1.3 + przesunięcie migracji testów; `SPEC-ARCHITEKTURA` A-1, A-6, C-*.
 
 **Artefakty:**
 
 - Nowe (api): `apps/api/src/config/env.schema.ts`, `apps/api/src/config/config.module.ts`, `apps/api/src/health/health.controller.ts`, `apps/api/src/health/health.module.ts`, `apps/api/jest.config.cjs`, `apps/api/test/health.e2e-spec.ts`
 - Nowe (worker): cały szkielet pod `apps/worker/` (patrz niżej)
 - Zmiana: `apps/api/package.json`, `apps/api/src/main.ts`, `apps/api/src/app.module.ts`, `apps/api/tsconfig.json`, `apps/web/package.json`, `apps/web/app/page.tsx`
-- Usunięcie: `apps/api/vitest.config.ts`, `apps/api/vitest.config.e2e.ts`; brakujące w scaffoldzie `AppController`/`AppService` — **nie odtwarzać** (zastąpione health)
+- Usunięcie: `apps/api/vitest.config.ts`, `apps/api/vitest.config.e2e.ts`; brakujące w scaffoldzie `AppController`/`AppService` - **nie odtwarzać** (zastąpione health)
 
 #### Kolejność w kroku
 
@@ -408,7 +408,7 @@ WORKER_LOG_LEVEL=debug
 5. Stub `web` (minimalna strona „stub etapu 0”) + nazwa `@vinseo/web` w workspace.
 6. `pnpm install` z roota.
 
-#### Nowy plik — `apps/api/src/config/env.schema.ts`
+#### Nowy plik - `apps/api/src/config/env.schema.ts`
 
 ```typescript
 import { z } from 'zod';
@@ -440,7 +440,7 @@ export function validateApiEnv(
 }
 ```
 
-#### Nowy plik — `apps/api/src/config/config.module.ts`
+#### Nowy plik - `apps/api/src/config/config.module.ts`
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -460,7 +460,7 @@ import { validateApiEnv } from './env.schema.js';
 export class AppConfigModule {}
 ```
 
-#### Nowy plik — `apps/api/src/health/health.controller.ts`
+#### Nowy plik - `apps/api/src/health/health.controller.ts`
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
@@ -474,7 +474,7 @@ export class HealthController {
 }
 ```
 
-#### Nowy plik — `apps/api/src/health/health.module.ts`
+#### Nowy plik - `apps/api/src/health/health.module.ts`
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -487,7 +487,7 @@ import { HealthController } from './health.controller.js';
 export class HealthModule {}
 ```
 
-#### Refaktor — `apps/api/src/app.module.ts`
+#### Refaktor - `apps/api/src/app.module.ts`
 
 **Teraz:**
 
@@ -518,7 +518,7 @@ import { HealthModule } from './health/health.module.js';
 export class AppModule {}
 ```
 
-#### Refaktor — `apps/api/src/main.ts`
+#### Refaktor - `apps/api/src/main.ts`
 
 **Teraz:** `listen(process.env.PORT ?? 3000)` bez ValidationPipe / bez typowanego portu.
 
@@ -550,7 +550,7 @@ async function bootstrap(): Promise<void> {
 await bootstrap();
 ```
 
-#### Refaktor — `apps/api/package.json` (kluczowe fragmenty)
+#### Refaktor - `apps/api/package.json` (kluczowe fragmenty)
 
 **Teraz:** `"name": "api"`, skrypty Vitest, brak `@nestjs/config`, brak `@vinseo/contracts`.
 
@@ -612,7 +612,7 @@ await bootstrap();
 
 *(Usuń `@vitest/*`, `vitest`, `vite`, zbędne `@nestjs/mau` jeśli nieużywane. Dopnij wersje przy `pnpm install`.)*
 
-#### Nowy plik — `apps/api/jest.config.cjs`
+#### Nowy plik - `apps/api/jest.config.cjs`
 
 ```javascript
 /** @type {import('jest').Config} */
@@ -637,7 +637,7 @@ module.exports = {
 };
 ```
 
-#### Nowy plik — `apps/api/test/jest-e2e.json`
+#### Nowy plik - `apps/api/test/jest-e2e.json`
 
 ```json
 {
@@ -661,7 +661,7 @@ module.exports = {
 }
 ```
 
-#### Nowy plik — `apps/api/test/health.e2e-spec.ts`
+#### Nowy plik - `apps/api/test/health.e2e-spec.ts`
 
 ```typescript
 import { INestApplication } from '@nestjs/common';
@@ -699,17 +699,17 @@ describe('HealthController (e2e)', () => {
 });
 ```
 
-#### Refaktor — `apps/api/test/app.e2e-spec.ts`
+#### Refaktor - `apps/api/test/app.e2e-spec.ts`
 
-**Usuń** plik (Hello World / brak controllera) — zastąpiony `health.e2e-spec.ts`.
+**Usuń** plik (Hello World / brak controllera) - zastąpiony `health.e2e-spec.ts`.
 
-#### Refaktor — `apps/api/tsconfig.json`
+#### Refaktor - `apps/api/tsconfig.json`
 
 W `compilerOptions.types` **zamień** `"vitest/globals"` na `"jest"` (oraz `"node"`).
 
 ---
 
-#### Worker — nowe pliki
+#### Worker - nowe pliki
 
 `apps/worker/package.json`:
 
@@ -891,7 +891,7 @@ async function bootstrap(): Promise<void> {
 await bootstrap();
 ```
 
-Katalogi placeholdery (puste `.gitkeep` lub README 1-linijkowe — bez logiki):
+Katalogi placeholdery (puste `.gitkeep` lub README 1-linijkowe - bez logiki):
 
 - `apps/worker/src/jobs/.gitkeep`
 - `apps/worker/src/pipeline/.gitkeep`
@@ -903,13 +903,13 @@ Katalogi placeholdery (puste `.gitkeep` lub README 1-linijkowe — bez logiki):
 
 **Refaktor** `apps/web/package.json`: `"name": "@vinseo/web"` (reszta Next 16 może zostać).
 
-**Refaktor** `apps/web/app/page.tsx` — minimalny stub (bez dashboardu):
+**Refaktor** `apps/web/app/page.tsx` - minimalny stub (bez dashboardu):
 
 ```tsx
 export default function HomePage() {
   return (
     <main>
-      <h1>Vinseo — web stub (etap 0)</h1>
+      <h1>Vinseo - web stub (etap 0)</h1>
       <p>
         Pełne UI / BFF według majoru frontendu. Ten proces tylko potwierdza
         miejsce <code>apps/web</code> w monorepo.
@@ -921,8 +921,8 @@ export default function HomePage() {
 
 #### Biblioteki / API
 
-- Nest `ConfigModule.forRoot({ validate })` — fail-closed przy starcie (`SPEC-ARCHITEKTURA`).
-- Worker: `NestFactory.createApplicationContext` — brak publicznego HTTP dla przeglądarki.
+- Nest `ConfigModule.forRoot({ validate })` - fail-closed przy starcie (`SPEC-ARCHITEKTURA`).
+- Worker: `NestFactory.createApplicationContext` - brak publicznego HTTP dla przeglądarki.
 - Prisma adapter deps już w `package.json` (użycie w KROK 4).
 
 #### Testy
@@ -939,18 +939,18 @@ export default function HomePage() {
 
 ---
 
-### KROK 4 — Model danych startowy (Prisma)
+### KROK 4 - Model danych startowy (Prisma)
 
 **Status:** `WYKONANY`
 
-**Cel:** Schemat i migracja forward pokrywająca byty `SPEC-DANE` D-7 (gotowość pod pipeline Fazy 2 i auth Fazy 3) — major 1.4.
+**Cel:** Schemat i migracja forward pokrywająca byty `SPEC-DANE` D-7 (gotowość pod pipeline Fazy 2 i auth Fazy 3) - major 1.4.
 
 **Artefakty:**
 
 - Nowe: `prisma/schema.prisma`, `prisma.config.ts`, `apps/api/src/prisma/prisma.service.ts`, `apps/api/src/prisma/prisma.module.ts`, analogicznie w workerze, migracja `prisma/migrations/...`
 - Zmiana: `apps/api/src/app.module.ts`, `apps/worker/src/app.module.ts` (import PrismaModule)
 
-#### Nowy plik — `prisma/schema.prisma`
+#### Nowy plik - `prisma/schema.prisma`
 
 ```prisma
 generator client {
@@ -1028,7 +1028,7 @@ model Meeting {
   projectId          String?          @db.Uuid
   processingStatus   ProcessingStatus @default(pending)
   startedAt          DateTime?
-  /// Segmenty transcriptu (JSON) — zapis kanoniczny dopiero po akceptacji pipeline (Faza 2)
+  /// Segmenty transcriptu (JSON) - zapis kanoniczny dopiero po akceptacji pipeline (Faza 2)
   transcriptSegments Json?
   /// Summary kanoniczne: shortSummary, decisions, actionItems (JSON)
   summary            Json?
@@ -1085,7 +1085,7 @@ model AuditLog {
 }
 ```
 
-#### Nowy plik — `prisma.config.ts` (root; Prisma 7)
+#### Nowy plik - `prisma.config.ts` (root; Prisma 7)
 
 ```typescript
 import 'dotenv/config';
@@ -1104,7 +1104,7 @@ export default defineConfig({
 
 Dopisz `dotenv` do root `devDependencies` jeśli jeszcze go nie ma.
 
-#### Nowy plik — `apps/api/src/prisma/prisma.service.ts`
+#### Nowy plik - `apps/api/src/prisma/prisma.service.ts`
 
 ```typescript
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
@@ -1135,7 +1135,7 @@ export class PrismaService
 }
 ```
 
-#### Nowy plik — `apps/api/src/prisma/prisma.module.ts`
+#### Nowy plik - `apps/api/src/prisma/prisma.module.ts`
 
 ```typescript
 import { Global, Module } from '@nestjs/common';
@@ -1152,7 +1152,7 @@ export class PrismaModule {}
 
 Analogicznie `apps/worker/src/prisma/prisma.service.ts` + `prisma.module.ts` (ten sam wzorzec, `WorkerEnv` zamiast `ApiEnv`).
 
-#### Refaktor — import PrismaModule
+#### Refaktor - import PrismaModule
 
 W `apps/api/src/app.module.ts` oraz `apps/worker/src/app.module.ts` dodaj `PrismaModule` do `imports`.
 
@@ -1169,8 +1169,8 @@ pnpm exec prisma migrate dev --name init_etap0
 #### Biblioteki / API
 
 - Prisma 7: `prisma.config.ts` + `PrismaPg` adapter (Context7 `/websites/prisma_io`).
-- UUID `@db.Uuid`, JSON dla segmentów/summary, unikalne `externalMeetingId` — `SPEC-DANE`.
-- Zakaz treści transcriptu w `AuditLog` — tylko metadane.
+- UUID `@db.Uuid`, JSON dla segmentów/summary, unikalne `externalMeetingId` - `SPEC-DANE`.
+- Zakaz treści transcriptu w `AuditLog` - tylko metadane.
 
 #### Testy
 
@@ -1184,11 +1184,11 @@ pnpm exec prisma migrate dev --name init_etap0
 
 ---
 
-### KROK 5 — Smoke jakości i README po scaffoldzie
+### KROK 5 - Smoke jakości i README po scaffoldzie
 
 **Status:** `WYKONANY`
 
-**Cel:** Bramka jakości + README pozwalające obcej osobie podnieść scaffold — major 1.5. Komendy bazy przez **`pnpm db:up`** (KROK 6 / major 1.2.1), nie wyłącznie surowy `docker compose`.
+**Cel:** Bramka jakości + README pozwalające obcej osobie podnieść scaffold - major 1.5. Komendy bazy przez **`pnpm db:up`** (KROK 6 / major 1.2.1), nie wyłącznie surowy `docker compose`.
 
 **Artefakty:**
 
@@ -1196,7 +1196,7 @@ pnpm exec prisma migrate dev --name init_etap0
 - Potwierdzenie: `pnpm --filter @vinseo/api test` oraz `test:e2e`
 - Wymaga: skryptów z KROK 6 (lub równoważnego stanu root `package.json`)
 
-#### Nowy plik (opcjonalny unit) — `apps/api/src/health/health.controller.spec.ts`
+#### Nowy plik (opcjonalny unit) - `apps/api/src/health/health.controller.spec.ts`
 
 ```typescript
 import { HealthController } from './health.controller.js';
@@ -1209,14 +1209,14 @@ describe('HealthController', () => {
 });
 ```
 
-#### Refaktor — root `README.md` (sekcja „Uruchomienie”)
+#### Refaktor - root `README.md` (sekcja „Uruchomienie”)
 
 **Teraz:** TODO / TBD pnpm **albo** surowy `docker compose up -d` bez skryptów root.
 
-**Zamień na** (fragment sekcji — zachowaj resztę README, zaktualizuj tylko uruchomienie):
+**Zamień na** (fragment sekcji - zachowaj resztę README, zaktualizuj tylko uruchomienie):
 
 ```markdown
-## Uruchomienie (scaffold — po Fazie 1)
+## Uruchomienie (scaffold - po Fazie 1)
 
 Wymagania: Node ≥22, pnpm, Docker.
 
@@ -1227,7 +1227,7 @@ pnpm install
 # 2. Env
 cp .env.example .env
 
-# 3. Postgres (Compose via skrypty root — A-7)
+# 3. Postgres (Compose via skrypty root - A-7)
 pnpm db:up
 # pnpm db:logs   # opcjonalnie
 # pnpm db:down   # zatrzymanie
@@ -1268,22 +1268,22 @@ data model so pipeline work can start without reshaping the repository.
 
 ---
 
-### KROK 6 — Root skrypty Compose (`db:up` / `db:down` / `db:logs`)
+### KROK 6 - Root skrypty Compose (`db:up` / `db:down` / `db:logs`)
 
 **Status:** `WYKONANY`
 
-**Refaktor względem:** KROK 1 — root `package.json` (WYKONANY; skrypty `db:generate` / `db:migrate*` bez Compose) oraz KROK 2 — lokalne Postgres/Compose (WYKONANY; DoD i weryfikacja przez surowy `docker compose up -d`).  
-**Cel:** kanoniczne wejście DX zgodne z majorem **1.2 / 1.2.1**, `docs/deployment.md`, `SPEC-ARCHITEKTURA` **A-7** i `SPEC-TESTY` T-3 — bez przepisywania historii KROK 1–2.
+**Refaktor względem:** KROK 1 - root `package.json` (WYKONANY; skrypty `db:generate` / `db:migrate*` bez Compose) oraz KROK 2 - lokalne Postgres/Compose (WYKONANY; DoD i weryfikacja przez surowy `docker compose up -d`).  
+**Cel:** kanoniczne wejście DX zgodne z majorem **1.2 / 1.2.1**, `docs/deployment.md`, `SPEC-ARCHITEKTURA` **A-7** i `SPEC-TESTY` T-3 - bez przepisywania historii KROK 1–2.
 
 **Artefakty:**
 
-- Zmiana: root `package.json` — dopisanie skryptów:
+- Zmiana: root `package.json` - dopisanie skryptów:
   - `"db:up": "docker compose up -d"`
   - `"db:down": "docker compose down"`
   - `"db:logs": "docker compose logs -f postgres"`
 - Spójność docs/SPEC już poza tym plikiem (osobna aktualizacja); ten krok egzekwuje stan w `package.json` + użycie w KROK 5 (README).
 
-#### Implementacja — fragment `scripts` w root `package.json`
+#### Implementacja - fragment `scripts` w root `package.json`
 
 ```json
 "db:up": "docker compose up -d",
@@ -1319,21 +1319,21 @@ point (SPEC-ARCHITEKTURA A-7) without changing the Compose file itself.
 
 ---
 
-### KROK 7 — Compose dev stack (ścieżka B, obowiązkowa)
+### KROK 7 - Compose dev stack (ścieżka B, obowiązkowa)
 
 **Status:** `WYKONANY`
 
 **Refaktor / rozszerzenie względem:** KROK 2 (Compose DB-only, WYKONANY), KROK 6 (`db:*`, NIE_ROZPOCZĘTY/wdrożony), major **1.2.2** / `SPEC-ARCHITEKTURA` **A-8**.  
-**Cel:** obowiązkowy pełny stack developerski w kontenerach z bind mountem kodu — **bez** zmiany semantyki istniejących skryptów `db:*` / `dev:*`.
+**Cel:** obowiązkowy pełny stack developerski w kontenerach z bind mountem kodu - **bez** zmiany semantyki istniejących skryptów `db:*` / `dev:*`.
 
 **Artefakty:**
 
 - Nowe: `docker-compose.dev.yml`, `docker/dev/Dockerfile`, (opcjonalnie) `.dockerignore`
-- Zmiana: root `package.json` — **dopisanie** (nie zamiana):
+- Zmiana: root `package.json` - **dopisanie** (nie zamiana):
   - `"dev:stack:up": "docker compose -f docker-compose.dev.yml up -d --build"`
   - `"dev:stack:down": "docker compose -f docker-compose.dev.yml down"`
   - `"dev:stack:logs": "docker compose -f docker-compose.dev.yml logs -f"`
-- Zmiana: root `README.md` / docs / SPEC — opis ścieżki B (osobno lub w tej samej sesji)
+- Zmiana: root `README.md` / docs / SPEC - opis ścieżki B (osobno lub w tej samej sesji)
 
 #### DoD (krok)
 
@@ -1353,11 +1353,11 @@ dev:stack:* scripts without altering host-oriented db:* / dev:* flows.
 
 ---
 
-### KROK 8 — Align Prisma model with ACL v1 and client-link policy
+### KROK 8 - Align Prisma model with ACL v1 and client-link policy
 
 **Status:** `WYKONANY`
 
-**Refaktor względem:** KROK 4 — Model danych startowy (Prisma) (`WYKONANY` w planie; wdrożony w repo).  
+**Refaktor względem:** KROK 4 - Model danych startowy (Prisma) (`WYKONANY` w planie; wdrożony w repo).  
 **Cel:** Dopasować schemat do zaktualizowanych `docs/` / `SPEC-DANE` / `SPEC-AUTH_I_ACL` po odpowiedzi firmy: ACL v1 = **organizator ∨ uczestnik ∨ admin** (bez egzekucji `ProjectMembership`); powiązanie klienta po domenie e-mail zewnętrznego; unmatched bez blokady pipeline; flaga poufności; pola potrzebne do erase treści (fakt callu zostaje).
 
 **Poza tym krokiem (kolejna faza / major Faza 3+):** HTTP erase admin, real Google Calendar / Directory, ekspansja grup Workspace, HubSpot, job retencji prod, UI przypisania klienta.
@@ -1366,14 +1366,14 @@ dev:stack:* scripts without altering host-oriented db:* / dev:* flows.
 
 | Element | Norma |
 |---------|--------|
-| `Meeting.organizerId` | FK → `User` (nullable tylko jeśli legacy/fixture bez organizatora — preferuj wymagane w nowych rekordach) |
-| `Meeting.durationSeconds` (lub `endedAt`) | Czas trwania — pole zostaje przy erase treści |
-| `Meeting.confidential` | `Boolean @default(false)` — flaga ręczna / z fixture |
+| `Meeting.organizerId` | FK → `User` (nullable tylko jeśli legacy/fixture bez organizatora - preferuj wymagane w nowych rekordach) |
+| `Meeting.durationSeconds` (lub `endedAt`) | Czas trwania - pole zostaje przy erase treści |
+| `Meeting.confidential` | `Boolean @default(false)` - flaga ręczna / z fixture |
 | `Meeting.clientLinkStatus` | Enum: `internal` \| `matched` \| `unmatched` (brak zewnętrznych vs domena zmapowana vs nie) |
 | `Client.emailDomain` | Unikalna domena do matchingu (bez integracji HubSpot) |
-| Uczestnicy zewnętrzni | JSON metadanych na `Meeting` (np. `externalParticipants`) — e-mail/nazwa; **bez** konta `User` |
+| Uczestnicy zewnętrzni | JSON metadanych na `Meeting` (np. `externalParticipants`) - e-mail/nazwa; **bez** konta `User` |
 | `Project` / `ProjectMembership` | **Zostają w schemacie** pod przyszłą fazę; **zakaz** używania ich w serwisie `access` w etapie 0 |
-| Treść przy erase (norma produktowa) | Kasowane/null: `transcriptSegments`, `summary`, `externalParticipants` (i ewentualne nagranie u vendora — poza DB); **zostają:** `startedAt`/`duration*`, `processingStatus`, `title`, `clientId` |
+| Treść przy erase (norma produktowa) | Kasowane/null: `transcriptSegments`, `summary`, `externalParticipants` (i ewentualne nagranie u vendora - poza DB); **zostają:** `startedAt`/`duration*`, `processingStatus`, `title`, `clientId` |
 
 #### Artefakty
 
@@ -1389,7 +1389,7 @@ dev:stack:* scripts without altering host-oriented db:* / dev:* flows.
 #### DoD (krok)
 
 - Schemat zawiera organizatora, status linku klienta, domenę na `Client`, flagę `confidential`, czas trwania (lub równoważne).
-- Brak zależności kodu ACL (gdy powstanie w Fazie 3) od `ProjectMembership` — tu: brak seeda/fixture zakładającego membership jako ACL.
+- Brak zależności kodu ACL (gdy powstanie w Fazie 3) od `ProjectMembership` - tu: brak seeda/fixture zakładającego membership jako ACL.
 - KROK 4 pozostaje historycznie `WYKONANY` (bez przepisywania treści kroku 4).
 
 #### Propozycja commit message
@@ -1418,5 +1418,5 @@ so etap-0 ACL and future erase keep meeting facts without team membership.
 |---------------|-------------------------------------------|
 | Faza 1 | `WYKONANY` |
 | Kroki 1.1–1.5 (w tym 1.2.1, 1.2.2) | `WYKONANY` |
-| MILESTONE — Fundament monorepo gotowy | `OSIĄGNIĘTY` |
+| MILESTONE - Fundament monorepo gotowy | `OSIĄGNIĘTY` |
 | Faza 2+ | bez zmian (plan w pliku `_2`) |

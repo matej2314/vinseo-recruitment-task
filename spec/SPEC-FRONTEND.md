@@ -1,10 +1,10 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Frontend (`apps/web`)
+# SPEC - Frontend (`apps/web`)
 
 Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiwarki, BFF, SSE po Test. Kontekst: `docs/frontend.md`, przepływ Test: `docs/data_flow.md`. Kontrakty / SSE: `SPEC-KOMUNIKACJA`, sesja/ACL: `SPEC-AUTH_I_ACL`. Warstwy: `SPEC-ARCHITEKTURA`. Smoke: `SPEC-TESTY`.
 
@@ -31,11 +31,11 @@ Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiw
 
 ### Routing i layout
 
-F-1. `/` — auth: jeden wspólny komponent login / register z klasycznym przełączaniem trybu.
+F-1. `/` - auth: jeden wspólny komponent login / register z klasycznym przełączaniem trybu.
 Zmiana względem: wcześniejsza norma F-1 („login/register z przełączaniem trybu” bez szczegółów UX). Obowiązuje teraz:
 - **tryb startowy:** login;
-- **CTA submit:** login — „Zaloguj się”; register — „Zarejestruj się”;
-- **pod formularzem** tekstowe buttony (bez innego, konkurencyjnego mechanizmu): w login — „Nie masz konta? Zarejestruj się!”; w register — „Masz już konto? Zaloguj się!”;
+- **CTA submit:** login - „Zaloguj się”; register - „Zarejestruj się”;
+- **pod formularzem** tekstowe buttony (bez innego, konkurencyjnego mechanizmu): w login - „Nie masz konta? Zarejestruj się!”; w register - „Masz już konto? Zaloguj się!”;
 - w trybie **register:** pole potwierdzenia hasła (`passwordConfirm`); **wymagana** walidacja zgodności z `password` w UI **przed** submitem (przy mismatch UI **nie** wysyła rejestracji);
 - po sukcesie **login lub register** (oba ustawiają cookie sesji) → redirect na dashboard (widok domyślny).
 
@@ -45,23 +45,26 @@ F-3. Po zalogowaniu: layout z prostym **sidebarem** przełączającym:
 - widok **domyślny** (tabela spotkań + Test),
 - widok **wyszukiwarki** (osobna podstrona).
 
-F-4. **Brak** osobnej trasy UI detail spotkania (`/meetings/:id`) w v1 — podgląd wyniku w **tabeli** na widoku domyślnym.
+F-4. **Brak** osobnej trasy UI detail spotkania (`/meetings/:id`) w v1 - podgląd wyniku w **tabeli** na widoku domyślnym.
 
 ### Widok domyślny
 
-F-5. Tabela spotkań z API (`GET` lista przez BFF), wyłącznie dane już po ACL po stronie `api`.
+F-5. Tabela spotkań z API (`GET` lista przez BFF), wyłącznie dane już po ACL po stronie `api`. Element listy obejmuje pola wyniku potrzebne do kolumny podglądu: **`summary`** oraz **`failureReason`** (`SPEC-KOMUNIKACJA` K-2a). UI mapuje je na skrót / komunikat w wierszu.
+Zmiana względem: wcześniejsze F-5 bez wymogu treści wyniku na liście (poleganie wyłącznie na SSE / detail).
 
 F-6. Paginacja: select limitu **10 / 25 / 50 / 100** oraz parametr **`page`** (1-based; norma `SPEC-AUTH_I_ACL`); oba wysyłane do API.
 
-F-7. Przycisk **Test** — zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk). Wywołuje BFF → `POST /demo/run-meeting`. **Bez** UI wyboru fixture — losowanie mocka po stronie API (katalog 10; `SPEC-KOMUNIKACJA` K-5).
+F-7. Przycisk **Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk). Wywołuje BFF → `POST /demo/run-meeting`. **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10; `SPEC-KOMUNIKACJA` K-5).
 
 F-8. Po sukcesie enqueue:
 1. UI używa `meetingId` z odpowiedzi (własny run sesji) i otwiera **SSE** (przez BFF) dla tego id (`SPEC-KOMUNIKACJA`).
 2. Użytkownik **zostaje** na bieżącym widoku.
-3. Tabela **aktualizuje / dokłada wiersz** (status `pending` → `processing` → `completed` | `failed`; po `completed` — dostępne pola summary / zadań w wierszu lub rozwinięciu).
-4. Przy `failed` — status + komunikat w UI; **bez** redirectu.
-5. **Multi-tester:** wielu użytkowników na jednej instancji — każdy widzi własne spotkania dema (ACL); brak założenia jednego globalnego wiersza dema współdzielonego między kontami.
+3. Tabela **aktualizuje / dokłada wiersz** (status `pending` → `processing` → `completed` | `failed`; po `completed` - dostępne pola summary / zadań w wierszu lub rozwinięciu).
+4. Przy `failed` - status + komunikat w UI; **bez** redirectu.
+5. **Multi-tester:** wielu użytkowników na jednej instancji - każdy widzi własne spotkania dema (ACL); brak założenia jednego globalnego wiersza dema współdzielonego między kontami.
 6. **Ponowny Test** tego samego użytkownika dodaje kolejny wiersz (akceptowalne w v1; lista może rosnąć).
+7. Po **odświeżeniu** widoku (ponowny `GET` listy) wiersze `completed` / `failed` nadal pokazują skrót summary / komunikat błędu z pól listy (F-5) — **zakaz** traktowania wyłącznie stanu SSE jako źródła kolumny wyniku.
+Zmiana względem: F-8 bez jawnego wymogu przetrwania podglądu wyniku po reloadzie.
 
 F-9. Data-fetching: natywny **`fetch`** (bez React Query / SWR jako wymogu).
 
@@ -123,7 +126,7 @@ F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, s
 | SSE (klient) | EventSource (lub równoważne) wobec BFF |
 | Testy UI v1 | smoke `next build` / typecheck (`SPEC-TESTY`) |
 
-Wersje pakietów: zgodne z repo / aktualnym LTS — bez pinowania w tym SPEC.
+Wersje pakietów: zgodne z repo / aktualnym LTS - bez pinowania w tym SPEC.
 
 ## Kryteria akceptacji
 
@@ -132,6 +135,7 @@ Wersje pakietów: zgodne z repo / aktualnym LTS — bez pinowania w tym SPEC.
 - [ ] Niezalogowany użytkownik na dashboardzie trafia na `/`.
 - [ ] Sidebar przełącza widok domyślny i wyszukiwarkę; wyszukiwarka nie woła API LLM/search.
 - [ ] Test enqueue’uje demo; SSE aktualizuje / dokłada wiersz bez zmiany trasy; bez UI wyboru fixture; ponowny Test = kolejny wiersz (F-7/F-8).
+- [ ] Po completed/failed i odświeżeniu `/meetings` kolumna podsumowania / błędu pozostaje wypełniona z `GET` listy (F-5 / F-8.7).
 - [ ] Limit listy tylko z {10,25,50,100}.
 - [ ] Brak sekretów sesji w Web Storage; BFF nie zawiera reguł ACL.
 - [ ] `"use client"` nie obejmuje całych drzew bez potrzeby interakcji.

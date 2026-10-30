@@ -68,7 +68,7 @@ services:
       - -c
       - |
         set -e
-        # Wymuś URL usługi Compose (bind-mounted .env ma localhost — poza kontenerem).
+        # Wymuś URL usługi Compose (bind-mounted .env ma localhost - poza kontenerem).
         export DATABASE_URL="postgresql://vinseo:vinseo@postgres:5432/vinseo?schema=public"
         export DATABASE_URL_TEST="postgresql://vinseo:vinseo@postgres:5432/vinseo_test?schema=public"
         corepack enable

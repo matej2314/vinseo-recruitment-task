@@ -57,7 +57,7 @@ describe('MeetingAccessService (ACL v1)', () => {
     await expect(
       svc.canReadMeeting(user({ id: 'stranger' }), meetingId),
     ).resolves.toBe('deny');
-    // brak join ProjectMembership w select — tylko organizer + participants
+    // brak join ProjectMembership w select - tylko organizer + participants
     expect(findUnique).toHaveBeenCalledWith({
       where: { id: meetingId },
       select: {

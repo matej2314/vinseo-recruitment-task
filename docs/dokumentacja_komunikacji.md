@@ -1,5 +1,5 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -8,7 +8,9 @@ data_modyfikacji: 2026-10-30
 
 Normatywny kontrakt komunikacji Firmowego asystenta spotkań w v1. Opisuje **co** wolno wymieniać między procesami i z otoczeniem; *dlaczego* takie granice - w `architektura.md`.
 
-Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-meeting` dostaje **nowe** `externalMeetingId` (UUID) i `organizerId` sesji; serwer losuje `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza na tej ścieżce. Wcześniejsza reguła „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” **nie** dotyczy UI Test — zostaje przy DX / ogólnej idempotencji po `externalMeetingId`. Produkcja (Fireflies) bez zmiany normy w tej wersji.
+Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-meeting` dostaje **nowe** `externalMeetingId` (UUID) i `organizerId` sesji; serwer losuje `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza na tej ścieżce. Wcześniejsza reguła „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” **nie** dotyczy UI Test - zostaje przy DX / ogólnej idempotencji po `externalMeetingId`. Produkcja (Fireflies) bez zmiany normy w tej wersji.
+
+Zmiana względem wcześniejszej projekcji listy (tylko metadane + `processingStatus`): element `GET /meetings` **niesie też** `summary` oraz `failureReason`, bo UI v1 nie ma strony detail — podgląd wyniku w tabeli musi przetrwać odświeżenie widoku (nie tylko kanał SSE). Detail nadal rozszerza o pola niedostępne w wierszu listy (np. uczestnicy zewnętrzni).
 
 ## Powierzchnie w zakresie v1
 
@@ -51,7 +53,7 @@ Autoryzacja treści spotkań: wyłącznie tutaj (moduł `access`).
 | `POST` | `/auth/refresh` | Rotacja refresh / nowy access | refresh cookie |
 
 **Hasła:** bcrypt przed zapisem; porównanie hasha przy loginie. Przy rejestracji / zmianie: minimum **12** znaków, ≥1 wielka litera, ≥1 cyfra, ≥1 znak specjalny.  
-**Rejestracja v1:** otwarta (bez zaproszenia). `POST /auth/register` po sukcesie **od razu ustawia cookie** sesji (access + refresh) — jak login; UI redirect na dashboard.  
+**Rejestracja v1:** otwarta (bez zaproszenia). `POST /auth/register` po sukcesie **od razu ustawia cookie** sesji (access + refresh) - jak login; UI redirect na dashboard.  
 **Sesja:** krótki access JWT (**TTL 15 min**) + refresh (hash w PostgreSQL); oba cookie HttpOnly (Secure/SameSite per środowisko). Ciało odpowiedzi auth nie musi duplikować sekretów w JSON. Szczegóły: `spec/SPEC-AUTH_I_ACL.md`.
 
 Przykład ciała logowania:
@@ -68,14 +70,14 @@ Przykład ciała logowania:
 | Metoda | Ścieżka | Opis | Auth |
 |--------|---------|------|------|
 | `GET` | `/meetings` | Lista spotkań widocznych wg ACL; paginacja: `limit` ∈ {10,25,50,100}, **`page`** (1-based; nie cursor) | tak |
-| `GET` | `/meetings/:id` | Szczegóły po ACL (API; UI v1 nie ma osobnej strony detail — tabela + SSE) | tak |
+| `GET` | `/meetings/:id` | Szczegóły po ACL (API; UI v1 nie ma osobnej strony detail - tabela + SSE) | tak |
 | `GET` | `/meetings/:id/events` | **SSE** statusów pipeline (`pending`→…→`completed`\|`failed`); ACL jak detail | tak |
 
 **ACL v1 (przypomnienie kontraktowe):** **organizator** spotkania **lub** uczestnik wewnętrzny **lub** admin.  
 `clientId` / membership projektu **nie** przyznają odczytu w v1.  
-Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku istnienia) — także dla SSE.
+Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku istnienia) - także dla SSE.
 
-Element listy (kształt logiczny; typy współdzielone w `packages/contracts`):
+Element listy (kształt logiczny; typy współdzielone w `packages/contracts` — `MeetingListItemDto`):
 
 ```json
 {
@@ -87,11 +89,16 @@ Element listy (kształt logiczny; typy współdzielone w `packages/contracts`):
   "clientId": "uuid",
   "clientLinkStatus": "matched",
   "confidential": false,
-  "processingStatus": "completed"
+  "processingStatus": "completed",
+  "summary": { "shortSummary": "…", "decisions": [], "actionItems": [] },
+  "failureReason": null
 }
 ```
 
-Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnętrzni + zewnętrzni jako info) — zawsze po przejściu ACL. Po erase treści: te same metadane faktu, bez transcriptu/summary.
+- Lista **zawiera** kanoniczne `summary` (wynik UC1 / `null`) oraz `failureReason` (`null` albo komunikat przy `failed`) — projekcja pod tabelę UI v1; UI buduje skrót podglądu z tych pól (także po pełnym reloadzie `GET /meetings`).
+- **Bez** pełnego transcriptu w elemencie listy.
+- Detail (`GET /meetings/:id`) rozszerza listę o pola dodatkowe (np. `externalParticipants` / skrót uczestników) — zawsze po przejściu ACL. Po erase treści: metadane faktu + `summary` / `failureReason` jak po erase (bez transcriptu/summary treściowego).
+- SSE (`GET /meetings/:id/events`): przy `completed` wolno dołączyć `title` + `summary`; przy `failed` wolno dołączyć `failureReason` — ten sam kanon co lista, do live update wiersza.
 
 ### 1.3 Demo - uruchomienie pipeline (przycisk Test)
 
@@ -100,12 +107,12 @@ Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnę
 | `POST` | `/demo/run-meeting` | Enqueue tego samego pipeline co ścieżka produkcyjna; źródło = mock z katalogu fixture | tak |
 
 - Wymaga zalogowanego pracownika.
-- **Bez** bramki `DEMO_ENABLED` — endpoint dostępny przy ważnej sesji (flaga usunięta z kontraktu v1).
+- **Bez** bramki `DEMO_ENABLED` - endpoint dostępny przy ważnej sesji (flaga usunięta z kontraktu v1).
 - Nie omija workera: tylko **enqueue** joba `meeting.process`.
 - **Tożsamość runu:** serwer nadaje **nowe** `externalMeetingId` (UUID) na każde wywołanie oraz ustawia `organizerId` = użytkownik sesji. Klient **nie** musi podawać unikalnego ID spotkania.
-- **Wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów. Opcjonalne `fixtureKey` w body — jeśli pozostaje w kontrakcie HTTP — serwer może je zignorować / nadpisać losowaniem; norma: wybór należy do API demo.
+- **Wybór mocka:** serwer **losuje** `fixtureKey` spośród katalogu **10** fixture’ów. Opcjonalne `fixtureKey` w body - jeśli pozostaje w kontrakcie HTTP - serwer może je zignorować / nadpisać losowaniem; norma: wybór należy do API demo.
 - **`fixtureKey` ≠ klucz tożsamości wiersza** na ścieżce DEMO/Test. Ten sam klucz fixture może powtórzyć się u wielu użytkowników i runów; każde wywołanie Test → osobny wiersz `Meeting`.
-- Idempotencja pipeline nadal dotyczy **tego samego** `externalMeetingId` (retry joba). DX `POST /dev/meetings/enqueue` (idempotencja `fixtureKey` ≈ `externalMeetingId`) — **poza** tym kontraktem dema, bez zmiany.
+- Idempotencja pipeline nadal dotyczy **tego samego** `externalMeetingId` (retry joba). DX `POST /dev/meetings/enqueue` (idempotencja `fixtureKey` ≈ `externalMeetingId`) - **poza** tym kontraktem dema, bez zmiany.
 
 **Request:** ciało może być puste lub zawierać opcjonalne pola ignorowane przy losowaniu; klient nie wskazuje tożsamości spotkania.
 
@@ -119,9 +126,9 @@ Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnę
 }
 ```
 
-`meetingId` to spotkanie **tego** runu (własne dla sesji). UI po sukcesie **zostaje** na widoku tabeli, otwiera SSE `GET /meetings/:id/events` (przez BFF) i aktualizuje wiersz — bez osobnej nawigacji na detail (`frontend.md`). Wielu testerów na jednej instancji nie współdzieli jednego globalnego wiersza dema.
+`meetingId` to spotkanie **tego** runu (własne dla sesji). UI po sukcesie **zostaje** na widoku tabeli, otwiera SSE `GET /meetings/:id/events` (przez BFF) i aktualizuje wiersz - bez osobnej nawigacji na detail (`frontend.md`). Wielu testerów na jednej instancji nie współdzieli jednego globalnego wiersza dema.
 
-### 1.3a SSE — status spotkania
+### 1.3a SSE - status spotkania
 
 Implementacja po stronie Nest: dekorator `@Sse`, handler zwraca `Observable<MessageEvent>` (`text/event-stream`).
 
@@ -183,11 +190,11 @@ Krótka warstwa między przeglądarką a `api`.
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
 | trasy auth pod `/api/auth/*` | `/auth/*` (w tym `refresh`) |
 
-Dokładne ścieżki BFF mogą dodać prefiks `/api`; semantyka ciał i kodów jak w sekcji HTTP API — **z wyjątkiem rejestracji** (poniżej).
+Dokładne ścieżki BFF mogą dodać prefiks `/api`; semantyka ciał i kodów jak w sekcji HTTP API - **z wyjątkiem rejestracji** (poniżej).
 
-### Auth BFF — wyjątek `passwordConfirm` przy rejestracji
+### Auth BFF - wyjątek `passwordConfirm` przy rejestracji
 
-Zmiana względem dotychczasowej reguły „semantyka ciał BFF jak HTTP API”: **wyłącznie** dla `POST /api/auth/register`. Login BFF (`POST /api/auth/login`) pozostaje bez `passwordConfirm` — ciało jak API (`email`, `password`).
+Zmiana względem dotychczasowej reguły „semantyka ciał BFF jak HTTP API”: **wyłącznie** dla `POST /api/auth/register`. Login BFF (`POST /api/auth/login`) pozostaje bez `passwordConfirm` - ciało jak API (`email`, `password`).
 
 **Ciało BFF** `POST /api/auth/register` (przykład):
 
@@ -203,7 +210,7 @@ Zmiana względem dotychczasowej reguły „semantyka ciał BFF jak HTTP API”: 
 |----------|------------|
 | Match | BFF sprawdza `password === passwordConfirm` **przed** proxy |
 | Fail (mismatch) | HTTP **400** + envelope walidacji (jak sekcja 1.4); **bez** wołania Nest `POST /auth/register` |
-| OK | Proxy do API wyłącznie `{ email, password }` — `passwordConfirm` **nie** trafia do Nest |
+| OK | Proxy do API wyłącznie `{ email, password }` - `passwordConfirm` **nie** trafia do Nest |
 
 Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 
@@ -217,7 +224,7 @@ Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 | Enqueue | głównie `api` (w tym demo); worker tylko konsumuje |
 | Idempotencja | klucz = `externalMeetingId` (tożsamość spotkania / runu). Na DEMO/Test: UUID nadany przy enqueue; `fixtureKey` to tylko materiał mocka. Na DX / prod mock: dotychczasowa semantyka poza kontraktem UI Test |
 
-**Payload (DEMO/Test — przykład):**
+**Payload (DEMO/Test - przykład):**
 
 ```json
 {
@@ -228,8 +235,8 @@ Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 }
 ```
 
-- `externalMeetingId` — UUID **runu** dema (nie musi równać się `fixtureKey`).
-- `fixtureKey` — wylosowany klucz z katalogu 10; wskazuje treść mocka za portem źródła.
+- `externalMeetingId` - UUID **runu** dema (nie musi równać się `fixtureKey`).
+- `fixtureKey` - wylosowany klucz z katalogu 10; wskazuje treść mocka za portem źródła.
 - `source: "mock"` w v1; docelowo inne wartości adaptera bez zmiany nazwy joba (ew. wersjonowanie payloadu w contracts).
 - **`requestId`:** correlation id z requestu HTTP `api` przy enqueue (wymagane na ścieżce demo / request-driven); worker loguje ten sam id (`observability.md`).
 

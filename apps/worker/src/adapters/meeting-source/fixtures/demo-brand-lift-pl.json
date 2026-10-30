@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-brand-lift-pl",
+  "title": "Brand Lift sync",
+  "startedAt": "2026-10-18T08:30:00.000Z",
+  "participants": [
+    {
+      "email": "kasia.brand@vinseo.example",
+      "displayName": "Kasia Brand",
+      "internal": true
+    },
+    {
+      "email": "insights@client-x.example",
+      "displayName": "Insights Lead",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Kasia Brand",
+      "text": "Próbka Brand Lift: uplift +4.2 pp. Mail roboczy kasia.lift@vinseo.example.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Insights Lead",
+      "text": "Decision: skalujemy TV+OLV. Action: Kasia dostarcza deck do czwartku.",
+      "startMs": 18000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

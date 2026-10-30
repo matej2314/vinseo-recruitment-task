@@ -9,7 +9,7 @@ type DashboardLayoutProps = {
 };
 
 /**
- * Cache Components (Next 16): `cookies()` to Request-time API —
+ * Cache Components (Next 16): `cookies()` to Request-time API -
  * musi żyć wewnątrz `<Suspense>`, inaczej blocking-prerender po nawigacji
  * (np. register → /meetings).
  */

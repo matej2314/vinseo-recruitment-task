@@ -24,7 +24,7 @@ Szerszy kontekst produktu: `dokumentacja_koncepcyjna.md`. ACL i redakcja w kodzi
 | Konto pracownika | e-mail, hash hasła | Postgres; hasło tylko bcrypt |
 | Metadane spotkania | tytuł, czas, czas trwania, `clientId`, status linku, `processingStatus` | Postgres |
 | Treść wrażliwa | transcript, summary, action items, e-maile zewnętrznych | Postgres pod ACL; **nie** w pino / `audit_log` jako treść |
-| Audyt | eventType, id, requestId | `audit_log` (90 dni); przy erase — anonimizacja |
+| Audyt | eventType, id, requestId | `audit_log` (90 dni); przy erase - anonimizacja |
 | Capture u vendora | audio / transcript u Fireflies lub Notes by Gemini (gdy prod) | poza naszą DB - wymaga DPA i decyzji |
 
 Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / tekście.
@@ -36,7 +36,7 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży).
 2. Brak zgody uczestnika / klienta na nagrywanie lub notetakera → **brak capture** treści; w systemie może zostać rekord **metadanych** spotkania (fakt callu) bez transcriptu / AI.
 3. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
-4. W **etapie 0 (kod)**: wyłącznie mocki źródeł i LLM. Realne Google Workspace / Fireflies / LLM — kolejna wersja, na tych samych portach.
+4. W **etapie 0 (kod)**: wyłącznie mocki źródeł i LLM. Realne Google Workspace / Fireflies / LLM - kolejna wersja, na tych samych portach.
 
 ### Uczestnicy zewnętrzni
 
@@ -49,18 +49,18 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 
 - Flaga ręczna / procesowa (1:1, rekrutacja, zarząd itd.).
 - W v1: **pełny pipeline** (mock) jak pozostałe spotkania; ACL v1 (organizator / uczestnik / **admin czyta**).
-- W produkcji: rozważyć ograniczenie zewnętrznego capture/LLM dla `confidential` (osobna decyzja ops) — nie blokuje architektury etapu 0.
+- W produkcji: rozważyć ograniczenie zewnętrznego capture/LLM dla `confidential` (osobna decyzja ops) - nie blokuje architektury etapu 0.
 
-## Retencja (robocza) — uzasadnienie
+## Retencja (robocza) - uzasadnienie
 
 | Zasób | Retencja | Uzasadnienie |
 |-------|----------|--------------|
 | Transkrypcja (surowa / znormalizowana) | **90 dni** | Pełny tekst rozmowy to najwyższa ekspozycja PII i tajemnic klienta; krótki okres ogranicza powierzchnię wycieku przy zachowaniu okna odtworzenia ustaleń. |
 | Streszczenie + action items | **12 miesięcy** | Ustalenia i zadania żyją w cyklu projektu/kampanii dłużej niż surowy transcript; 12 mies. pokrywa typowy horyzont rozliczeń bez trzymania pełnej rozmowy. |
 | `audit_log` | **90 dni** | Ślad bezpieczeństwa i operacji; bez treści transcriptu (patrz `observability.md`, `deployment.md`). |
-| Dumpy backup | Osobna polityka ops | Mogą żyć dłużej niż wiersze w tabeli — świadomie, z kontrolą dostępu ops. |
+| Dumpy backup | Osobna polityka ops | Mogą żyć dłużej niż wiersze w tabeli - świadomie, z kontrolą dostępu ops. |
 
-Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action items po 12 miesiącach — job w etapie wdrożeniowym (nie must-have kodu etapu 0).
+Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action items po 12 miesiącach - job w etapie wdrożeniowym (nie must-have kodu etapu 0).
 
 ## Usunięcie treści na żądanie klienta
 
@@ -71,7 +71,7 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 | Data rozpoczęcia, czas trwania, `processingStatus`, **title**, **clientId** | `transcriptSegments`, `summary` (w tym action items), metadane uczestników zewnętrznych (e-maile/nazwy), inne pola treściowe |
 | | U vendora (gdy prod): usunięcie nagrania/transcriptu zgodnie z API i DPA |
 
-- Inicjacja w produkcie: **tylko admin z panelu** (implementacja UI/API erase — **kolejna faza**; norma obowiązuje już w docs).
+- Inicjacja w produkcie: **tylko admin z panelu** (implementacja UI/API erase - **kolejna faza**; norma obowiązuje już w docs).
 - `audit_log` powiązany ze spotkaniem: **anonimizacja** (bez treści, bez PII klienta w payloadzie; identyfikatory zdarzeń mogą pozostać).
 - Spotkanie po erase nadal podlega ACL v1 (organizator/uczestnik/admin widzą „pustą” kartę faktu).
 
@@ -81,7 +81,7 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 - Brak uprawnień → **404** (bez enumeracji).
 - Wyszukiwanie / przyszły asystent Q&A: tylko w zbiorze dozwolonym tą samą funkcją ACL.
 - Deny ACL → zdarzenie w `audit_log` **bez** treści spotkania.
-- Grupy Workspace (struktura org / grupa wszystkich pracowników): **nie** ekspandujemy do ACL całej firmy — utrata historii dla osób „obecnych tylko przez grupę” jest świadoma względem ryzyka wycieku; indywidualni uczestnicy z e-mailem firmowym w liście Calendar dostają uczestnictwo.
+- Grupy Workspace (struktura org / grupa wszystkich pracowników): **nie** ekspandujemy do ACL całej firmy - utrata historii dla osób „obecnych tylko przez grupę” jest świadoma względem ryzyka wycieku; indywidualni uczestnicy z e-mailem firmowym w liście Calendar dostają uczestnictwo.
 
 ## Redakcja przed „wyjściem”
 
@@ -108,7 +108,7 @@ Mapowanie techniczne FF: `dokumentacja_komunikacji.md`.
 1. Dezaktywacja konta (brak logowania).
 2. Unieważnienie sesji (cookie / store sesji).
 3. Natychmiastowy efekt ACL (nie loguje się; historyczne uczestnictwo/organizatorstwo w metadanych może zostać).
-4. Dane spotkań **zostają** w organizacji — inni organizatorzy/uczestnicy/admin nadal widzą wg ACL v1; nie kasujemy historii klienta wraz z odejściem osoby.
+4. Dane spotkań **zostają** w organizacji - inni organizatorzy/uczestnicy/admin nadal widzą wg ACL v1; nie kasujemy historii klienta wraz z odejściem osoby.
 5. Opcjonalnie: wpis w `audit_log` (`user.deactivated`).
 
 ## Edge case’y (checklista operacyjna)

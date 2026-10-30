@@ -18,7 +18,7 @@ Jak w projekcie wykorzystujemy model językowy (API): jedna integracja, dwa use 
 
 ## Jedna integracja, dwa use case’y
 
-Wspólny port / adapter klienta LLM (redakcja przed wysyłką; w prod później: klucz, timeouty, limity tokenów, retry sieciowy — poza obowiązkowym MVP). Use case’y różnią się promptem i wejściem - **nie** osobnym vendorem „do chatu”. Retry **Zod / „popraw JSON”** przy UC1 to norma pipeline (max 1) — nie mylić z retry sieciowym vendora.
+Wspólny port / adapter klienta LLM (redakcja przed wysyłką; w prod później: klucz, timeouty, limity tokenów, retry sieciowy - poza obowiązkowym MVP). Use case’y różnią się promptem i wejściem - **nie** osobnym vendorem „do chatu”. Retry **Zod / „popraw JSON”** przy UC1 to norma pipeline (max 1) - nie mylić z retry sieciowym vendora.
 
 ```text
                     ┌─────────────────┐
@@ -38,7 +38,7 @@ Wspólny port / adapter klienta LLM (redakcja przed wysyłką; w prod później:
 | Wyjście | JSON → Zod (`shortSummary`, `decisions`, `actionItems`) | Odpowiedź + wskazanie źródeł (meeting id / fragment) |
 | Gdzie | Worker, job `meeting.process` | API (po retrieval) |
 
-Model roboczy w rachunkach: **Gemini 3.5 Flash-Lite** (podstawowy); opcjonalnie po testach jakości UC1 — **Claude Haiku 5.5** (cennik i warianty w `koszty_i_warianty.md`). Wymiana modelu to konfiguracja adaptera — **nie** zmienia portu `LlmClient` ani use case’ów.
+Model roboczy w rachunkach: **Gemini 3.5 Flash-Lite** (podstawowy); opcjonalnie po testach jakości UC1 - **Claude Haiku 5.5** (cennik i warianty w `koszty_i_warianty.md`). Wymiana modelu to konfiguracja adaptera - **nie** zmienia portu `LlmClient` ani use case’ów.
 
 ## UC1 - summarizeMeeting (obowiązkowe w architekturze oddania)
 

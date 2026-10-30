@@ -11,6 +11,12 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 export interface EnqueueMeetingProcessInput {
   readonly fixtureKey: string;
+  /**
+   * Tożsamość runu / spotkania.
+   * DEMO: UUID nadane przez API.
+   * DX (pominięte): externalMeetingId = fixtureKey.
+   */
+  readonly externalMeetingId?: string;
   readonly requestId?: string;
   /** Wymagane przy demo z sesją; DX może pominąć */
   readonly organizerId?: string;
@@ -33,7 +39,7 @@ export class EnqueueMeetingProcessUseCase {
   async execute(
     input: EnqueueMeetingProcessInput,
   ): Promise<EnqueueMeetingProcessResult> {
-    const externalMeetingId = input.fixtureKey;
+    const externalMeetingId = input.externalMeetingId ?? input.fixtureKey;
     const requestId = input.requestId ?? randomUUID();
 
     const meeting = await this.prisma.meeting.upsert({
@@ -44,7 +50,7 @@ export class EnqueueMeetingProcessUseCase {
         ...(input.organizerId ? { organizerId: input.organizerId } : {}),
       },
       update: {
-        // ponowne enqueue: update in place — bez drugiego wiersza
+        // ponowne enqueue: update in place - bez drugiego wiersza
         processingStatus: 'pending',
         failureReason: null,
         // nie nadpisuj organizatora przy ponownym enqueue (idempotencja)

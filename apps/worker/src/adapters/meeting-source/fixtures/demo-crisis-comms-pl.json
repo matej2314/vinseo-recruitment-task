@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-crisis-comms-pl",
+  "title": "Crisis comms desk",
+  "startedAt": "2026-10-20T07:15:00.000Z",
+  "participants": [
+    {
+      "email": "ania.pr@vinseo.example",
+      "displayName": "Ania PR",
+      "internal": true
+    },
+    {
+      "email": "comms@client-z.example",
+      "displayName": "Comms Director",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Ania PR",
+      "text": "Szkic oświadczenia gotowy. PESEL demo do formalności: 90010112345.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Comms Director",
+      "text": "Decision: publikacja o 16:00. Action: Ania koordynuje media list.",
+      "startMs": 9000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

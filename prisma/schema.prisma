@@ -33,20 +33,20 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships        ProjectMembership[]
-  participants       MeetingParticipant[]
-  organizedMeetings  Meeting[]            @relation("MeetingOrganizer")
-  refreshTokens      RefreshToken[]
-  auditLogs          AuditLog[]
+  memberships       ProjectMembership[]
+  participants      MeetingParticipant[]
+  organizedMeetings Meeting[]            @relation("MeetingOrganizer")
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
 }
 
 model Client {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   /// Domena e-mail do matchingu (bez HubSpot); unikalna.
-  emailDomain String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  emailDomain String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   projects    Project[]
   meetings    Meeting[]
 }
@@ -63,7 +63,7 @@ model Project {
   meetings    Meeting[]
 }
 
-/// Pod przyszłą fazę ACL zespołu klienta — nie egzekwowane w access v1.
+/// Pod przyszłą fazę ACL zespołu klienta - nie egzekwowane w access v1.
 model ProjectMembership {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
@@ -77,27 +77,27 @@ model ProjectMembership {
 }
 
 model Meeting {
-  id                 String           @id @default(uuid()) @db.Uuid
-  externalMeetingId  String           @unique
-  title              String?
-  organizerId        String?          @db.Uuid
-  clientId           String?          @db.Uuid
-  projectId          String?          @db.Uuid
-  clientLinkStatus   ClientLinkStatus @default(internal)
-  confidential       Boolean          @default(false)
-  processingStatus   ProcessingStatus @default(pending)
-  startedAt          DateTime?
-  /// Czas trwania w sekundach — zostaje przy erase treści.
-  durationSeconds    Int?
-  /// Segmenty transcriptu (JSON) — kasowane przy erase.
-  transcriptSegments Json?
-  /// Summary kanoniczne: shortSummary, decisions, actionItems (JSON) — kasowane przy erase.
-  summary            Json?
-  /// Uczestnicy zewnętrzni (e-mail poza domeną firmy) — kasowane przy erase.
+  id                   String           @id @default(uuid()) @db.Uuid
+  externalMeetingId    String           @unique
+  title                String?
+  organizerId          String?          @db.Uuid
+  clientId             String?          @db.Uuid
+  projectId            String?          @db.Uuid
+  clientLinkStatus     ClientLinkStatus @default(internal)
+  confidential         Boolean          @default(false)
+  processingStatus     ProcessingStatus @default(pending)
+  startedAt            DateTime?
+  /// Czas trwania w sekundach - zostaje przy erase treści.
+  durationSeconds      Int?
+  /// Segmenty transcriptu (JSON) - kasowane przy erase.
+  transcriptSegments   Json?
+  /// Summary kanoniczne: shortSummary, decisions, actionItems (JSON) - kasowane przy erase.
+  summary              Json?
+  /// Uczestnicy zewnętrzni (e-mail poza domeną firmy) - kasowane przy erase.
   externalParticipants Json?
-  failureReason      String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  failureReason        String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   organizer    User?                @relation("MeetingOrganizer", fields: [organizerId], references: [id])
   client       Client?              @relation(fields: [clientId], references: [id])

@@ -41,6 +41,8 @@ export class ListMeetingsUseCase {
       clientLinkStatus: m.clientLinkStatus,
       confidential: m.confidential,
       processingStatus: m.processingStatus,
+      summary: m.summary,
+      failureReason: m.failureReason,
     }));
 
     return { items, page, limit, total };

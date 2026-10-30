@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Firmowy asystent spotkań (web)",
-  description: "Szkielet UI v1 — etap 0",
+  description: "Szkielet UI v1 - etap 0",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

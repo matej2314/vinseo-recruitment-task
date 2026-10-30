@@ -1,5 +1,5 @@
 /**
- * Statyczny mock wyszukiwarki — SPEC-FRONTEND F-11…F-12.
+ * Statyczny mock wyszukiwarki - SPEC-FRONTEND F-11…F-12.
  * Zakaz wołań LLM / search / RAG z UI v1.
  */
 export type SearchMockHit = {
@@ -12,7 +12,7 @@ export const searchMockHits: readonly SearchMockHit[] = [
   {
     id: "mock-1",
     title: "Przykładowe spotkanie (atrapa)",
-    snippet: "Wynik hardcodowany — bez backendu AI.",
+    snippet: "Wynik hardcodowany - bez backendu AI.",
   },
   {
     id: "mock-2",

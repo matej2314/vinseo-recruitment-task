@@ -1,5 +1,5 @@
 /**
- * Nazwy cookie sesji — zgodne z apps/api `auth-cookies.ts`
+ * Nazwy cookie sesji - zgodne z apps/api `auth-cookies.ts`
  * (SPEC-AUTH_I_ACL: access + refresh HttpOnly).
  */
 export const ACCESS_COOKIE = "ma_access" as const;

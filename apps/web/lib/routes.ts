@@ -1,5 +1,5 @@
 /**
- * Kanoniczne ścieżki UI v1 — docs/frontend.md, SPEC-FRONTEND F-1…F-4, F-10.
+ * Kanoniczne ścieżki UI v1 - docs/frontend.md, SPEC-FRONTEND F-1…F-4, F-10.
  * Brak trasy detail UI (`/meetings/[id]`) w v1.
  */
 export const uiRoutes = {
@@ -10,7 +10,7 @@ export const uiRoutes = {
 
 export type UiRoute = (typeof uiRoutes)[keyof typeof uiRoutes];
 
-/** Świadomie poza v1 UI (docs/frontend.md — poza v1). */
+/** Świadomie poza v1 UI (docs/frontend.md - poza v1). */
 export const outOfScopeUiV1 = [
   "branding / design system produktowy",
   "osobna strona detail spotkania jako główna nawigacja",

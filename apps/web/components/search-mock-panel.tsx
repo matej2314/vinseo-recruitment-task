@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { searchMockHits } from "@/lib/search-mock";
 
 /**
- * Mock wyszukiwarki — F-11…F-12. Filtr lokalny po hardcodzie; zero fetch.
+ * Mock wyszukiwarki - F-11…F-12. Filtr lokalny po hardcodzie; zero fetch.
  */
 export function SearchMockPanel() {
   const [query, setQuery] = useState("");
@@ -30,7 +30,7 @@ export function SearchMockPanel() {
       </p>
       <Input
         type="search"
-        placeholder="Szukaj (mock — bez API)"
+        placeholder="Szukaj (mock - bez API)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         aria-label="Pole wyszukiwania (mock)"

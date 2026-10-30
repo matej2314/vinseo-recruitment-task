@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   Body,
   Controller,
@@ -5,7 +7,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import type { DemoRunMeetingResponseDto } from '@vinseo/contracts';
+import {
+  pickRandomDemoFixtureKey,
+  type DemoRunMeetingResponseDto,
+} from '@vinseo/contracts';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -21,15 +26,20 @@ export class DemoController {
   @Post('run-meeting')
   async runMeeting(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: RunMeetingDto,
+    @Body() _body: RunMeetingDto,
     @Headers('x-request-id') requestId?: string,
   ): Promise<DemoRunMeetingResponseDto> {
-    // bez DEMO_ENABLED (K-5)
+    // bez DEMO_ENABLED (K-5); body.fixtureKey ignorowane
+    const fixtureKey = pickRandomDemoFixtureKey();
+    const externalMeetingId = randomUUID();
+
     const result = await this.enqueue.execute({
-      fixtureKey: body.fixtureKey,
+      fixtureKey,
+      externalMeetingId,
       requestId,
       organizerId: user.id,
     });
+
     return {
       meetingId: result.meetingId,
       jobId: result.jobId,

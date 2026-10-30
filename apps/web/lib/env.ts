@@ -1,5 +1,5 @@
 /**
- * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret — nie tu
+ * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret - nie tu
  * (SPEC-FRONTEND F-16). API URL tylko server-side (BFF), bez NEXT_PUBLIC_.
  */
 export type WebServerEnv = {

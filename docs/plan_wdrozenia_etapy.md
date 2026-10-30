@@ -17,7 +17,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 | **2** | Rozszerzenie | Więcej użytkowników; retencja automatyczna; erase admin; ewentualnie Q&A ze źródłami |
 | **3** | Cała firma | Membership zespołu klienta (onboarding historii); polityka grup Calendar; confidential/vendor w prod; IdP / offboarding dojrzały |
 
-**Priorytet typów spotkań:** wszystkie (wewnętrzne i zewnętrzne) mają **identyczny** priorytet produktowy. Wrażliwe (1:1, rekrutacje, zarząd) — flaga `confidential`, nie „odkładanie na później”.
+**Priorytet typów spotkań:** wszystkie (wewnętrzne i zewnętrzne) mają **identyczny** priorytet produktowy. Wrażliwe (1:1, rekrutacje, zarząd) - flaga `confidential`, nie „odkładanie na później”.
 
 ---
 
@@ -46,7 +46,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 - Powiadomienia (mail, Slack).
 - Prawdziwa integracja Google Workspace / Fireflies / HubSpot.
 - Prawdziwy LLM (tylko mock LlmClient / UC1).
-- Q&A / RAG ze wskazaniem źródła (**UC2** — etap 2+).
+- Q&A / RAG ze wskazaniem źródła (**UC2** - etap 2+).
 - Membership ACL „zespołu klienta”; ekspansja grup Workspace.
 - Automatyczny CD na VPS (jest CI + checklista ręczna).
 - HTTP do odczytu `audit_log`.
@@ -97,7 +97,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 - Kolejne osoby / zespoły (nadal ACL v1: organizator/uczestnik/admin).
 - Job retencji (transcript 90 dni, summary 12 mies., `audit_log` 90 dni).
-- **Erase treści na żądanie klienta** — admin z panelu (`bezpieczenstwo_i_rodo.md`).
+- **Erase treści na żądanie klienta** - admin z panelu (`bezpieczenstwo_i_rodo.md`).
 - Dopracowanie mapowania źródeł i monitoring faili.
 - Opcjonalnie: pierwsze **Q&A ze źródłami** (**UC2**, ten sam LlmClient; tylko w ACL) - cienki MVP asystenta.
 - Opcjonalnie: zmniejszenie seatów FF / przejście części ruchu na wariant B (koszty).
@@ -115,8 +115,8 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 ### Zakres
 
-- **Membership zespołu klienta** w naszym systemie (nie grupy Google) — onboarding historii bez obecności na każdym callu.
-- Polityka zaproszeń Calendar / grup (zwłaszcza „wszyscy pracownicy”) — bez przypadkowego ACL dla całej firmy.
+- **Membership zespołu klienta** w naszym systemie (nie grupy Google) - onboarding historii bez obecności na każdym callu.
+- Polityka zaproszeń Calendar / grup (zwłaszcza „wszyscy pracownicy”) - bez przypadkowego ACL dla całej firmy.
 - Confidential vs vendor capture w prod.
 - Offboarding zsynchronizowany z IdP / grupami Google (jeśli dostępne).
 - Ewentualny odczyt `audit_log` dla admina (HTTP) - decyzja osobna.

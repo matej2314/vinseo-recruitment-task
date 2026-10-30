@@ -1,6 +1,6 @@
 {
   "externalId": "demo-client-budget-pl",
-  "title": "Budżet kampanii Q4 — Client X",
+  "title": "Budżet kampanii Q4 - Client X",
   "startedAt": "2026-10-15T09:00:00.000Z",
   "participants": [
     {
@@ -27,7 +27,7 @@
     },
     {
       "speaker": "Anna Kowalska",
-      "text": "Dzięki. Karta firmowa do refundacji testowej: 4111111111111111 — nie używać w prod.",
+      "text": "Dzięki. Karta firmowa do refundacji testowej: 4111111111111111 - nie używać w prod.",
       "startMs": 24000
     },
     {
@@ -37,7 +37,9 @@
     }
   ],
   "summary": {
-    "overview": "VENDOR SUMMARY — MUST BE IGNORED",
-    "action_items": ["ignore-me"]
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
   }
 }

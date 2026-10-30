@@ -1,13 +1,13 @@
-# Vinseo Recruitment Task — major plan (backend)
+# Vinseo Recruitment Task - major plan (backend)
 
-**Zakres tego pliku:** major plan prac nad **backendem** etapu 0 — procesy `api` i `worker`, wspólny fundament monorepo (w tym model danych i kontrakty typów) oraz artefakty oddania zależne od backendu (CI, Część A, root README).
+**Zakres tego pliku:** major plan prac nad **backendem** etapu 0 - procesy `api` i `worker`, wspólny fundament monorepo (w tym model danych i kontrakty typów) oraz artefakty oddania zależne od backendu (CI, Część A, root README).
 
 **Powiązany major frontendu:** [`vinseo-recruitment-task-frontend_major-plan.md`](./vinseo-recruitment-task-frontend_major-plan.md). Oba pliki razem opisują postęp etapu 0; statusy prowadzi się **osobno** w każdym pliku.
 
-**Frontend w tym pliku:** `apps/web` pojawia się jako **stub / miejsce w strukturze repo** (Faza 1) oraz jako zależność kontraktowa API (Faza 3). Pełne UI, BFF i zachowanie panelu wg `docs/frontend.md` / `SPEC-FRONTEND` to postęp majoru frontendu (Faza 1 frontu = odbiór fundamentu z tej Fazy 1 — bez powielania treści monorepo).
+**Frontend w tym pliku:** `apps/web` pojawia się jako **stub / miejsce w strukturze repo** (Faza 1) oraz jako zależność kontraktowa API (Faza 3). Pełne UI, BFF i zachowanie panelu wg `docs/frontend.md` / `SPEC-FRONTEND` to postęp majoru frontendu (Faza 1 frontu = odbiór fundamentu z tej Fazy 1 - bez powielania treści monorepo).
 
 **Źródła:** `docs/` oraz `spec/SPEC-*.md` (spis: `docs/README.md`, `spec/SPEC-README.md`).  
-**Etap produktowy:** szkielet / etap 0 — `docs/plan_wdrozenia_etapy.md`, `docs/dokumentacja_koncepcyjna.md`.
+**Etap produktowy:** szkielet / etap 0 - `docs/plan_wdrozenia_etapy.md`, `docs/dokumentacja_koncepcyjna.md`.
 
 **Statusy (fazy / kroki):** `NIE_ROZPOCZĘTY` | `W_TRAKCIE` | `WYKONANY`  
 **Milestone:** domyślnie **bez statusu**; po spełnieniu DoD → wyłącznie `OSIĄGNIĘTY`
@@ -16,11 +16,11 @@
 
 ---
 
-## Faza 1 — Fundament monorepo i szkielet procesów
+## Faza 1 - Fundament monorepo i szkielet procesów
 
 **Status:** `WYKONANY`
 
-**Opis:** Pierwszy etap prac: dogranie **struktury całego repo** (backend, frontend jako stub, worker) oraz lokalnej gotowości do dalszych faz. Po Fazie 1 działa **ścieżka A** (`pnpm db:up` + `dev:*` na hoście) oraz **obowiązkowa ścieżka B** (`docker-compose.dev.yml` + `pnpm dev:stack:up` — Postgres i procesy w kontenerach z bind mountem), startowy model danych i kontrakty typów — zgodnie z `docs/architektura_katalogi_pliki.md`, `docs/deployment.md`, `SPEC-ARCHITEKTURA` (**A-7**, **A-8**), `SPEC-DANE`.
+**Opis:** Pierwszy etap prac: dogranie **struktury całego repo** (backend, frontend jako stub, worker) oraz lokalnej gotowości do dalszych faz. Po Fazie 1 działa **ścieżka A** (`pnpm db:up` + `dev:*` na hoście) oraz **obowiązkowa ścieżka B** (`docker-compose.dev.yml` + `pnpm dev:stack:up` - Postgres i procesy w kontenerach z bind mountem), startowy model danych i kontrakty typów - zgodnie z `docs/architektura_katalogi_pliki.md`, `docs/deployment.md`, `SPEC-ARCHITEKTURA` (**A-7**, **A-8**), `SPEC-DANE`.
 
 **DoD (faza):**
 
@@ -30,7 +30,7 @@
 - Smoke jakości w `api` przechodzi; README opisuje obie ścieżki bez domysłów spoza repo.
 - Fundament wystarcza do startu Fazy 2 (pipeline) i Fazy 3 (auth/ACL) bez przebudowy układu repo.
 
-### Krok 1.1 — Struktura całego repozytorium
+### Krok 1.1 - Struktura całego repozytorium
 
 **Status:** `WYKONANY`
 
@@ -40,22 +40,22 @@
 
 - Drzewo katalogów jest zgodne z `docs/architektura_katalogi_pliki.md` w zakresie etapu 0 (w tym `docker-compose.dev.yml`, `docker/dev/`).
 - Współdzielone typy żyją wyłącznie w uzgodnionym pakiecie kontraktów; nie ma tam walidacji runtime ani logiki domenowej (zgodnie z `SPEC-ARCHITEKTURA`).
-- Jest jeden root repo — aplikacje nie są osobnymi repozytoriami.
-- Root `package.json` ma `dev:*`, `db:generate` / `db:migrate*` — skrypty `db:*` Compose i `dev:stack:*` domykają Krok 1.2.
+- Jest jeden root repo - aplikacje nie są osobnymi repozytoriami.
+- Root `package.json` ma `dev:*`, `db:generate` / `db:migrate*` - skrypty `db:*` Compose i `dev:stack:*` domykają Krok 1.2.
 
-#### Podkrok 1.1.1 — Miejsca procesów `api`, `worker`, `web`
+#### Podkrok 1.1.1 - Miejsca procesów `api`, `worker`, `web`
 
 Widoczne, rozróżnialne lokalizacje trzech procesów runtime z docs.
 
-#### Podkrok 1.1.2 — Pakiet kontraktów i schemat danych w rootcie
+#### Podkrok 1.1.2 - Pakiet kontraktów i schemat danych w rootcie
 
 Minimalne kształty typów pod późniejsze API/job oraz lokalizacja schematu / migracji wspólnej bazy.
 
-### Krok 1.2 — Lokalne środowisko danych i kolejki
+### Krok 1.2 - Lokalne środowisko danych i kolejki
 
 **Status:** `WYKONANY`
 
-**Opis:** Lokalne podniesienie magazynu stanu (PostgreSQL) oraz (ścieżka B) pełnego stacku procesów — zgodnie z `docs/deployment.md` / `SPEC-ARCHITEKTURA` **A-7** i **A-8** (bez osobnego brokera w v1). Ścieżka A: `docker-compose.yml` + `db:*` + appki na hoście. Ścieżka B (**obowiązkowa**): `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `dev:stack:*` (Postgres + api/worker/web, bind mount, wolumeny zależności).
+**Opis:** Lokalne podniesienie magazynu stanu (PostgreSQL) oraz (ścieżka B) pełnego stacku procesów - zgodnie z `docs/deployment.md` / `SPEC-ARCHITEKTURA` **A-7** i **A-8** (bez osobnego brokera w v1). Ścieżka A: `docker-compose.yml` + `db:*` + appki na hoście. Ścieżka B (**obowiązkowa**): `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `dev:stack:*` (Postgres + api/worker/web, bind mount, wolumeny zależności).
 
 **DoD (krok):**
 
@@ -64,15 +64,15 @@ Minimalne kształty typów pod późniejsze API/job oraz lokalizacja schematu / 
 - Kolejka jobów korzysta z tej samej bazy (założenie docs), bez równoległego magazynu „na start”.
 - README / docs ostrzegają przed równoczesnym A+B na tych samych portach.
 
-#### Podkrok 1.2.1 — Compose DB + skrypty root `db:*` (ścieżka A)
+#### Podkrok 1.2.1 - Compose DB + skrypty root `db:*` (ścieżka A)
 
-Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:down` / `db:logs` — wejście lokalne i pod testy integracyjne (`SPEC-TESTY` T-3).
+Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:down` / `db:logs` - wejście lokalne i pod testy integracyjne (`SPEC-TESTY` T-3).
 
-#### Podkrok 1.2.2 — Compose dev stack + skrypty `dev:stack:*` (ścieżka B, obowiązkowa)
+#### Podkrok 1.2.2 - Compose dev stack + skrypty `dev:stack:*` (ścieżka B, obowiązkowa)
 
 `docker-compose.dev.yml` + `docker/dev/Dockerfile` + skrypty `dev:stack:up` / `down` / `logs`. Kontenery app z bind mountem monorepo i wolumenami `node_modules`; `DATABASE_URL` → host `postgres`. Nie mylić z Compose produkcyjnym VPS.
 
-### Krok 1.3 — Szkielety procesów Nest oraz stub frontu
+### Krok 1.3 - Szkielety procesów Nest oraz stub frontu
 
 **Status:** `WYKONANY`
 
@@ -84,18 +84,18 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 - Stub `web` startuje (host i/lub compose.dev).
 - Granice odpowiedzialności procesów są zachowane opisowo jak w `docs/architektura.md` (worker bez publicznego API przeglądarki).
 
-### Krok 1.4 — Model danych startowy
+### Krok 1.4 - Model danych startowy
 
 **Status:** `WYKONANY`
 
-**Opis:** Startowy model pod etap 0: użytkownicy, spotkania (**organizator**, `clientLinkStatus`, `confidential`, czas trwania), uczestnicy wewnętrzni + metadane zewnętrznych, transcript, summary, zadania, `Client.emailDomain`, refresh tokeny, `audit_log` — zgodnie z `SPEC-DANE`. `Project` / `ProjectMembership` mogą istnieć w schemacie **bez** roli ACL v1. Align po KROK 4: feature plan plik `_1` **KROK 8** (gdy startowy schemat powstał wcześniej). Gotowość pod pipeline (Faza 2) oraz auth/ACL v1 (Faza 3).
+**Opis:** Startowy model pod etap 0: użytkownicy, spotkania (**organizator**, `clientLinkStatus`, `confidential`, czas trwania), uczestnicy wewnętrzni + metadane zewnętrznych, transcript, summary, zadania, `Client.emailDomain`, refresh tokeny, `audit_log` - zgodnie z `SPEC-DANE`. `Project` / `ProjectMembership` mogą istnieć w schemacie **bez** roli ACL v1. Align po KROK 4: feature plan plik `_1` **KROK 8** (gdy startowy schemat powstał wcześniej). Gotowość pod pipeline (Faza 2) oraz auth/ACL v1 (Faza 3).
 
 **DoD (krok):**
 
 - Model pokrywa byty wymagane przez etap 0 w docs/SPEC-DANE (w tym organizer + status linku klienta).
 - Nie ma oczywistej luki wymuszającej przebudowę schematu przed Fazą 2 lub 3 (np. brak miejsca na status przetwarzania, sesję refresh, organizatora lub audyt).
 
-### Krok 1.5 — Smoke jakości i README po scaffoldzie
+### Krok 1.5 - Smoke jakości i README po scaffoldzie
 
 **Status:** `WYKONANY`
 
@@ -108,7 +108,7 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 
 ---
 
-## MILESTONE — Fundament monorepo gotowy
+## MILESTONE - Fundament monorepo gotowy
 
 **Status:** `OSIĄGNIĘTY`
 
@@ -123,7 +123,7 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 
 ---
 
-## Faza 2 — Pipeline spotkania
+## Faza 2 - Pipeline spotkania
 
 **Status:** `WYKONANY`
 
@@ -137,18 +137,18 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 - Redakcja E+T+P+K jest przed wywołaniem portu LLM; demo lokalne jest opisane i działa.
 - Enqueue pochodzi ze ścieżki `api` (nie „dla UI” z workera).
 
-### Krok 2.1 — Port źródła i atrapa materiałów
+### Krok 2.1 - Port źródła i atrapa materiałów
 
 **Status:** `WYKONANY`
 
-**Opis:** Port pobrania spotkania + atrapa (fixture PL z wtrąceniami EN). Obiekt summary vendora **ignorowany** — kanon powstaje u nas (`docs/llm_i_asystent.md`, `SPEC-PIPELINE`).
+**Opis:** Port pobrania spotkania + atrapa (fixture PL z wtrąceniami EN). Obiekt summary vendora **ignorowany** - kanon powstaje u nas (`docs/llm_i_asystent.md`, `SPEC-PIPELINE`).
 
 **DoD (krok):**
 
 - Da się pobrać materiał mockowy po kluczu zewnętrznym / fixture.
 - Ścieżka nie opiera się na `summary.*` vendora jako źródle prawdy.
 
-### Krok 2.2 — Orkiestracja joba `meeting.process`
+### Krok 2.2 - Orkiestracja joba `meeting.process`
 
 **Status:** `WYKONANY`
 
@@ -160,26 +160,26 @@ Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:
 - Awaria / przerwanie przed akceptacją wyniku nie zostawia „pół-sukcesu” kanonicznego w DB.
 - Statusy są obserwowalne dla późniejszego API / SSE (Faza 3).
 
-#### Podkrok 2.2.1 — Redakcja E+T+P+K przed LLM
+#### Podkrok 2.2.1 - Redakcja E+T+P+K przed LLM
 
 Czysta ścieżka redakcji wywołana przed każdym wywołaniem portu summarizera.
 
-#### Podkrok 2.2.2 — Walidacja wyniku i persist po akceptacji
+#### Podkrok 2.2.2 - Walidacja wyniku i persist po akceptacji
 
 Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantine; bez dirty summary jako sukcesu.
 
-### Krok 2.3 — Idempotencja i enqueue z `api`
+### Krok 2.3 - Idempotencja i enqueue z `api`
 
 **Status:** `WYKONANY`
 
-**Opis:** Klucz idempotencji (`externalMeetingId` / `fixtureKey`) — update in place. Enqueue joba z `api` (CLI/demo DX może istnieć jako dodatkowa ścieżka). Worker tylko konsumuje.
+**Opis:** Klucz idempotencji (`externalMeetingId` / `fixtureKey`) - update in place. Enqueue joba z `api` (CLI/demo DX może istnieć jako dodatkowa ścieżka). Worker tylko konsumuje.
 
 **DoD (krok):**
 
 - Dwukrotne odpalenie tego samego klucza = jedno spotkanie.
 - Enqueue jest osiągalny ze ścieżki `api` zgodnie z `SPEC-KOMUNIKACJA` / `SPEC-PIPELINE`.
 
-### Krok 2.4 — Testy redakcji i demo przepuszczenia spotkania
+### Krok 2.4 - Testy redakcji i demo przepuszczenia spotkania
 
 **Status:** `WYKONANY`
 
@@ -192,7 +192,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ---
 
-## MILESTONE — Pipeline etapu 0 działa
+## MILESTONE - Pipeline etapu 0 działa
 
 **Status:** `OSIĄGNIĘTY`
 
@@ -207,11 +207,11 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ---
 
-## Faza 3 — Auth, ACL i kontrakty API pod UI
+## Faza 3 - Auth, ACL i kontrakty API pod UI
 
 **Status:** `WYKONANY`
 
-**Opis:** Prawdziwa sesja pracownika, ACL na odczycie spotkań, demo enqueue oraz SSE statusów — wyłącznie po stronie `api`. Zgodnie z `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA`, `SPEC-TESTY`. **Poza tym majorem:** implementacja UI, BFF, layoutu sidebara i zachowań przeglądarki (osobny major frontu).
+**Opis:** Prawdziwa sesja pracownika, ACL na odczycie spotkań, demo enqueue oraz SSE statusów - wyłącznie po stronie `api`. Zgodnie z `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA`, `SPEC-TESTY`. **Poza tym majorem:** implementacja UI, BFF, layoutu sidebara i zachowań przeglądarki (osobny major frontu).
 
 **DoD (faza):**
 
@@ -221,18 +221,18 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 - Testy krytyczne auth/ACL (tabela przypadków) przechodzą w zakresie opisanym w `SPEC-TESTY`.
 - Powierzchnia HTTP potrzebna majorowi frontu jest domknięta opisowo (auth, meetings, demo, events).
 
-### Krok 3.1 — Auth pracowników i sesja
+### Krok 3.1 - Auth pracowników i sesja
 
 **Status:** `WYKONANY`
 
-**Opis:** Register / login / logout / me / refresh; hasła hashowane; access + refresh (hash refresh w DB); cookie HttpOnly. Rejestracja v1 otwarta; po register od razu sesja — `SPEC-AUTH_I_ACL`.
+**Opis:** Register / login / logout / me / refresh; hasła hashowane; access + refresh (hash refresh w DB); cookie HttpOnly. Rejestracja v1 otwarta; po register od razu sesja - `SPEC-AUTH_I_ACL`.
 
 **DoD (krok):**
 
 - Ścieżki auth zachowują się zgodnie z normą SPEC (w tym rotacja / unieważnienie refresh).
 - Nie da się uznać sesji za „atrapę na zawsze”: model jest produkcyjnie sensowny dla etapu 0.
 
-### Krok 3.2 — ACL i odczyt spotkań
+### Krok 3.2 - ACL i odczyt spotkań
 
 **Status:** `WYKONANY`
 
@@ -244,22 +244,22 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 - Membership projektu nie daje allow w testach ACL v1.
 - Lista zwraca wyłącznie spotkania dozwolone regułami ACL.
 
-### Krok 3.3 — Demo enqueue i SSE statusów
+### Krok 3.3 - Demo enqueue i SSE statusów
 
 **Status:** `WYKONANY`
 
-**Opis:** `POST /demo/run-meeting` — sesja wymagana; tylko enqueue (bez synchronicznego pipeline w requeście; bez wymogu flagi `DEMO_ENABLED` w kontrakcie). `GET /meetings/:id/events` — SSE statusów pipeline z ACL jak detail (`SPEC-KOMUNIKACJA`).
+**Opis:** `POST /demo/run-meeting` - sesja wymagana; tylko enqueue (bez synchronicznego pipeline w requeście; bez wymogu flagi `DEMO_ENABLED` w kontrakcie). `GET /meetings/:id/events` - SSE statusów pipeline z ACL jak detail (`SPEC-KOMUNIKACJA`).
 
 **DoD (krok):**
 
 - Demo endpoint enqueue’uje job przy ważnej sesji.
 - SSE / równoważny strumień statusów jest dostępny tylko przy uprawnieniu do spotkania.
 
-### Krok 3.4 — Testy auth/ACL (i SSE w miarę czasu)
+### Krok 3.4 - Testy auth/ACL (i SSE w miarę czasu)
 
 **Status:** `WYKONANY`
 
-**Opis:** Testy tabeli ACL (`SPEC-TESTY`), auth cookie + deny→404, demo enqueue; SSE wg dostępnego czasu. Opcjonalnie zapis `audit_log` przy deny / fail joba (`SPEC-OBSERVABILITY`) — dogrywka tu lub w Fazie 5.
+**Opis:** Testy tabeli ACL (`SPEC-TESTY`), auth cookie + deny→404, demo enqueue; SSE wg dostępnego czasu. Opcjonalnie zapis `audit_log` przy deny / fail joba (`SPEC-OBSERVABILITY`) - dogrywka tu lub w Fazie 5.
 
 **DoD (krok):**
 
@@ -267,13 +267,13 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 - Krytyczna ścieżka auth + deny→404 jest pokryta testami.
 - Luki świadomie odłożone (np. pełne SSE / audit) są nazwane, nie ukryte.
 
-#### Podkrok 3.4.1 — (Opcjonalnie) zapis `audit_log` przy deny / fail
+#### Podkrok 3.4.1 - (Opcjonalnie) zapis `audit_log` przy deny / fail
 
-Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli czas; inaczej jawnie w Fazie 5.
+Trwały ślad kluczowych odmów i faili joba bez treści transcriptu - jeśli czas; inaczej jawnie w Fazie 5.
 
 ---
 
-## MILESTONE — API sesji i ACL gotowe pod front
+## MILESTONE - API sesji i ACL gotowe pod front
 
 **Status:** `OSIĄGNIĘTY`
 
@@ -288,13 +288,13 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ---
 
-## Faza 3.5 — Tożsamość DEMO/Test (multi-tester)
+## Faza 3.5 - Tożsamość DEMO/Test (multi-tester)
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Zmiana kontraktu ścieżki **DEMO/Test** (`POST /demo/run-meeting`) pod multi-tester na jednej instancji — zgodnie z `SPEC-KOMUNIKACJA` K-5 / `SPEC-PIPELINE` P-6 (po legalizacji aux). Pipeline 1:1 jak produkcja; mocki wyłącznie na porcie źródła.
+**Opis:** Zmiana kontraktu ścieżki **DEMO/Test** (`POST /demo/run-meeting`) pod multi-tester na jednej instancji - zgodnie z `SPEC-KOMUNIKACJA` K-5 / `SPEC-PIPELINE` P-6 (po legalizacji aux). Pipeline 1:1 jak produkcja; mocki wyłącznie na porcie źródła.
 
-**Refaktor / zmiana kontraktu względem:** Faza 2 (pipeline / demo lokalne; `WYKONANY`) oraz Faza 3 / Krok 3.3 — Demo enqueue i SSE (`WYKONANY`); MILESTONE „API sesji i ACL gotowe pod front” (`OSIĄGNIĘTY`) — **bez przepisywania** treści źródeł. Cel: nowe `externalMeetingId` (UUID) na każde wywołanie Test, `organizerId` = użytkownik sesji, losowy `fixtureKey` z katalogu **10**; DX i ścieżka produkcyjna poza zakresem tej fazy.
+**Refaktor / zmiana kontraktu względem:** Faza 2 (pipeline / demo lokalne; `WYKONANY`) oraz Faza 3 / Krok 3.3 - Demo enqueue i SSE (`WYKONANY`); MILESTONE „API sesji i ACL gotowe pod front” (`OSIĄGNIĘTY`) - **bez przepisywania** treści źródeł. Cel: nowe `externalMeetingId` (UUID) na każde wywołanie Test, `organizerId` = użytkownik sesji, losowy `fixtureKey` z katalogu **10**; DX i ścieżka produkcyjna poza zakresem tej fazy.
 
 **DoD (faza):**
 
@@ -302,10 +302,11 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Multi-user Test → osobne wiersze `Meeting`; idempotencja pipeline nadal po `externalMeetingId` (nie po samym fixture na UI Test).
 - Brak zmiany semantyki DX (`POST /dev/meetings/enqueue`) i produkcji (Fireflies / webhook).
 - Testy pokrywają multi-tester / katalog 10 w zakresie `SPEC-TESTY`.
+- Projekcja listy / SSE (Krok 3.5.4): `GET /meetings` i eventy terminalne niosą `summary` / `failureReason` pod tabelę UI v1.
 
-### Krok 3.5.1 — Katalog 10 fixture’ów za portem źródła
+### Krok 3.5.1 - Katalog 10 fixture’ów za portem źródła
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Rozszerzenie / uzupełnienie materiałów mocka do **10** kluczy dostępnych przez port źródła (bez zmiany kontraktu obiektu źródłowego).
 
@@ -313,9 +314,9 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 - Katalog obejmuje 10 kluczy; worker/api potrafią pobrać materiał po `fixtureKey`.
 
-### Krok 3.5.2 — Demo enqueue: UUID runu, organizer sesji, losowy fixture
+### Krok 3.5.2 - Demo enqueue: UUID runu, organizer sesji, losowy fixture
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** `POST /demo/run-meeting` zgodny z K-5: każde wywołanie → nowe `externalMeetingId` (UUID), `organizerId` = user sesji, serwer losuje `fixtureKey` z katalogu 10; payload joba `meeting.process` z UUID runu + wylosowanym `fixtureKey` (`fixtureKey` ≠ tożsamość wiersza).
 
@@ -324,19 +325,45 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Dwóch użytkowników × Test → dwa spotkania; ponowny Test tego samego usera → nowy wiersz.
 - DX `/dev/meetings/enqueue` bez zmian zachowania w tej fazie.
 
-### Krok 3.5.3 — Testy multi-user DEMO i idempotencja po UUID
+### Krok 3.5.3 - Testy multi-user DEMO i idempotencja po UUID
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Integracja / API wg `SPEC-TESTY` (T-9/T-10): multi-tester, katalog 10, idempotencja po `externalMeetingId` runu — bez wymogu „jeden fixture = jeden wiersz globalnie” dla UI Test.
+**Opis:** Integracja / API wg `SPEC-TESTY` (T-9/T-10): multi-tester, katalog 10, idempotencja po `externalMeetingId` runu - bez wymogu „jeden fixture = jeden wiersz globalnie” dla UI Test.
 
 **DoD (krok):**
 
 - Asercje multi-user i idempotencji po UUID runu przechodzą w zakresie DoD testów dema.
 
+### Krok 3.5.4 - Projekcja wyniku na liście i SSE (`summary` / `failureReason`)
+
+**Status:** `WYKONANY`
+
+**Opis:** Uzupełnienie kontraktu odczytu pod tabelę UI v1 (brak trasy detail): element `GET /meetings` oraz eventy SSE przy statusach terminalnych niosą pola wyniku pipeline, żeby kolumna podsumowania / błędu przetrwała odświeżenie widoku — nie tylko live SSE.
+
+**Refaktor względem:** Faza 3 / Krok 3.2 — Lista + detail + ACL (`WYKONANY`) oraz Faza 3 / Krok 3.3 — Demo enqueue i SSE (`WYKONANY`). Zmiana: wcześniejsza projekcja listy bez `summary` / `failureReason` (wynik tylko w detail / ephemeralnie w SSE) → lista i SSE zgodne z `SPEC-KOMUNIKACJA` K-2a / K-5a oraz `docs/dokumentacja_komunikacji.md` (wersja z projekcją wyniku na liście).
+
+**Zakres backend (api + contracts):**
+
+- `MeetingListItemDto` (+ re-export contracts): pola `summary`, `failureReason`.
+- `ListMeetingsUseCase`: mapowanie `m.summary`, `m.failureReason` z Prisma.
+- `MeetingEventsService` (SSE): przy `completed` — `title` + `summary`; przy `failed` — `failureReason`.
+- Detail bez regresji (nadal rozszerza listę, np. `externalParticipants`).
+
+**Poza tym krokiem:** zmiany wyłącznie w `apps/web` (mapowanie UI); katalog 10 / UUID dema (3.5.1–3.5.2); DX enqueue.
+
+**DoD (krok):**
+
+- `GET /meetings` zwraca w elemencie listy `summary` oraz `failureReason` zgodnie z K-2a.
+- SSE przy `failed` może / niesie `failureReason`; przy `completed` — `summary` (spójnie z K-5a).
+- Po `completed` / `failed` odświeżenie listy nie wymaga osobnego `GET /meetings/:id`, żeby UI miał treść kolumny wyniku (weryfikacja z frontem / kontraktem).
+- Brak transcriptu w elemencie listy; ACL listy bez zmian (AC-4).
+
 ---
 
-## MILESTONE — DEMO/Test multi-tester bez kolizji ACL
+## MILESTONE - DEMO/Test multi-tester bez kolizji ACL
+
+**Status:** `OSIĄGNIĘTY`
 
 **Opis:** Bramka po Fazie 3.5. Kilku testerów na jednej instancji nie koliduje w ACL; UI Test nie współdzieli jednego globalnego wiersza dema.
 
@@ -346,11 +373,9 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Kontrakt K-5 (UUID runu, katalog 10, losowanie API, organizer sesji) jest spełniony po stronie `api` / źródła mock.
 - DX i produkcja pozostają poza zakresem tej zmiany.
 
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
-
 ---
 
-## Faza 4 — Część A + CI
+## Faza 4 - Część A + CI
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -362,7 +387,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - CI odpala testy na pull request; istnieje ścieżka ręcznego uruchomienia.
 - README opisuje ochronę gałęzi głównej (ustawienie po stronie hostingu gita).
 
-### Krok 4.1 — Dokument Części A
+### Krok 4.1 - Dokument Części A
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -373,7 +398,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Dokument A ≤5 stron, bez sprzeczności z `docs/`.
 - Zawiera warianty kosztów i skrót etapów wdrożenia.
 
-### Krok 4.2 — CI i ochrona gałęzi głównej
+### Krok 4.2 - CI i ochrona gałęzi głównej
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -387,7 +412,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ---
 
-## MILESTONE — Dokument A i bramka CI
+## MILESTONE - Dokument A i bramka CI
 
 **Opis:** Bramka po Fazie 4. Duży skok: oddanie ma warstwę decyzyjną (Część A) oraz automatyczną bramkę jakości na PR.
 
@@ -401,7 +426,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ---
 
-## Faza 5 — Domknięcie oddania (backend / etap 0)
+## Faza 5 - Domknięcie oddania (backend / etap 0)
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -409,23 +434,23 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 **DoD (faza):**
 
-- Must-have backendu etapu 0: model, pipeline, redakcja+testy, ACL+testy, auth sesji, uruchomienie lokalne + demo — spełnione.
+- Must-have backendu etapu 0: model, pipeline, redakcja+testy, ACL+testy, auth sesji, uruchomienie lokalne + demo - spełnione.
 - Root README bez TODO-placeholderów wymaganych na oddanie; wskazuje Część A i opisuje atrapy / użycie AI.
 - Smoke end-to-end (Compose + procesy + demo) działa komendami opisanymi w README.
 - Świadomy zakres (brak prawdziwego Google/Fireflies/LLM; UC2 poza v1; UI = osobny major) jest zapisany w README.
 
-### Krok 5.1 — Root README oddania
+### Krok 5.1 - Root README oddania
 
 **Status:** `NIE_ROZPOCZĘTY`
 
-**Opis:** Uruchomienie całości, co działa / atrapa / czego nie ma i dlaczego, użycie AI, wskazanie Części A — zgodnie z `docs/plan_wdrozenia_etapy.md` (wymagania oddania w root README, nie w `docs/README.md`).
+**Opis:** Uruchomienie całości, co działa / atrapa / czego nie ma i dlaczego, użycie AI, wskazanie Części A - zgodnie z `docs/plan_wdrozenia_etapy.md` (wymagania oddania w root README, nie w `docs/README.md`).
 
 **DoD (krok):**
 
 - Sekcje oddania są kompletne i zgodne z faktycznym stanem repo.
 - Brak wymaganych placeholderów „do uzupełnienia” w sekcjach oddania.
 
-### Krok 5.2 — Domknięcie testów krytycznych i porządki
+### Krok 5.2 - Domknięcie testów krytycznych i porządki
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -433,8 +458,8 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 **Jawna lista odroczeń z Fazy 3** (do domknięcia tu albo świadomie w README oddania):
 
-- Pełny happy-path SSE (emisja statusów `pending` → terminalny) — w Fazie 3 pokryty deny→404, bez e2e emisji eventów.
-- Pełny katalog audytu auth/demo/job (`auth.*`, `demo.run`, `job.enqueued` itd. wg O-11) — w Fazie 3 domknięty `meeting.access.denied`; reszta poza deny.
+- Pełny happy-path SSE (emisja statusów `pending` → terminalny) - w Fazie 3 pokryty deny→404, bez e2e emisji eventów.
+- Pełny katalog audytu auth/demo/job (`auth.*`, `demo.run`, `job.enqueued` itd. wg O-11) - w Fazie 3 domknięty `meeting.access.denied`; reszta poza deny.
 
 **DoD (krok):**
 
@@ -442,11 +467,11 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Brak oczywistych sekretów i dead code blokującego czytelność oddania.
 - Pozycje z listy odroczeń Fazy 3 są albo domknięte testami, albo nazwane w README oddania.
 
-### Krok 5.3 — Smoke end-to-end i świadomy zakres
+### Krok 5.3 - Smoke end-to-end i świadomy zakres
 
 **Status:** `NIE_ROZPOCZĘTY`
 
-**Opis:** Sprawdzenie „jedna lub kilka komend” na czystym clone; przeczytanie Części A jak decydent; lista odpuszczonych rzeczy w README (i ewentualnie w A). Koordynacja z majorem frontu: UI (login, tabela, Test, SSE, mock search) **nie** jest DoD tego kroku — tylko wzmianka / checklista zależności.
+**Opis:** Sprawdzenie „jedna lub kilka komend” na czystym clone; przeczytanie Części A jak decydent; lista odpuszczonych rzeczy w README (i ewentualnie w A). Koordynacja z majorem frontu: UI (login, tabela, Test, SSE, mock search) **nie** jest DoD tego kroku - tylko wzmianka / checklista zależności.
 
 **DoD (krok):**
 
@@ -456,7 +481,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ---
 
-## MILESTONE — Backend etapu 0 gotowy do oddania
+## MILESTONE - Backend etapu 0 gotowy do oddania
 
 **Opis:** Bramka zamykająca ten major. Duży skok: backendowa część etapu 0 jest oddawalna; dokument A i CI stoją; README jest kompletne. Pełne kryterium UI etapu 0 domyka osobny major frontu.
 
@@ -474,9 +499,9 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ## Poza zakresem tego major planu
 
-- Pełna implementacja `apps/web` (BFF, sidebar, tabela+Test+SSE w UI, mock wyszukiwarki) — **osobny major frontu**.
-- Prawdziwy Google Workspace / Fireflies / LLM; UC2 / RAG; Playwright jako must-have; HTTP odczytu `audit_log`; konta klientów zewnętrznych; HubSpot; erase admin UI/API; ACL przez membership zespołu klienta — poza etapem 0 (`docs/dokumentacja_koncepcyjna.md`, `docs/plan_wdrozenia_etapy.md`).
-- Etapy wdrożenia firmowego 1–3 — poza tym planem prac kodu oddania.
+- Pełna implementacja `apps/web` (BFF, sidebar, tabela+Test+SSE w UI, mock wyszukiwarki) - **osobny major frontu**.
+- Prawdziwy Google Workspace / Fireflies / LLM; UC2 / RAG; Playwright jako must-have; HTTP odczytu `audit_log`; konta klientów zewnętrznych; HubSpot; erase admin UI/API; ACL przez membership zespołu klienta - poza etapem 0 (`docs/dokumentacja_koncepcyjna.md`, `docs/plan_wdrozenia_etapy.md`).
+- Etapy wdrożenia firmowego 1–3 - poza tym planem prac kodu oddania.
 
 ## Mapowanie obszarów SPEC → fazy (ślad)
 

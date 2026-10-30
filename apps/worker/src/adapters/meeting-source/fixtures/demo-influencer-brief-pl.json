@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-influencer-brief-pl",
+  "title": "Influencer brief",
+  "startedAt": "2026-10-24T16:30:00.000Z",
+  "participants": [
+    {
+      "email": "nina.social@vinseo.example",
+      "displayName": "Nina Social",
+      "internal": true
+    },
+    {
+      "email": "creator@client-z.example",
+      "displayName": "Creator Manager",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Nina Social",
+      "text": "Brief: 3 role TikTok + 1 YT. Fee cap 25k PLN. Karta testowa 4111111111111111.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Creator Manager",
+      "text": "Decision: idziemy w short-form. Action: Nina finalizuje shortlistę.",
+      "startMs": 13000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

@@ -2,7 +2,7 @@
   "name": "vinseo-recruitment-task",
   "version": "1.0.0",
   "private": true,
-  "description": "Firmowy asystent spotkań — monorepo (api / worker / web)",
+  "description": "Firmowy asystent spotkań - monorepo (api / worker / web)",
   "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=22"

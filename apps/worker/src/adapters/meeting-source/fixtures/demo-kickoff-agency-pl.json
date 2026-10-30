@@ -1,0 +1,35 @@
+{
+  "externalId": "demo-kickoff-agency-pl",
+  "title": "Kickoff agencji - Client Y",
+  "startedAt": "2026-10-16T10:00:00.000Z",
+  "participants": [
+    {
+      "email": "ola.nowak@vinseo.example",
+      "displayName": "Ola Nowak",
+      "internal": true
+    },
+    {
+      "email": "pm@client-y.example",
+      "displayName": "Piotr Manager",
+      "internal": false
+    }
+  ],
+  "segments": [
+    {
+      "speaker": "Ola Nowak",
+      "text": "Cel kickoffu: scope Q4 i SLA raportowania. Kontakt awaryjny +48 501 200 300.",
+      "startMs": 0
+    },
+    {
+      "speaker": "Piotr Manager",
+      "text": "Decision: start 1 listopada. Action: Ola wysyła brief do środy.",
+      "startMs": 15000
+    }
+  ],
+  "summary": {
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
+    "action_items": [
+      "ignore-me"
+    ]
+  }
+}

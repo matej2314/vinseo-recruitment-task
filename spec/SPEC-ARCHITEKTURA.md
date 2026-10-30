@@ -4,9 +4,9 @@ data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Architektura (monolit, procesy, warstwy)
+# SPEC - Architektura (monolit, procesy, warstwy)
 
-Norma implementacji stylu globalnego Firmowego asystenta spotkań. Koncepcja i uzasadnienie: `docs/architektura.md`, drzewo monorepo: `docs/architektura_katalogi_pliki.md`. Ten plik **nie** redefiniuje docs — egzekwuje *jak wolno pisać kod*.
+Norma implementacji stylu globalnego Firmowego asystenta spotkań. Koncepcja i uzasadnienie: `docs/architektura.md`, drzewo monorepo: `docs/architektura_katalogi_pliki.md`. Ten plik **nie** redefiniuje docs - egzekwuje *jak wolno pisać kod*.
 
 ## Cel / zakres
 
@@ -52,12 +52,12 @@ A-4. Procesy **nie importują** kodu źródłowego nawzajem: zabronione `apps/ap
 
 A-5. `apps/web` nie zawiera egzekucji ACL do treści spotkań ani orkiestracji pipeline / enqueue pg-boss poza wywołaniem HTTP API przez BFF.
 
-A-6. Konfiguracja `api` i `worker`: na starcie procesu **fail-closed** — brak lub niepoprawne wymagane zmienne środowiskowe → proces **nie** startuje. Zakaz odczytu `process.env` ad hoc w use case’ach, redakcji, ACL i adapterach (poza warstwą config).
+A-6. Konfiguracja `api` i `worker`: na starcie procesu **fail-closed** - brak lub niepoprawne wymagane zmienne środowiskowe → proces **nie** startuje. Zakaz odczytu `process.env` ad hoc w use case’ach, redakcji, ACL i adapterach (poza warstwą config).
 
 A-7. Ścieżka A (host): root `package.json` **musi** udostępniać skrypty `db:up` / `db:down` (opcjonalnie `db:logs`) opakowujące `docker-compose.db.yml` (tylko Postgres; bazy `vinseo` + `vinseo_test`) oraz `dev:api` / `dev:worker` / `dev:web` na hoście. Opis: `docs/deployment.md`, root `README.md`.
 Zmiana względem: wcześniejsza nazwa pliku `docker-compose.yml` (ta sama semantyka ścieżki A).
 
-A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istnieje `docker-compose.dev.yml` oraz `docker/dev/Dockerfile` (obraz bazowy Node+pnpm, **nie** prod). Compose podnosi Postgres + `api` + `worker` + `web` z **bind mountem** kodu monorepo i **wolumenami** na `node_modules` / store pnpm. Root `package.json` **musi** mieć skrypty `dev:stack:up` / `dev:stack:down` / `dev:stack:logs` (bez usuwania ani zmiany semantyki skryptów z A-7). `DATABASE_URL` w kontenerach wskazuje usługę `postgres`. Zakaz równoległego A+B na tych samych portach. CI v1 **nie** wymaga pełnego stacku B jako bramki testów (`SPEC-TESTY`).
+A-8. Ścieżka B (compose.dev) - **obowiązkowa** w Fazie 1: w rootcie istnieje `docker-compose.dev.yml` oraz `docker/dev/Dockerfile` (obraz bazowy Node+pnpm, **nie** prod). Compose podnosi Postgres + `api` + `worker` + `web` z **bind mountem** kodu monorepo i **wolumenami** na `node_modules` / store pnpm. Root `package.json` **musi** mieć skrypty `dev:stack:up` / `dev:stack:down` / `dev:stack:logs` (bez usuwania ani zmiany semantyki skryptów z A-7). `DATABASE_URL` w kontenerach wskazuje usługę `postgres`. Zakaz równoległego A+B na tych samych portach. CI v1 **nie** wymaga pełnego stacku B jako bramki testów (`SPEC-TESTY`).
 
 ## Norma: wzorce i struktura
 
@@ -67,9 +67,9 @@ A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istniej
 |---------|------------------|
 | Cienkie controllery Nest | Mapowanie HTTP ↔ DTO / wynik use case; bez Prisma i bez reguł ACL w metodzie controllera |
 | Guards / pipes Nest | Auth sesji, `ValidationPipe` + DTO |
-| Use case / serwis aplikacji per operacja | Np. lista spotkań, detail, enqueue demo — jedna odpowiedzialność na operację biznesową |
+| Use case / serwis aplikacji per operacja | Np. lista spotkań, detail, enqueue demo - jedna odpowiedzialność na operację biznesową |
 | Repozytorium **lub** serwis aplikacji nad Prisma | Dostęp do DB za abstrakcją aplikacji; **nie** `prisma.*` w controllerze |
-| Ports & adapters | Port źródła spotkań, port `LlmClient`, dostęp do kolejki — implementacje w infrastrukturze / `adapters` |
+| Ports & adapters | Port źródła spotkań, port `LlmClient`, dostęp do kolejki - implementacje w infrastrukturze / `adapters` |
 | Moduły Nest + jawne `exports` | Moduły wg odpowiedzialności (`auth`, `access`, `meetings`, `pipeline`, `jobs`…); eksport tylko kontraktu potrzebnego sąsiadom |
 
 ### Wolno
@@ -101,19 +101,19 @@ A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istniej
 | Local DX stack B | `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `pnpm dev:stack:*` (obowiązkowe) |
 | ORM / migracje | Prisma (schemat w rootcie `prisma/`; skrypty `db:generate` / `db:migrate` / `db:migrate:deploy`) |
 | Kolejka | pg-boss (w Postgresie; bez Redis jako brokera v1) |
-| Kontrakty współdzielone | `packages/contracts` — typy TS |
+| Kontrakty współdzielone | `packages/contracts` - typy TS |
 | Walidacja HTTP | `class-validator` + `class-transformer` (DTO Nest) |
 | Walidacja wyniku AI / summary oraz env | **Zod w aplikacjach** (`api` / `worker`; ewentualnie `web` tylko lokalnie, nie w `packages/`) |
-| Config procesów Nest | `@nestjs/config` + walidacja przy starcie (**Zod** jako `validationSchema` / Standard Schema **lub** `validate` z class-validator) — zgodnie z dokumentacją Nest Configuration |
+| Config procesów Nest | `@nestjs/config` + walidacja przy starcie (**Zod** jako `validationSchema` / Standard Schema **lub** `validate` z class-validator) - zgodnie z dokumentacją Nest Configuration |
 | Testy (narzędzie) | Jest (szczegóły piramidy: `SPEC-TESTY`) |
 
-Weryfikacja config: dokumentacja NestJS Configuration — `ConfigModule.forRoot` z `validationSchema` (Zod) albo funkcją `validate`; przy błędzie walidacji aplikacja nie bootstrapuje.
+Weryfikacja config: dokumentacja NestJS Configuration - `ConfigModule.forRoot` z `validationSchema` (Zod) albo funkcją `validate`; przy błędzie walidacji aplikacja nie bootstrapuje.
 
-## Konfiguracja — reguły
+## Konfiguracja - reguły
 
 C-1. `api` i `worker` rejestrują globalny / root `ConfigModule` z walidacją env przed obsługą ruchu / jobów.
 
-C-2. Preferowany mechanizm v1: Zod przez `validationSchema` w `@nestjs/config` (oficjalnie wspierane jako Standard Schema). Dopuszczalna ścieżka alternatywna: custom `validate` + class-validator — jedna spójna ścieżka per proces, bez mieszania ad hoc w głębokich warstwach.
+C-2. Preferowany mechanizm v1: Zod przez `validationSchema` w `@nestjs/config` (oficjalnie wspierane jako Standard Schema). Dopuszczalna ścieżka alternatywna: custom `validate` + class-validator - jedna spójna ścieżka per proces, bez mieszania ad hoc w głębokich warstwach.
 
 C-3. Wartości konfiguracyjne injectowane do serwisów / adapterów z warstwy config (np. `ConfigService` lub typowany obiekt config), nie surowy `process.env` w use case.
 
@@ -133,7 +133,7 @@ C-3. Wartości konfiguracyjne injectowane do serwisów / adapterów z warstwy co
 ## Poza zakresem
 
 - Szczegóły ścieżek HTTP, payloadów joba i portu źródła.
-- Reguły ACL v1 (organizator / uczestnik / admin) i auth cookie — `SPEC-AUTH_I_ACL`.
+- Reguły ACL v1 (organizator / uczestnik / admin) i auth cookie - `SPEC-AUTH_I_ACL`.
 - Orkiestracja kroków `meeting.process` i redakcja PII.
 - Implementacja UC1/UC2 LLM.
 - Widoki Next / shadcn.

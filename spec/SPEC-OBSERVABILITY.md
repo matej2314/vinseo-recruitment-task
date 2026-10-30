@@ -4,13 +4,13 @@ data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
 
-# SPEC — Observability
+# SPEC - Observability
 
 Norma logów technicznych, audytu biznesowego, korelacji i health. Kontekst: `docs/observability.md` (katalog eventów zsynchronizowany z tym SPEC). Model `audit_log`: `SPEC-DANE`. Envelope / `requestId`: `SPEC-KOMUNIKACJA`. Zakaz treści LLM w logach: `SPEC-LLM`. DoD testów audytu: `SPEC-TESTY`.
 
 ## Cel / zakres
 
-- pino (JSON) vs trwały `audit_log` — rozdzielone role.
+- pino (JSON) vs trwały `audit_log` - rozdzielone role.
 - Correlation id między `api` a `worker`.
 - Katalog obowiązkowych `eventType` v1.
 - Health na `api` i `workerze`.
@@ -50,17 +50,17 @@ O-6. Przy enqueue `meeting.process` `requestId` trafia do **payloadu joba**; wor
 
 O-7. Bez Prometheus / `/metrics` w v1.
 
-O-8. Liczniki **in-memory** w procesie (co najmniej worker: started/completed/failed) + zdarzenia w logach (`job.started` / `job.completed` / `job.failed` z id + krótkim kodem błędu). Restart zeruje liczniki — akceptowalne w v1.
+O-8. Liczniki **in-memory** w procesie (co najmniej worker: started/completed/failed) + zdarzenia w logach (`job.started` / `job.completed` / `job.failed` z id + krótkim kodem błędu). Restart zeruje liczniki - akceptowalne w v1.
 
 ### Audyt (`audit_log`)
 
-O-9. Zapis wyłącznie przez **dedykowany serwis / writer** używany z warstwy aplikacji `api` i `worker` — nie ad hoc z controllera „przy okazji” i nie z `web`.
+O-9. Zapis wyłącznie przez **dedykowany serwis / writer** używany z warstwy aplikacji `api` i `worker` - nie ad hoc z controllera „przy okazji” i nie z `web`.
 
 O-10. **Brak** endpointu HTTP / BFF do odczytu `audit_log` w v1.
 
 O-11. Kształt rekordu (minimum): `id`, `createdAt`, `eventType`, `actorUserId?`, `requestId?`, `resourceType?` / `resourceId?`, `payload` JSON **bez** PII wrażliwych, transcriptu, pełnego summary, hasła.
 
-O-12. Retencja: **90 dni** jako norma polityczna. Mechanizm czyszczenia (cron workera vs inny) — **niepinowany** w tym SPEC; wdrożenie operacyjne poza egzekwowaniem konkretnej libki.
+O-12. Retencja: **90 dni** jako norma polityczna. Mechanizm czyszczenia (cron workera vs inny) - **niepinowany** w tym SPEC; wdrożenie operacyjne poza egzekwowaniem konkretnej libki.
 
 ### Katalog `eventType` (v1)
 
@@ -79,7 +79,7 @@ O-12. Retencja: **90 dni** jako norma polityczna. Mechanizm czyszczenia (cron wo
 | `summary.validation.failed` | Reject Zod UC1 |
 | `demo.run` | `POST /demo/run-meeting` |
 
-**Opcjonalne:** `meeting.access.granted` (np. przy detail — nie spamować na każdym GET listy).
+**Opcjonalne:** `meeting.access.granted` (np. przy detail - nie spamować na każdym GET listy).
 
 **Poza tą wersją:** `ask.completed` / `ask.failed` i inne UC2.
 
@@ -87,7 +87,7 @@ Rozszerzanie katalogu = zmiana tego SPEC (+ docs) przed dodaniem eventów „na 
 
 ### Health
 
-O-13. **`api`:** `GET /health` (lub `/healthz`) — liveness; opcjonalnie szybki check Postgres (fail → 503). Bez auth albo ograniczenie sieciowe wg deploy. Bez pipeline i ciężkich zapytań.
+O-13. **`api`:** `GET /health` (lub `/healthz`) - liveness; opcjonalnie szybki check Postgres (fail → 503). Bez auth albo ograniczenie sieciowe wg deploy. Bez pipeline i ciężkich zapytań.
 
 O-14. **`worker`:** osobny lekki HTTP health na **porcie wewnętrznym** (nieeksponowany publicznie jak API). Sprawdza życie procesu; opcjonalnie DB / pg-boss.
 

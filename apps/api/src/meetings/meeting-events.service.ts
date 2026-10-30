@@ -72,6 +72,9 @@ export class MeetingEventsService {
           ...(m.processingStatus === 'completed'
             ? { title: m.title, summary: m.summary }
             : {}),
+          ...(m.processingStatus === 'failed'
+            ? { failureReason: m.failureReason }
+            : {}),
         };
         return payload;
       }),

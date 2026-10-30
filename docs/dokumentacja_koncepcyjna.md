@@ -27,7 +27,7 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 | Segment | Potrzeba |
 |---------|----------|
 | **Specjalista / opiekun klienta** | Odtworzyć ustalenia i zobowiązania z calli, na których był organizatorem lub uczestnikiem; mieć listę zadań po spotkaniu. |
-| **Nowa osoba w projekcie** | Docelowo: historia ustaleń klienta/projektu bez obecności na każdym callu. **Poza ACL v1** — wymaga membership „zespołu klienta” (kolejna faza; Workspace nie ma grup klienckich). |
+| **Nowa osoba w projekcie** | Docelowo: historia ustaleń klienta/projektu bez obecności na każdym callu. **Poza ACL v1** - wymaga membership „zespołu klienta” (kolejna faza; Workspace nie ma grup klienckich). |
 | **Lead / koordynator** | W v1: tylko spotkania, gdzie jest organizatorem lub uczestnikiem (albo admin). Brak automatycznego wglądu „po dziale” z grup Google. |
 | **Admin / ops (wewnętrzny)** | Widok serwisowy wszystkich spotkań; erase treści na żądanie klienta; obsługa wyjątków (np. offboarding). |
 
@@ -36,12 +36,12 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 ## Użytkownicy i dostęp
 
 - Konta wyłącznie dla **pracowników firmy**.
-- Klienci, dostawcy i inni uczestnicy zewnętrzni **nie logują się** do systemu (występują w metadanych jako uczestnicy zewnętrzni — e-mail poza domeną firmy).
+- Klienci, dostawcy i inni uczestnicy zewnętrzni **nie logują się** do systemu (występują w metadanych jako uczestnicy zewnętrzni - e-mail poza domeną firmy).
 - Kontrola dostępu do zasobów (**ACL v1**):
   - użytkownik jest **organizatorem** spotkania, albo
   - użytkownik jest **uczestnikiem** wewnętrznym spotkania, albo
   - użytkownik ma rolę **admin**.
-- **Poza ACL v1 (kolejna faza):** membership w zespole projektu/klienta — Workspace grupuje głównie działy, nie klientów; źródłem membership będzie ręczna/administracyjna lista w naszym systemie (nie grupy Google).
+- **Poza ACL v1 (kolejna faza):** membership w zespole projektu/klienta - Workspace grupuje głównie działy, nie klientów; źródłem membership będzie ręczna/administracyjna lista w naszym systemie (nie grupy Google).
 - Egzekwowanie ACL odbywa się po stronie **`api`** (jedyny punkt zaufania dla odczytu, listy, przyszłego wyszukiwania i asystenta).
 
 ## Powiązanie z klientem
@@ -69,7 +69,7 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 - Trwałe przechowanie: spotkanie, uczestnicy (wewnętrzni + metadane zewnętrznych), transkrypcja, streszczenie, zadania, reguły uprawnień.
 - Przetwarzanie asynchroniczne od pojawienia się materiału źródłowego do zapisanego, **zwalidowanego** streszczenia i listy zadań. Brak treści źródła → rekord metadanych (**metadata-only**), bez AI.
 - Możliwość pracy i testów na **przygotowanym mocku** źródła (bez prawdziwych nagrań firmowych) oraz **walidacja formatu** transkrypcji / wyniku streszczenia.
-- Minimalny front: warstwa BFF + layout z **sidebarem** — widok domyślny (tabela spotkań + Test + SSE) oraz **mock wyszukiwarki**; bez pełnego panelu produktowego i bez osobnej strony detail.
+- Minimalny front: warstwa BFF + layout z **sidebarem** - widok domyślny (tabela spotkań + Test + SSE) oraz **mock wyszukiwarki**; bez pełnego panelu produktowego i bez osobnej strony detail.
 
 ### Technicznie (to, co ma udowodnić szkielet)
 
@@ -77,11 +77,11 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 - Idempotentne przetwarzanie (ponowne uruchomienie / awaria w połowie bez duplikatów i bez gubienia spotkań).
 - Redakcja danych wrażliwych przed krokiem traktowanym jako wyjście poza zaufaną granicę - z testami.
 - Kontrola dostępu na API - z testami reguł.
-- Uruchomienie lokalne: ścieżka A (`pnpm db:up` + `dev:*`) oraz ścieżka B (`pnpm dev:stack:up` — compose.dev) i przepuszczenie przykładowego spotkania komendami.
+- Uruchomienie lokalne: ścieżka A (`pnpm db:up` + `dev:*`) oraz ścieżka B (`pnpm dev:stack:up` - compose.dev) i przepuszczenie przykładowego spotkania komendami.
 
 ## Poza zakresem v1
 
-- Pełny interfejs użytkownika / design system panelu (w tym panel erase — norma w `bezpieczenstwo_i_rodo.md`, implementacja później).
+- Pełny interfejs użytkownika / design system panelu (w tym panel erase - norma w `bezpieczenstwo_i_rodo.md`, implementacja później).
 - Powiadomienia (mail, Slack itp.).
 - Produkcyjna integracja z Google Workspace i Fireflies (w kodzie: mocki o stabilnym kontrakcie pod łatwą migrację).
 - Wywołania prawdziwego LLM w MVP (mock summarizera z realnym kształtem kontraktu).

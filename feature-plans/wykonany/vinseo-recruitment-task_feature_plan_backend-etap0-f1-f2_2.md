@@ -1,8 +1,8 @@
-# Vinseo Recruitment Task — feature plan (backend etap 0, plik 2/2)
+# Vinseo Recruitment Task - feature plan (backend etap 0, plik 2/2)
 
 **Lokalizacja:** `feature-plans/vinseo-recruitment-task_feature_plan_backend-etap0-f1-f2_2.md`  
 **Zestaw:** plik `_1` = FAZA 1 (zatwierdzony); ten plik = **FAZA 2**.  
-**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` — Faza 2 (pełna) → MILESTONE „Pipeline etapu 0 działa”.  
+**Kotwica major:** `vinseo-recruitment-task-backend_major-plan.md` - Faza 2 (pełna) → MILESTONE „Pipeline etapu 0 działa”.  
 **Wymaga:** zaimplementowanej FAZY 1 z pliku `_1` (monorepo, Prisma, szkielety, Compose).  
 **Źródła:** `docs/data_flow.md`, `docs/dokumentacja_komunikacji.md`, `docs/llm_i_asystent.md`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (job / źródło), `SPEC-TESTY` (T-7…T-9), `SPEC-DANE`.  
 **Pass rozwojowy (sesja):** redakcja + unit testy przed orkiestracją; `LlmClient` mock przed summarize; enqueue DX z `api` bez sesji cookie (`POST /demo/run-meeting` → major Faza 3).
@@ -19,27 +19,27 @@
 | Major | Faza 2, kroki 2.1–2.4 → milestone „Pipeline etapu 0 działa” |
 | Poza zakresem | Auth cookie / ACL / SSE / `POST /demo/run-meeting` (Faza 3); CI / Część A; pełne UI |
 | Ustalenie enqueue DX | Endpoint deweloperski w `api` **bez** sesji; w `production` **nie** rejestrujemy trasy |
-| Po implementacji (informacyjnie) | Major: Faza 2 → `WYKONANY`; MILESTONE „Pipeline etapu 0 działa” → `OSIĄGNIĘTY` — **edycja major poza tym skillem** |
+| Po implementacji (informacyjnie) | Major: Faza 2 → `WYKONANY`; MILESTONE „Pipeline etapu 0 działa” → `OSIĄGNIĘTY` - **edycja major poza tym skillem** |
 
 ---
 
 ## Założenia
 
 - Stack i katalogi z FAZY 1 + `SPEC-ARCHITEKTURA` (porty w workerze, enqueue tylko z `api`, brak `prisma` w redakcji).
-- Kolejka: **pg-boss** w tej samej Postgres (`MEETING_PROCESS_JOB_NAME` z `@vinseo/contracts`) — Context7: `start` → `createQueue` → `send` / `work`.
-- Zod **wyłącznie** w `apps/worker` i `apps/api` (walidacja źródła / summary) — nie w `packages/`.
+- Kolejka: **pg-boss** w tej samej Postgres (`MEETING_PROCESS_JOB_NAME` z `@vinseo/contracts`) - Context7: `start` → `createQueue` → `send` / `work`.
+- Zod **wyłącznie** w `apps/worker` i `apps/api` (walidacja źródła / summary) - nie w `packages/`.
 - Mock LLM: zero HTTP do API modelu; tryby happy / invalid (`SPEC-LLM` L-9).
 - Brak trwałego zapisu transcript/summary **przed** wywołaniem `LlmClient` (`SPEC-PIPELINE` P-9).
 
 ---
 
-## FAZA 2 — Pipeline spotkania
+## FAZA 2 - Pipeline spotkania
 
-### KROK 1 — Port źródła i atrapa materiałów
+### KROK 1 - Port źródła i atrapa materiałów
 
 **Status:** `WYKONANY`
 
-**Cel:** Pobranie mockowego materiału po `externalMeetingId` / `fixtureKey`; kanon **bez** `summary.*` vendora — major 2.1, `SPEC-PIPELINE` P-3, `SPEC-KOMUNIKACJA` K-12…K-14.
+**Cel:** Pobranie mockowego materiału po `externalMeetingId` / `fixtureKey`; kanon **bez** `summary.*` vendora - major 2.1, `SPEC-PIPELINE` P-3, `SPEC-KOMUNIKACJA` K-12…K-14.
 
 **Artefakty:**
 
@@ -49,10 +49,10 @@
   `apps/worker/src/adapters/meeting-source/mock-meeting-source.adapter.ts`  
   `apps/worker/src/adapters/meeting-source/fixtures/demo-client-budget-pl.json`  
   `apps/worker/src/adapters/meeting-source/meeting-source.module.ts`
-- Nowe (api, walidacja kształtu przy DX — później KROK 4):  
-  `apps/api/src/meetings/meeting-source.zod.ts` (ten sam kontrakt Zod — **skopiowany** / współdzielony wyłącznie jako typ z contracts; schemat Zod osobno w obu appach)
+- Nowe (api, walidacja kształtu przy DX - później KROK 4):  
+  `apps/api/src/meetings/meeting-source.zod.ts` (ten sam kontrakt Zod - **skopiowany** / współdzielony wyłącznie jako typ z contracts; schemat Zod osobno w obu appach)
 
-#### Nowy plik — port
+#### Nowy plik - port
 
 `apps/worker/src/adapters/meeting-source/meeting-source.port.ts`:
 
@@ -71,7 +71,7 @@ export interface MeetingSourcePort {
 }
 ```
 
-#### Nowy plik — Zod źródła (worker)
+#### Nowy plik - Zod źródła (worker)
 
 `apps/worker/src/adapters/meeting-source/meeting-source.zod.ts`:
 
@@ -103,16 +103,16 @@ export type MeetingSourcePayloadParsed = z.infer<
 >;
 ```
 
-*(Jeśli Zod 4 wymaga innej opcji datetime — użyj `z.string().min(1)` + parse `Date` w normalize; ważne: walidacja w aplikacji, nie w contracts.)*
+*(Jeśli Zod 4 wymaga innej opcji datetime - użyj `z.string().min(1)` + parse `Date` w normalize; ważne: walidacja w aplikacji, nie w contracts.)*
 
-#### Nowy plik — fixture
+#### Nowy plik - fixture
 
 `apps/worker/src/adapters/meeting-source/fixtures/demo-client-budget-pl.json`:
 
 ```json
 {
   "externalId": "demo-client-budget-pl",
-  "title": "Budżet kampanii Q4 — Client X",
+  "title": "Budżet kampanii Q4 - Client X",
   "startedAt": "2026-10-15T09:00:00.000Z",
   "participants": [
     {
@@ -139,7 +139,7 @@ export type MeetingSourcePayloadParsed = z.infer<
     },
     {
       "speaker": "Anna Kowalska",
-      "text": "Dzięki. Karta firmowa do refundacji testowej: 4111111111111111 — nie używać w prod.",
+      "text": "Dzięki. Karta firmowa do refundacji testowej: 4111111111111111 - nie używać w prod.",
       "startMs": 24000
     },
     {
@@ -149,15 +149,15 @@ export type MeetingSourcePayloadParsed = z.infer<
     }
   ],
   "summary": {
-    "overview": "VENDOR SUMMARY — MUST BE IGNORED",
+    "overview": "VENDOR SUMMARY - MUST BE IGNORED",
     "action_items": ["ignore-me"]
   }
 }
 ```
 
-**Uwaga:** pole `summary` jest **tylko** w surowym JSON fixture (kształt „jak vendor”). Adapter **nie** mapuje go na `MeetingSourcePayload` — po Zod porcie tego pola nie ma.
+**Uwaga:** pole `summary` jest **tylko** w surowym JSON fixture (kształt „jak vendor”). Adapter **nie** mapuje go na `MeetingSourcePayload` - po Zod porcie tego pola nie ma.
 
-#### Nowy plik — adapter mock
+#### Nowy plik - adapter mock
 
 `apps/worker/src/adapters/meeting-source/mock-meeting-source.adapter.ts`:
 
@@ -208,7 +208,7 @@ export class MockMeetingSourceAdapter implements MeetingSourcePort {
 }
 ```
 
-#### Nowy plik — moduł
+#### Nowy plik - moduł
 
 `apps/worker/src/adapters/meeting-source/meeting-source.module.ts`:
 
@@ -231,7 +231,7 @@ export class MeetingSourceModule {}
 #### Biblioteki
 
 - Kontrakt K-12; Zod w workerze (K-13).
-- Ignorowanie `summary` vendora — P-3 / L-5.
+- Ignorowanie `summary` vendora - P-3 / L-5.
 
 #### Testy (szkic w tym kroku; pełne redakcji w KROK 2)
 
@@ -244,11 +244,11 @@ export class MeetingSourceModule {}
 
 ---
 
-### KROK 2 — Redakcja E+T+P+K (pure) + unit testy
+### KROK 2 - Redakcja E+T+P+K (pure) + unit testy
 
 **Status:** `WYKONANY`
 
-**Cel:** Czysta redakcja przed LLM; testy jednostkowe — major 2.2.1 + część 2.4; `SPEC-PIPELINE` P-10…P-12; `SPEC-TESTY` T-7.
+**Cel:** Czysta redakcja przed LLM; testy jednostkowe - major 2.2.1 + część 2.4; `SPEC-PIPELINE` P-10…P-12; `SPEC-TESTY` T-7.
 
 **Artefakty:**
 
@@ -258,7 +258,7 @@ export class MeetingSourceModule {}
   `apps/worker/src/pipeline/redaction/redact-text.spec.ts`  
   `apps/worker/src/pipeline/redaction/redact-segments.spec.ts`
 
-#### Nowy plik — `redact-text.ts`
+#### Nowy plik - `redact-text.ts`
 
 ```typescript
 const PLACEHOLDERS = {
@@ -268,19 +268,19 @@ const PLACEHOLDERS = {
   card: '[REDACTED_CARD]',
 } as const;
 
-/** E — adresy e-mail */
+/** E - adresy e-mail */
 const EMAIL_RE =
   /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 
-/** T — telefony (PL / międzynarodowe uproszczone) */
+/** T - telefony (PL / międzynarodowe uproszczone) */
 const PHONE_RE =
   /(?:\+|00)?\d{1,3}[\s-]?(?:\(?\d{2,3}\)?[\s-]?)?\d{3}[\s-]?\d{2,4}[\s-]?\d{2,4}/g;
 
-/** P — PESEL (11 cyfr) / numer dowodu (3 litery + 6 cyfr) */
+/** P - PESEL (11 cyfr) / numer dowodu (3 litery + 6 cyfr) */
 const PESEL_RE = /\b\d{11}\b/g;
 const ID_CARD_RE = /\b[A-Z]{3}\s?\d{6}\b/gi;
 
-/** K — PAN karty (13–19 cyfr, z Separators); Luhn sprawdzamy opcjonalnie przy matchu ciągłym */
+/** K - PAN karty (13–19 cyfr, z Separators); Luhn sprawdzamy opcjonalnie przy matchu ciągłym */
 const CARD_RE = /\b(?:\d[ -]*?){13,19}\b/g;
 
 function luhnOk(digits: string): boolean {
@@ -318,7 +318,7 @@ export function redactTextIdempotent(input: string): string {
 }
 ```
 
-*(Regex telefonu jest świadomie uproszczony pod fixture PL; DoD = maskowanie klas z fixture + idempotencja na już zredagowanym tekście. Doprecyzuj wzorce w testach, jeśli false-positive na „50k” — wyklucz krótkie liczby bez separatorów telefonu.)*
+*(Regex telefonu jest świadomie uproszczony pod fixture PL; DoD = maskowanie klas z fixture + idempotencja na już zredagowanym tekście. Doprecyzuj wzorce w testach, jeśli false-positive na „50k” - wyklucz krótkie liczby bez separatorów telefonu.)*
 
 **Doprecyzowanie telefonu (zalecane w implementacji):** użyj węższego wzorca pod `+48 …` / `600 100 200`, żeby nie maskować „50k” / lat. Testy są źródłem prawdy zachowania.
 
@@ -329,7 +329,7 @@ const PHONE_RE =
   /(?:\+|00)\d{1,3}(?:[\s-]?\d{2,4}){2,5}|\b\d{3}[\s-]\d{3}[\s-]\d{3}\b/g;
 ```
 
-#### Nowy plik — `redact-segments.ts`
+#### Nowy plik - `redact-segments.ts`
 
 ```typescript
 import type { SourceSegment } from '@vinseo/contracts';
@@ -347,7 +347,7 @@ export function redactSegments(
 }
 ```
 
-#### Nowy plik — `redact-text.spec.ts`
+#### Nowy plik - `redact-text.spec.ts`
 
 ```typescript
 import { redactText, redactTextIdempotent } from './redact-text.js';
@@ -389,7 +389,7 @@ describe('redactText E+T+P+K', () => {
 });
 ```
 
-#### Nowy plik — `redact-segments.spec.ts`
+#### Nowy plik - `redact-segments.spec.ts`
 
 ```typescript
 import { redactSegments } from './redact-segments.js';
@@ -410,7 +410,7 @@ describe('redactSegments', () => {
 });
 ```
 
-Dodaj w `apps/worker/jest.config.cjs` (jak w api z FAZY 1) oraz skrypt `test` — jeśli jeszcze nie było w `_1` dla worker unitów, uzupełnij tu.
+Dodaj w `apps/worker/jest.config.cjs` (jak w api z FAZY 1) oraz skrypt `test` - jeśli jeszcze nie było w `_1` dla worker unitów, uzupełnij tu.
 
 #### DoD (krok)
 
@@ -419,11 +419,11 @@ Dodaj w `apps/worker/jest.config.cjs` (jak w api z FAZY 1) oraz skrypt `test` �
 
 ---
 
-### KROK 3 — LlmClient mock, Zod UC1, orkiestracja `meeting.process`
+### KROK 3 - LlmClient mock, Zod UC1, orkiestracja `meeting.process`
 
 **Status:** `WYKONANY`
 
-**Cel:** Happy path → `completed` z kanonem po Zod; fail-closed; brak pół-sukcesu w DB przed LLM — major 2.2 / 2.2.2; `SPEC-PIPELINE` P-1…P-9; `SPEC-LLM`.
+**Cel:** Happy path → `completed` z kanonem po Zod; fail-closed; brak pół-sukcesu w DB przed LLM - major 2.2 / 2.2.2; `SPEC-PIPELINE` P-1…P-9; `SPEC-LLM`.
 
 **Artefakty:**
 
@@ -441,7 +441,7 @@ Dodaj w `apps/worker/jest.config.cjs` (jak w api z FAZY 1) oraz skrypt `test` �
   `apps/worker/src/jobs/jobs.module.ts`
 - Zmiana: `apps/worker/src/config/env.schema.ts` (LLM_MOCK_MODE), `apps/worker/src/app.module.ts`, `apps/worker/src/main.ts`, `apps/worker/package.json` (+ `pg-boss`)
 
-#### Env — dopisek do `workerEnvSchema`
+#### Env - dopisek do `workerEnvSchema`
 
 ```typescript
 LLM_MOCK_MODE: z.enum(['happy', 'invalid']).default('happy'),
@@ -488,7 +488,7 @@ export const meetingSummarySchema = z.object({
 export type MeetingSummary = z.infer<typeof meetingSummarySchema>;
 ```
 
-*(Jeśli `z.string().date()` niedostępne w użytej Zod 4 — `z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()])`.)*
+*(Jeśli `z.string().date()` niedostępne w użytej Zod 4 - `z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()])`.)*
 
 #### Mock LLM
 
@@ -593,7 +593,7 @@ export class SummarizeMeetingUseCase {
 }
 ```
 
-#### Repozytorium spotkań (Prisma — infrastruktura)
+#### Repozytorium spotkań (Prisma - infrastruktura)
 
 `apps/worker/src/pipeline/meeting-repository.ts`:
 
@@ -811,15 +811,15 @@ export class MeetingProcessWorker implements OnModuleInit {
 }
 ```
 
-*(Dostosuj sygnaturę `work` do wersji `pg-boss` z lockfile — Context7 pokazuje `work(queue, async ([job]) => …)`; przy batch size 1 to wystarczy.)*
+*(Dostosuj sygnaturę `work` do wersji `pg-boss` z lockfile - Context7 pokazuje `work(queue, async ([job]) => …)`; przy batch size 1 to wystarczy.)*
 
-#### Moduły — złożenie
+#### Moduły - złożenie
 
-`LlmModule`, `PipelineModule`, `JobsModule` — standardowy Nest: providers + exports; `AppModule` importuje `MeetingSourceModule`, `LlmModule`, `PipelineModule`, `JobsModule`, `PrismaModule`.
+`LlmModule`, `PipelineModule`, `JobsModule` - standardowy Nest: providers + exports; `AppModule` importuje `MeetingSourceModule`, `LlmModule`, `PipelineModule`, `JobsModule`, `PrismaModule`.
 
-`package.json` worker — dodaj `"pg-boss": "^10.1.5"` (lub aktualna stabilna z npm przy install).
+`package.json` worker - dodaj `"pg-boss": "^10.1.5"` (lub aktualna stabilna z npm przy install).
 
-#### Testy integracyjne (szkielet — domknięcie w KROK 5)
+#### Testy integracyjne (szkielet - domknięcie w KROK 5)
 
 - Happy: orchestrator + mock source + happy LLM → `completed` + summary w DB.
 - Invalid LLM: `failed`, `summary` null / niekanoniczne.
@@ -833,11 +833,11 @@ export class MeetingProcessWorker implements OnModuleInit {
 
 ---
 
-### KROK 4 — Idempotencja i enqueue DX z `api`
+### KROK 4 - Idempotencja i enqueue DX z `api`
 
 **Status:** `WYKONANY`
 
-**Cel:** Ten sam klucz = jedno spotkanie; enqueue ze ścieżki `api` (DX bez sesji) — major 2.3; `SPEC-PIPELINE` P-6/P-7; `SPEC-KOMUNIKACJA` K-9/K-10.  
+**Cel:** Ten sam klucz = jedno spotkanie; enqueue ze ścieżki `api` (DX bez sesji) - major 2.3; `SPEC-PIPELINE` P-6/P-7; `SPEC-KOMUNIKACJA` K-9/K-10.  
 **Nie** implementujemy `POST /demo/run-meeting` (Faza 3).
 
 **Artefakty:**
@@ -899,7 +899,7 @@ export class EnqueueMeetingProcessUseCase {
         processingStatus: 'pending',
       },
       update: {
-        // ponowne enqueue: update in place — bez drugiego wiersza
+        // ponowne enqueue: update in place - bez drugiego wiersza
         processingStatus: 'pending',
         failureReason: null,
       },
@@ -1007,7 +1007,7 @@ export class MeetingsModule {
 
 W `AppModule`: `MeetingsModule.register()` zamiast `MeetingsModule`.
 
-`PgBossService` w api — jak w workerze (`start` + `createQueue`), bez `work`.
+`PgBossService` w api - jak w workerze (`start` + `createQueue`), bez `work`.
 
 #### DoD (krok)
 
@@ -1017,11 +1017,11 @@ W `AppModule`: `MeetingsModule.register()` zamiast `MeetingsModule`.
 
 ---
 
-### KROK 5 — Demo lokalne + testy pipeline (domknięcie)
+### KROK 5 - Demo lokalne + testy pipeline (domknięcie)
 
 **Status:** `WYKONANY`
 
-**Cel:** README z demo przepuszczenia spotkania; testy redakcji (już KROK 2) + integracja pipeline — major 2.4; `SPEC-TESTY` T-7…T-9.
+**Cel:** README z demo przepuszczenia spotkania; testy redakcji (już KROK 2) + integracja pipeline - major 2.4; `SPEC-TESTY` T-7…T-9.
 
 **Artefakty:**
 
@@ -1030,7 +1030,7 @@ W `AppModule`: `MeetingsModule.register()` zamiast `MeetingsModule`.
   `apps/api/test/dev-enqueue.e2e-spec.ts` (opcjonalnie)
 - Zmiana: root `README.md` (sekcja demo po Fazie 2)
 
-#### Demo (README) — fragment do dopisania
+#### Demo (README) - fragment do dopisania
 
 ```markdown
 ## Demo pipeline (po Fazie 2)
@@ -1083,7 +1083,7 @@ describe('MeetingProcessOrchestrator (integration)', () => {
 });
 ```
 
-*(W implementacji wstaw kompletny kod z `@nestjs/testing` + cleanup tabeli `Meeting` w `beforeEach` — wzorzec powyżej jest kontraktem testu; nie zostawiaj pustego `it` w merge.)*
+*(W implementacji wstaw kompletny kod z `@nestjs/testing` + cleanup tabeli `Meeting` w `beforeEach` - wzorzec powyżej jest kontraktem testu; nie zostawiaj pustego `it` w merge.)*
 
 Pełny przykład happy-path body do wklejenia przy implementacji:
 
@@ -1165,7 +1165,7 @@ describe('MeetingProcessOrchestrator (integration)', () => {
 #### DoD (krok)
 
 - Testy redakcji (KROK 2) zielone.
-- Testy pipeline: happy, idempotencja, fail-closed — zielone na DB testowej.
+- Testy pipeline: happy, idempotencja, fail-closed - zielone na DB testowej.
 - Demo opisane w README działa na Compose z FAZY 1.
 
 #### Propozycja commit message
@@ -1195,5 +1195,5 @@ LLM payloads without writing a canonical summary.
 |---------------|-------------------|
 | Faza 2 | `WYKONANY` |
 | Kroki 2.1–2.4 | `WYKONANY` |
-| MILESTONE — Pipeline etapu 0 działa | `OSIĄGNIĘTY` |
+| MILESTONE - Pipeline etapu 0 działa | `OSIĄGNIĘTY` |
 | Faza 3+ | bez zmian w tej sesji |

@@ -82,7 +82,7 @@ Trwały zapis zdarzeń związanych z **kluczową funkcjonalnością** (auth, ACL
 ### Anonimizacja przy erase treści klienta
 
 - Przy usunięciu treści spotkania na żądanie klienta (`bezpieczenstwo_i_rodo.md`): powiązane wpisy `audit_log` **anonimizujemy** (bez PII / bez residualnej treści; fakt zdarzenia może zostać).
-- Implementacja erase + anonimizacji audytu — **kolejna faza** względem etapu 0; norma już obowiązuje.
+- Implementacja erase + anonimizacji audytu - **kolejna faza** względem etapu 0; norma już obowiązuje.
 
 ### Kształt rekordu (logiczny)
 
@@ -102,11 +102,11 @@ Pola minimum: `id`, `createdAt`, `eventType`, `actorUserId` (nullable), `request
 | `summary.validation.failed` | Zod reject (UC1) |
 | `demo.run` | Przycisk Test / `POST /demo/run-meeting` |
 
-**Opcjonalne:** `meeting.access.granted` (np. detail — nie spamować na każdym GET listy).
+**Opcjonalne:** `meeting.access.granted` (np. detail - nie spamować na każdym GET listy).
 
 **Poza v1 kodu:** `ask.completed` / `ask.failed` (UC2).
 
-Rozszerzanie katalogu — przez zmianę docs + `spec/SPEC-OBSERVABILITY.md` + kod; unikać eventów „na wszelki wypadek”.
+Rozszerzanie katalogu - przez zmianę docs + `spec/SPEC-OBSERVABILITY.md` + kod; unikać eventów „na wszelki wypadek”.
 
 ## Health (obowiązkowe)
 

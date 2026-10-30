@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import type {
   DemoRunMeetingResponseDto,
-  MeetingDetailDto,
   MeetingListItemDto,
   MeetingListResponseDto,
   MeetingStatusEventDto,
@@ -24,11 +23,9 @@ import {
 } from "@/components/ui/table";
 import { uiRoutes } from "@/lib/routes";
 
-const DEMO_FIXTURE_KEY = "demo-client-budget-pl";
-
 type RowView = MeetingListItemDto & {
-  readonly summaryPreview?: string | null;
-  readonly failureMessage?: string | null;
+  readonly summaryPreview: string | null;
+  readonly failureMessage: string | null;
 };
 
 type LoadState =
@@ -42,6 +39,8 @@ type LoadState =
       readonly rows: readonly RowView[];
     };
 
+type RowPatch = Partial<RowView> & { readonly id: string };
+
 function summaryToPreview(summary: unknown): string | null {
   if (summary == null) return null;
   if (typeof summary === "string") return summary.slice(0, 160);
@@ -50,6 +49,14 @@ function summaryToPreview(summary: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+function toRowView(item: MeetingListItemDto): RowView {
+  return {
+    ...item,
+    summaryPreview: summaryToPreview(item.summary),
+    failureMessage: item.failureReason,
+  };
 }
 
 export function MeetingsDashboard() {
@@ -103,7 +110,7 @@ export function MeetingsDashboard() {
         page: data.page,
         limit: data.limit as MeetingListLimit,
         total: data.total,
-        rows: data.items,
+        rows: data.items.map(toRowView),
       });
     }
 
@@ -121,15 +128,57 @@ export function MeetingsDashboard() {
     };
   }, []);
 
-  function upsertRow(patch: RowView) {
+  function upsertRow(patch: RowPatch) {
     setState((prev) => {
       if (prev.status !== "ready") return prev;
       const idx = prev.rows.findIndex((r) => r.id === patch.id);
       if (idx === -1) {
-        return { ...prev, rows: [patch, ...prev.rows], total: prev.total + 1 };
+        const row = toRowView({
+          id: patch.id,
+          title: patch.title ?? null,
+          startedAt: patch.startedAt ?? null,
+          durationSeconds: patch.durationSeconds ?? null,
+          organizerId: patch.organizerId ?? null,
+          clientId: patch.clientId ?? null,
+          clientLinkStatus: patch.clientLinkStatus ?? "unmatched",
+          confidential: patch.confidential ?? false,
+          processingStatus: patch.processingStatus ?? "pending",
+          summary: patch.summary ?? null,
+          failureReason: patch.failureReason ?? null,
+        });
+        return {
+          ...prev,
+          rows: [
+            {
+              ...row,
+              summaryPreview: patch.summaryPreview ?? row.summaryPreview,
+              failureMessage: patch.failureMessage ?? row.failureMessage,
+            },
+            ...prev.rows,
+          ],
+          total: prev.total + 1,
+        };
       }
       const rows = prev.rows.slice();
-      rows[idx] = { ...rows[idx], ...patch };
+      const current = rows[idx];
+      if (!current) return prev;
+      const merged: RowView = {
+        ...current,
+        ...patch,
+        summaryPreview:
+          patch.summaryPreview !== undefined
+            ? patch.summaryPreview
+            : patch.summary !== undefined
+              ? summaryToPreview(patch.summary)
+              : current.summaryPreview,
+        failureMessage:
+          patch.failureMessage !== undefined
+            ? patch.failureMessage
+            : patch.failureReason !== undefined
+              ? patch.failureReason
+              : current.failureMessage,
+      };
+      rows[idx] = merged;
       return { ...prev, rows };
     });
   }
@@ -149,43 +198,32 @@ export function MeetingsDashboard() {
         return;
       }
 
-      const base: RowView = {
-        id: payload.meetingId,
-        title: payload.title ?? null,
-        startedAt: null,
-        durationSeconds: null,
-        organizerId: null,
-        clientId: null,
-        clientLinkStatus: "unmatched",
-        confidential: false,
-        processingStatus: payload.processingStatus,
-        summaryPreview: summaryToPreview(payload.summary ?? null),
-      };
+      // Tylko pola obecne w evencie — bez nadpisywania metadanych listy nullami.
+      const failedWithoutReason =
+        payload.processingStatus === "failed" &&
+        payload.failureReason === undefined;
 
-      if (payload.processingStatus === "failed") {
-        void (async () => {
-          const detailRes = await fetch(`/api/meetings/${meetingId}`, {
-            credentials: "same-origin",
-          });
-          let failureMessage = "Przetwarzanie nie powiodło się.";
-          if (detailRes.ok) {
-            const detail = (await detailRes.json()) as MeetingDetailDto;
-            if (detail.failureReason) {
-              failureMessage = detail.failureReason;
+      upsertRow({
+        id: payload.meetingId,
+        processingStatus: payload.processingStatus,
+        ...(payload.title !== undefined ? { title: payload.title } : {}),
+        ...(payload.summary !== undefined
+          ? {
+              summary: payload.summary,
+              summaryPreview: summaryToPreview(payload.summary),
             }
-            upsertRow({
-              ...base,
-              ...detail,
-              failureMessage,
-              summaryPreview: summaryToPreview(detail.summary),
-            });
-          } else {
-            upsertRow({ ...base, failureMessage });
-          }
-        })();
-      } else {
-        upsertRow(base);
-      }
+          : {}),
+        ...(payload.failureReason !== undefined
+          ? {
+              failureReason: payload.failureReason,
+              failureMessage:
+                payload.failureReason ?? "Przetwarzanie nie powiodło się.",
+            }
+          : {}),
+        ...(failedWithoutReason
+          ? { failureMessage: "Przetwarzanie nie powiodło się." }
+          : {}),
+      });
 
       if (
         payload.processingStatus === "completed" ||
@@ -210,13 +248,14 @@ export function MeetingsDashboard() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fixtureKey: DEMO_FIXTURE_KEY }),
+        body: JSON.stringify({}),
       });
       if (!res.ok) {
         setTestError("Nie udało się uruchomić demo.");
         return;
       }
       const data = (await res.json()) as DemoRunMeetingResponseDto;
+      // Każdy sukces = własny meetingId runu (F-8); upsert dokłada wiersz przy nowym id
       upsertRow({
         id: data.meetingId,
         title: null,
@@ -227,6 +266,10 @@ export function MeetingsDashboard() {
         clientLinkStatus: "unmatched",
         confidential: false,
         processingStatus: data.status,
+        summary: null,
+        failureReason: null,
+        summaryPreview: null,
+        failureMessage: null,
       });
       openSse(data.meetingId);
     } catch {

@@ -1,8 +1,8 @@
-# Vinseo Recruitment Task — feature plan: Faza 3 frontend (UI v1 ↔ API)
+# Vinseo Recruitment Task - feature plan: Faza 3 frontend (UI v1 ↔ API)
 
 **Lokalizacja:** `feature-plans/vinseo-recruitment-task_feature_plan_frontend-faza-3-ui-v1-api.md`  
-**Kotwica major:** `vinseo-recruitment-task-frontend_major-plan.md` — **Faza 3** (kroki 3.1–3.5), do **MILESTONE — Panel v1 działa z API**.  
-**Zależność zewnętrzna (już domknięta):** `vinseo-recruitment-task-backend_major-plan.md` — Faza 3 `WYKONANY` + MILESTONE „API sesji i ACL gotowe pod front” `OSIĄGNIĘTY`.  
+**Kotwica major:** `vinseo-recruitment-task-frontend_major-plan.md` - **Faza 3** (kroki 3.1–3.5), do **MILESTONE - Panel v1 działa z API**.  
+**Zależność zewnętrzna (już domknięta):** `vinseo-recruitment-task-backend_major-plan.md` - Faza 3 `WYKONANY` + MILESTONE „API sesji i ACL gotowe pod front” `OSIĄGNIĘTY`.  
 **Źródła:** `docs/frontend.md`, `docs/data_flow.md`, `docs/dokumentacja_komunikacji.md`, `spec/SPEC-FRONTEND.md`, `spec/SPEC-KOMUNIKACJA.md`, `spec/SPEC-AUTH_I_ACL.md`, `spec/SPEC-TESTY.md`.  
 **Kod bazowy:** `apps/web` (Next.js `16.4.3`, React `19`, Tailwind `4`, shadcn/ui, `strict: true`) + kontrakty `@vinseo/contracts`.  
 **Statusy kroków feature:** `NIE_ROZPOCZĘTY` | `W_TRAKCIE` | `WYKONANY`
@@ -21,8 +21,8 @@
 
 ### Założenia stacku (odwołania, bez przepisywania SPEC)
 
-- Next.js App Router + BFF w `app/api/*` — `SPEC-FRONTEND` F-13…F-14, `SPEC-KOMUNIKACJA` K-6…K-7.
-- Sesja wyłącznie cookie HttpOnly (`ma_access`, `ma_refresh` — te same nazwy co `apps/api`); **zakaz** Web Storage na tokeny — F-15 / `SPEC-AUTH_I_ACL`.
+- Next.js App Router + BFF w `app/api/*` - `SPEC-FRONTEND` F-13…F-14, `SPEC-KOMUNIKACJA` K-6…K-7.
+- Sesja wyłącznie cookie HttpOnly (`ma_access`, `ma_refresh` - te same nazwy co `apps/api`); **zakaz** Web Storage na tokeny - F-15 / `SPEC-AUTH_I_ACL`.
 - BFF: cienkie proxy; **jedyny** wyjątek domenowy UI-only: `passwordConfirm` na register (K-6a).
 - Data-fetching: natywny `fetch` (F-9); SSE klient: `EventSource` wobec BFF (F-8).
 - Typowanie: `strict` z `apps/web/tsconfig.json`; brak `any` na granicach; `import type` dla typów; importy: framework (`next`, `next/*`) najpierw w grupie wartości; DTO z `@vinseo/contracts`.
@@ -54,29 +54,29 @@
 
 ---
 
-## FAZA 1 — UI v1: sesja, tabela + Test + SSE, mock wyszukiwarki
+## FAZA 1 - UI v1: sesja, tabela + Test + SSE, mock wyszukiwarki
 
-**Kotwica major:** Faza 3 — UI v1: sesja, tabela + Test + SSE, mock wyszukiwarki.  
+**Kotwica major:** Faza 3 - UI v1: sesja, tabela + Test + SSE, mock wyszukiwarki.  
 **Cel fazy:** Domknąć minimalny panel etapu 0 na żywym API (auth cookie, lista po ACL, Test→SSE, mock search) zgodnie z DoD Fazy 3 majoru frontu.
 
 ---
 
-### KROK 1 — Infrastruktura BFF (env, proxy cookie, envelope, contracts)
+### KROK 1 - Infrastruktura BFF (env, proxy cookie, envelope, contracts)
 
 **Status:** `WYKONANY`
 
-**Cel:** Wspólna warstwa proxy używana przez wszystkie handlery — forward `Cookie` do Nest, relay `Set-Cookie` do przeglądarki (host BFF), envelope K-8 przy braku konfiguracji. Odwołania: `SPEC-KOMUNIKACJA` K-6…K-8, `SPEC-FRONTEND` F-13…F-16; major **3.2** (fundament pod).
+**Cel:** Wspólna warstwa proxy używana przez wszystkie handlery - forward `Cookie` do Nest, relay `Set-Cookie` do przeglądarki (host BFF), envelope K-8 przy braku konfiguracji. Odwołania: `SPEC-KOMUNIKACJA` K-6…K-8, `SPEC-FRONTEND` F-13…F-16; major **3.2** (fundament pod).
 
 **Artefakty:**
 
-- Zmiana: `apps/web/package.json` — zależność `@vinseo/contracts`
-- Zmiana: `apps/web/next.config.ts` — `transpilePackages: ["@vinseo/contracts"]`
-- Zmiana: `apps/web/lib/env.ts` — wymagany `API_BASE_URL` w handlerach
+- Zmiana: `apps/web/package.json` - zależność `@vinseo/contracts`
+- Zmiana: `apps/web/next.config.ts` - `transpilePackages: ["@vinseo/contracts"]`
+- Zmiana: `apps/web/lib/env.ts` - wymagany `API_BASE_URL` w handlerach
 - Nowy: `apps/web/lib/session-cookies.ts`
 - Nowy: `apps/web/lib/bff-proxy.ts`
-- Zmiana: `apps/web/lib/bff-stub.ts` — zostaje tylko jako dokument historyczny **albo** usunięcie po podmianie wszystkich route (preferuj usunięcie importów stubów w KROK 2–5; plik stub można skasować na końcu KROK 5)
+- Zmiana: `apps/web/lib/bff-stub.ts` - zostaje tylko jako dokument historyczny **albo** usunięcie po podmianie wszystkich route (preferuj usunięcie importów stubów w KROK 2–5; plik stub można skasować na końcu KROK 5)
 
-**Implementacja — zależność monorepo**
+**Implementacja - zależność monorepo**
 
 W `apps/web/package.json` dodaj:
 
@@ -86,7 +86,7 @@ W `apps/web/package.json` dodaj:
 
 W katalogu `apps/web`: `pnpm install` (z rootu monorepo). Przed typecheck: `pnpm --filter @vinseo/contracts build` (jak w skryptach `dev:api`).
 
-**Refaktor — `apps/web/next.config.ts`**
+**Refaktor - `apps/web/next.config.ts`**
 
 **Teraz:**
 
@@ -124,13 +124,13 @@ const nextConfig: NextConfig = {
 };
 ```
 
-**Refaktor — `apps/web/lib/env.ts` (cały plik)**
+**Refaktor - `apps/web/lib/env.ts` (cały plik)**
 
 **Zamień na:**
 
 ```ts
 /**
- * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret — nie tu
+ * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret - nie tu
  * (SPEC-FRONTEND F-16). API URL tylko server-side (BFF), bez NEXT_PUBLIC_.
  */
 export type WebServerEnv = {
@@ -158,11 +158,11 @@ export function requireApiBaseUrl(
 }
 ```
 
-**Nowy plik — `apps/web/lib/session-cookies.ts`:**
+**Nowy plik - `apps/web/lib/session-cookies.ts`:**
 
 ```ts
 /**
- * Nazwy cookie sesji — zgodne z apps/api `auth-cookies.ts`
+ * Nazwy cookie sesji - zgodne z apps/api `auth-cookies.ts`
  * (SPEC-AUTH_I_ACL: access + refresh HttpOnly).
  */
 export const ACCESS_COOKIE = "ma_access" as const;
@@ -173,7 +173,7 @@ export const SESSION_COOKIE_NAMES = [ACCESS_COOKIE, REFRESH_COOKIE] as const;
 export type SessionCookieName = (typeof SESSION_COOKIE_NAMES)[number];
 ```
 
-**Nowy plik — `apps/web/lib/bff-proxy.ts`:**
+**Nowy plik - `apps/web/lib/bff-proxy.ts`:**
 
 ```ts
 import type { HttpErrorBody } from "@vinseo/contracts";
@@ -293,7 +293,7 @@ export async function bffProxyJson(init: BffProxyInit): Promise<Response> {
       headers,
       body: init.body,
       cache: "no-store",
-      // Cookie sesji Nest — nie śledź redirectów auth między hostami
+      // Cookie sesji Nest - nie śledź redirectów auth między hostami
       redirect: "manual",
     },
   );
@@ -372,11 +372,11 @@ export async function bffProxySse(init: {
 
 **Biblioteki / API:**
 
-- Context7 Next `v16.2.9`: Route Handlers — `cookies` / `Set-Cookie` na `Response`; dynamic `params: Promise`.
+- Context7 Next `v16.2.9`: Route Handlers - `cookies` / `Set-Cookie` na `Response`; dynamic `params: Promise`.
 - Lokalne docs: `proxy.ts` zamiast deprecated `middleware` (użyte w KROK 3).
 - SPEC > Context7 przy konflikcie.
 
-**Testy:** `pnpm --filter @vinseo/contracts build` + typecheck importów w `apps/web` (pełny smoke build — Faza 4 majoru; tu: brak błędów TS na nowych plikach).
+**Testy:** `pnpm --filter @vinseo/contracts build` + typecheck importów w `apps/web` (pełny smoke build - Faza 4 majoru; tu: brak błędów TS na nowych plikach).
 
 **DoD (krok):**
 
@@ -387,11 +387,11 @@ export async function bffProxySse(init: {
 
 ---
 
-### KROK 2 — BFF auth + register `passwordConfirm` (K-6a)
+### KROK 2 - BFF auth + register `passwordConfirm` (K-6a)
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **3.2** — żywe handlery auth; register: match `passwordConfirm` przed proxy, mismatch → 400 bez Nest; OK → strip do `{ email, password }`. Login bez `passwordConfirm`. `SPEC-KOMUNIKACJA` K-6a.
+**Cel:** Spełnić major **3.2** - żywe handlery auth; register: match `passwordConfirm` przed proxy, mismatch → 400 bez Nest; OK → strip do `{ email, password }`. Login bez `passwordConfirm`. `SPEC-KOMUNIKACJA` K-6a.
 
 **Artefakty:**
 
@@ -402,7 +402,7 @@ export async function bffProxySse(init: {
   `apps/web/app/api/auth/me/route.ts`  
   `apps/web/app/api/auth/refresh/route.ts`
 
-**Implementacja — kompletne pliki**
+**Implementacja - kompletne pliki**
 
 `apps/web/app/api/auth/register/route.ts`:
 
@@ -546,22 +546,22 @@ export async function POST(request: Request): Promise<Response> {
 
 ---
 
-### KROK 3 — Auth UI F-1 + ochrona tras + wylogowanie
+### KROK 3 - Auth UI F-1 + ochrona tras + wylogowanie
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **3.1** — klasyczny UX auth (F-1), sukces → cookie przez BFF → `/meetings`; brak ważnej sesji na chronionych → `/`; wylogowanie przez BFF. Refaktor względem Faza 2 / Krok 2.1 (szkielet przełączania).
+**Cel:** Spełnić major **3.1** - klasyczny UX auth (F-1), sukces → cookie przez BFF → `/meetings`; brak ważnej sesji na chronionych → `/`; wylogowanie przez BFF. Refaktor względem Faza 2 / Krok 2.1 (szkielet przełączania).
 
 **Artefakty:**
 
-- Zmiana: `apps/web/components/auth-mode-toggle.tsx` (cały plik — F-1)
+- Zmiana: `apps/web/components/auth-mode-toggle.tsx` (cały plik - F-1)
 - Zmiana: `apps/web/app/page.tsx`
 - Nowy: `apps/web/proxy.ts` (miękka bramka cookie)
 - Nowy: `apps/web/lib/require-session.ts` (twarda weryfikacja `me` w layoutcie dashboard)
 - Zmiana: `apps/web/app/(dashboard)/layout.tsx`
 - Zmiana: `apps/web/components/dashboard-sidebar.tsx` (żywy logout)
 
-**Refaktor — `apps/web/components/auth-mode-toggle.tsx` (cały plik)**
+**Refaktor - `apps/web/components/auth-mode-toggle.tsx` (cały plik)**
 
 Usuń konkurencyjne taby „Logowanie/Rejestracja” (F-1: przełączanie wyłącznie linkami tekstowymi pod formularzem).
 
@@ -586,9 +586,9 @@ type AuthFormState =
   | { readonly status: "error"; readonly message: string };
 
 /**
- * Auth UI v1 — SPEC-FRONTEND F-1.
+ * Auth UI v1 - SPEC-FRONTEND F-1.
  * Start: login; CTA; linki tekstowe; register: passwordConfirm + match przed submit.
- * Sesja tylko przez cookie HttpOnly z BFF — bez localStorage/sessionStorage.
+ * Sesja tylko przez cookie HttpOnly z BFF - bez localStorage/sessionStorage.
  */
 export function AuthModeToggle() {
   const router = useRouter();
@@ -748,7 +748,7 @@ export function AuthModeToggle() {
 }
 ```
 
-**Refaktor — `apps/web/app/page.tsx`**
+**Refaktor - `apps/web/app/page.tsx`**
 
 **Zamień na:**
 
@@ -768,7 +768,7 @@ export default function AuthPage() {
 }
 ```
 
-**Nowy plik — `apps/web/proxy.ts`**
+**Nowy plik - `apps/web/proxy.ts`**
 
 Miękka bramka: brak obu cookie sesji → redirect na `/` (F-2). Twarda walidacja JWT w layoutcie (poniżej). Next 16: **`proxy.ts`**, nie `middleware.ts` (lokalne docs + Context7).
 
@@ -808,7 +808,7 @@ export const config = {
 };
 ```
 
-**Nowy plik — `apps/web/lib/require-session.ts`:**
+**Nowy plik - `apps/web/lib/require-session.ts`:**
 
 Layout RSC: tylko obecność cookie (+ misconfig). Cykl **refresh → me** robi klient dashboardu przez BFF same-origin (`credentials: "same-origin"`), żeby `Set-Cookie` z Nest wróciły do przeglądarki (RSC `fetch` do Nest po refresh nie ustawi cookie w browserze).
 
@@ -837,7 +837,7 @@ export async function requireSessionCookies(): Promise<void> {
 }
 ```
 
-**Refaktor — `apps/web/app/(dashboard)/layout.tsx`**
+**Refaktor - `apps/web/app/(dashboard)/layout.tsx`**
 
 **Zamień na:**
 
@@ -865,7 +865,7 @@ export default async function DashboardLayout({
 }
 ```
 
-**Refaktor — `apps/web/components/dashboard-sidebar.tsx` (fragment logout)**
+**Refaktor - `apps/web/components/dashboard-sidebar.tsx` (fragment logout)**
 
 **Teraz:** `Link` „Wyloguj (stub)” → `/`.
 
@@ -948,11 +948,11 @@ export function DashboardSidebar() {
 
 ---
 
-### KROK 4 — BFF meetings + dashboard: tabela, limit, page
+### KROK 4 - BFF meetings + dashboard: tabela, limit, page
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **3.3** — lista z API przez BFF (już po ACL), select limitu ∈ {10,25,50,100} + `page`. F-5, F-6; `SPEC-AUTH_I_ACL` paginacja.
+**Cel:** Spełnić major **3.3** - lista z API przez BFF (już po ACL), select limitu ∈ {10,25,50,100} + `page`. F-5, F-6; `SPEC-AUTH_I_ACL` paginacja.
 
 **Artefakty:**
 
@@ -1022,8 +1022,8 @@ export async function GET(
 }
 ```
 
-**Nowy — `apps/web/components/meetings-dashboard.tsx`** (szkielet listy + paginacja; Test/SSE w KROK 5 w **tym samym** pliku — poniżej w KROK 5 pełna wersja).  
-W **tym** kroku wystarczy wersja bez SSE (można od razu wkleić pełny plik z KROK 5, żeby uniknąć podwójnego refaktoru — **zalecane: od razu pełny komponent z KROK 5**, a DoD KROK 4 weryfikuje listę/paginację niezależnie od Test).
+**Nowy - `apps/web/components/meetings-dashboard.tsx`** (szkielet listy + paginacja; Test/SSE w KROK 5 w **tym samym** pliku - poniżej w KROK 5 pełna wersja).  
+W **tym** kroku wystarczy wersja bez SSE (można od razu wkleić pełny plik z KROK 5, żeby uniknąć podwójnego refaktoru - **zalecane: od razu pełny komponent z KROK 5**, a DoD KROK 4 weryfikuje listę/paginację niezależnie od Test).
 
 **`apps/web/app/(dashboard)/meetings/page.tsx`:**
 
@@ -1039,15 +1039,15 @@ export default function MeetingsPage() {
 
 - Tabela pokazuje `items` z `GET /api/meetings?page&limit`.
 - Zmiana limitu / strony wysyła parametry; limit tylko z {10,25,50,100}.
-- UI nie „dopuszcza po ID” — widać wyłącznie to, co zwróci API.
+- UI nie „dopuszcza po ID” - widać wyłącznie to, co zwróci API.
 
 ---
 
-### KROK 5 — BFF demo/SSE + Test + aktualizacja wiersza
+### KROK 5 - BFF demo/SSE + Test + aktualizacja wiersza
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **3.4** — Test → `POST /api/demo/run-meeting` → SSE `GET /api/meetings/:id/events` → aktualizacja wiersza in-place; `failed` → status + komunikat; **bez** redirectu na detail. F-7, F-8; `docs/data_flow.md`; K-5 / K-5a.
+**Cel:** Spełnić major **3.4** - Test → `POST /api/demo/run-meeting` → SSE `GET /api/meetings/:id/events` → aktualizacja wiersza in-place; `failed` → status + komunikat; **bez** redirectu na detail. F-7, F-8; `docs/data_flow.md`; K-5 / K-5a.
 
 **Artefakty:**
 
@@ -1110,7 +1110,7 @@ export async function GET(
 }
 ```
 
-**Nowy plik (kompletny) — `apps/web/components/meetings-dashboard.tsx`:**
+**Nowy plik (kompletny) - `apps/web/components/meetings-dashboard.tsx`:**
 
 ```tsx
 "use client";
@@ -1443,12 +1443,12 @@ export function MeetingsDashboard() {
             ) : (
               state.rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.title ?? "—"}</TableCell>
+                  <TableCell>{row.title ?? "-"}</TableCell>
                   <TableCell>{row.processingStatus}</TableCell>
                   <TableCell className="max-w-md truncate text-sm text-muted-foreground">
                     {row.processingStatus === "failed"
                       ? (row.failureMessage ?? "failed")
-                      : (row.summaryPreview ?? "—")}
+                      : (row.summaryPreview ?? "-")}
                   </TableCell>
                 </TableRow>
               ))
@@ -1461,7 +1461,7 @@ export function MeetingsDashboard() {
 }
 ```
 
-> `clientLinkStatus: "unmatched"` przy wierszu z Test — literał z `ClientLinkStatus` (`internal` | `matched` | `unmatched`); po reload / detail SSE nadpisze pola z API.
+> `clientLinkStatus: "unmatched"` przy wierszu z Test - literał z `ClientLinkStatus` (`internal` | `matched` | `unmatched`); po reload / detail SSE nadpisze pola z API.
 
 **Biblioteki:** EventSource + BFF SSE (F-8); Nest `@Sse` emituje `data` jako JSON (parse w `onmessage`).
 
@@ -1473,11 +1473,11 @@ export function MeetingsDashboard() {
 
 ---
 
-### KROK 6 — Mock wyszukiwarki + domknięcie bezpieczeństwa UI
+### KROK 6 - Mock wyszukiwarki + domknięcie bezpieczeństwa UI
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **3.5** — interaktywny mock (bez API LLM/search); F-10…F-12, F-15…F-17; brak sekretów w bundlu; brak logowania pełnego transcriptu w konsoli na prod.
+**Cel:** Spełnić major **3.5** - interaktywny mock (bez API LLM/search); F-10…F-12, F-15…F-17; brak sekretów w bundlu; brak logowania pełnego transcriptu w konsoli na prod.
 
 **Artefakty:**
 
@@ -1486,7 +1486,7 @@ export function MeetingsDashboard() {
 - Ewentualnie: usunięcie `apps/web/lib/bff-stub.ts` jeśli żaden route go nie importuje
 - Przegląd: `apps/web` pod kątem `localStorage` / `sessionStorage` / `NEXT_PUBLIC_` / `console.log` transcriptu
 
-**Nowy — `apps/web/components/search-mock-panel.tsx`:**
+**Nowy - `apps/web/components/search-mock-panel.tsx`:**
 
 ```tsx
 "use client";
@@ -1497,7 +1497,7 @@ import { Input } from "@/components/ui/input";
 import { searchMockHits } from "@/lib/search-mock";
 
 /**
- * Mock wyszukiwarki — F-11…F-12. Filtr lokalny po hardcodzie; zero fetch.
+ * Mock wyszukiwarki - F-11…F-12. Filtr lokalny po hardcodzie; zero fetch.
  */
 export function SearchMockPanel() {
   const [query, setQuery] = useState("");
@@ -1521,7 +1521,7 @@ export function SearchMockPanel() {
       </p>
       <Input
         type="search"
-        placeholder="Szukaj (mock — bez API)"
+        placeholder="Szukaj (mock - bez API)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         aria-label="Pole wyszukiwania (mock)"
@@ -1598,12 +1598,12 @@ in-place over SSE without a detail page.
 1. `API_BASE_URL=http://localhost:3001` w `apps/web/.env`.
 2. Register → dashboard; refresh strony → nadal sesja (lub refresh cookie).
 3. Test → wiersz `pending`→`processing`→`completed|failed` bez zmiany URL.
-4. `/search` — filtr lokalny; brak requestów AI.
+4. `/search` - filtr lokalny; brak requestów AI.
 5. Wyloguj → `/`; `/meetings` → redirect `/`.
 
 ---
 
-## Ślad do major (informacyjnie — po późniejszej implementacji)
+## Ślad do major (informacyjnie - po późniejszej implementacji)
 
 Po spełnieniu DoD implementacji (poza tą sesją):
 
@@ -1611,7 +1611,7 @@ Po spełnieniu DoD implementacji (poza tą sesją):
 |----------------------|-------------------|
 | Faza 3 | `WYKONANY` |
 | Kroki 3.1–3.5 | `WYKONANY` |
-| MILESTONE — Panel v1 działa z API | `OSIĄGNIĘTY` |
+| MILESTONE - Panel v1 działa z API | `OSIĄGNIĘTY` |
 
 Ten feature plan **nie** zmienia pliku major.
 
@@ -1623,4 +1623,4 @@ Ten feature plan **nie** zmienia pliku major.
 2. Major 3.2 (BFF register) przed 3.1 (auth UI).  
 3. Meetings/demo/SSE BFF razem z UI, które je konsumują.  
 4. Mock/security na końcu.  
-**Brak** przenosin między fazami major — wyłącznie Faza 3 frontu.
+**Brak** przenosin między fazami major - wyłącznie Faza 3 frontu.

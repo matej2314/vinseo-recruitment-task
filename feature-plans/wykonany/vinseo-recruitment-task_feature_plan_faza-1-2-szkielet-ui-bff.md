@@ -1,7 +1,7 @@
-# Vinseo Recruitment Task — feature plan: Fazy 1–2 frontend (szkielet UI/BFF)
+# Vinseo Recruitment Task - feature plan: Fazy 1–2 frontend (szkielet UI/BFF)
 
 **Lokalizacja:** `feature-plans/vinseo-recruitment-task_feature_plan_faza-1-2-szkielet-ui-bff.md`  
-**Kotwica major:** `vinseo-recruitment-task-frontend_major-plan.md` — Faza 1 + Faza 2, do **MILESTONE — Szkielet UI/BFF gotowy do spięcia z API**.  
+**Kotwica major:** `vinseo-recruitment-task-frontend_major-plan.md` - Faza 1 + Faza 2, do **MILESTONE - Szkielet UI/BFF gotowy do spięcia z API**.  
 **Źródła:** `docs/frontend.md`, `docs/architektura_katalogi_pliki.md`, `docs/dokumentacja_komunikacji.md`, `docs/anty_patterny.md`, `spec/SPEC-FRONTEND.md`, `spec/SPEC-KOMUNIKACJA.md`, `spec/SPEC-AUTH_I_ACL.md`, `spec/SPEC-TESTY.md`.  
 **Kod bazowy:** `apps/web` (Next.js `16.4.3`, React `19`, Tailwind CSS `4`, `strict: true`).  
 **Statusy kroków feature:** `NIE_ROZPOCZĘTY` | `W_TRAKCIE` | `WYKONANY`
@@ -20,11 +20,11 @@
 
 ### Założenia stacku (odwołania, bez przepisywania SPEC)
 
-- Next.js App Router + BFF w `app/api/*` — `SPEC-FRONTEND` F-13…F-14, `SPEC-KOMUNIKACJA` K-6…K-7.
-- Tailwind + shadcn/ui; layout roboczy bez brandingu — `docs/frontend.md`, `SPEC-FRONTEND`.
+- Next.js App Router + BFF w `app/api/*` - `SPEC-FRONTEND` F-13…F-14, `SPEC-KOMUNIKACJA` K-6…K-7.
+- Tailwind + shadcn/ui; layout roboczy bez brandingu - `docs/frontend.md`, `SPEC-FRONTEND`.
 - Data-fetching v1: natywny `fetch` (Faza 3); tu tylko placeholdery.
 - Typowanie: `strict` z `apps/web/tsconfig.json`; brak `any` na granicach handlerów; `import type` dla typów; importy: framework (`next`, `next/*`) najpierw w grupie wartości.
-- Smoke UI v1 (build/typecheck) — poza tym wycinkiem (`SPEC-TESTY` / major Faza 4); tu: `next build` nie może być oczywście zepsuty po szkielecie.
+- Smoke UI v1 (build/typecheck) - poza tym wycinkiem (`SPEC-TESTY` / major Faza 4); tu: `next build` nie może być oczywście zepsuty po szkielecie.
 
 ### Mapa tras UI (kanon wycinka)
 
@@ -50,42 +50,42 @@ Grupa `(dashboard)` **nie** dodaje segmentu URL; osobne `page.tsx` pod `/` i pod
 | `GET /api/meetings/[id]/events` | `GET /meetings/:id/events` (SSE) | stub `501` |
 | `POST /api/demo/run-meeting` | `POST /demo/run-meeting` | stub `501` |
 
-Stub **nie** egzekwuje ACL, **nie** woła pg-boss, **nie** woła adapterów — zgodnie z zakazami BFF.
+Stub **nie** egzekwuje ACL, **nie** woła pg-boss, **nie** woła adapterów - zgodnie z zakazami BFF.
 
 ---
 
-## FAZA 1 — Odbiór fundamentu i stubu `web`
+## FAZA 1 - Odbiór fundamentu i stubu `web`
 
-**Kotwica major:** Faza 1 — Odbiór fundamentu i stubu `web`.  
+**Kotwica major:** Faza 1 - Odbiór fundamentu i stubu `web`.  
 **Cel fazy:** potwierdzić, że `apps/web` da się bezpiecznie rozbudować pod UI v1 bez przebudowy monorepo; utrwalić mapę widoków/BFF i stałe tras.
 
-### KROK 1 — Potwierdzenie gotowości stubu
+### KROK 1 - Potwierdzenie gotowości stubu
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **1.1** — stub uruchamialny w układzie repo; brak blokady „najpierw przebuduj monorepo”. Odwołania: `docs/architektura_katalogi_pliki.md`, major frontu Faza 1.
+**Cel:** Spełnić major **1.1** - stub uruchamialny w układzie repo; brak blokady „najpierw przebuduj monorepo”. Odwołania: `docs/architektura_katalogi_pliki.md`, major frontu Faza 1.
 
 **Artefakty:**
 
 - Bez zmian strukturalnych monorepo (zakaz powielania Fazy 1 backendu).
-- Opcjonalny zapis lokalny checklisty w notatce implementacyjnej / PR — **nie** nowy plik w `docs/`.
+- Opcjonalny zapis lokalny checklisty w notatce implementacyjnej / PR - **nie** nowy plik w `docs/`.
 - Ewentualna kosmetyka tylko jeśli `pnpm dev` / `pnpm build` w `apps/web` padają na domyślnym stubie create-next-app (naprawa blokera, nie redesign).
 
 **Implementacja (procedura odbioru):**
 
 1. Z rootu repo potwierdź lokalizację: `apps/web/package.json`, `apps/web/app/layout.tsx`, `apps/web/app/page.tsx`.
-2. W `apps/web`: `pnpm install` (jeśli potrzeba), `pnpm dev` — strona odpowiada lokalnie.
-3. `pnpm build` — build stubu przechodzi (regresja „nie startuje” = fail DoD).
+2. W `apps/web`: `pnpm install` (jeśli potrzeba), `pnpm dev` - strona odpowiada lokalnie.
+3. `pnpm build` - build stubu przechodzi (regresja „nie startuje” = fail DoD).
 4. Checklist równoważności względem fundamentu backendu (wystarczy „tak / nie / N/A”):
    - [ ] Katalog `apps/web` istnieje i nie jest osobnym repo git.
    - [ ] Next App Router (katalog `app/`).
    - [ ] Alias `@/*` w `tsconfig` działa.
    - [ ] Brak wymogu przenosin drzewa przed Fazą 2 tego planu.
-5. Jeśli fundament monorepo (workspaces root, `packages/contracts`) jest niepełny — **nie** buduj go tutaj; zanotuj lukę jako zależność majoru backendu, o ile stub `web` sam startuje.
+5. Jeśli fundament monorepo (workspaces root, `packages/contracts`) jest niepełny - **nie** buduj go tutaj; zanotuj lukę jako zależność majoru backendu, o ile stub `web` sam startuje.
 
 **Biblioteki / API:** brak nowego API; Next już w stubie (`next@16.4.3`).
 
-**Testy:** smoke ręczne `dev` + `build` (bez Playwright — `SPEC-TESTY`).
+**Testy:** smoke ręczne `dev` + `build` (bez Playwright - `SPEC-TESTY`).
 
 **DoD (krok):**
 
@@ -94,24 +94,24 @@ Stub **nie** egzekwuje ACL, **nie** woła pg-boss, **nie** woła adapterów — 
 
 ---
 
-### KROK 2 — Mapa widoków v1 i granic BFF
+### KROK 2 - Mapa widoków v1 i granic BFF
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **1.2** — mapa widoków i granic BFF zgodna z `docs/frontend.md` / `SPEC-FRONTEND` / `SPEC-KOMUNIKACJA`; świadomie poza v1 nazwane. Utrwalenie w kodzie jako stałe tras (bez logiki ACL).
+**Cel:** Spełnić major **1.2** - mapa widoków i granic BFF zgodna z `docs/frontend.md` / `SPEC-FRONTEND` / `SPEC-KOMUNIKACJA`; świadomie poza v1 nazwane. Utrwalenie w kodzie jako stałe tras (bez logiki ACL).
 
 **Artefakty:**
 
 - Nowy: `apps/web/lib/routes.ts`
 - Nowy: `apps/web/lib/bff-surface.ts`
 
-### Nowy plik — kompletny kod
+### Nowy plik - kompletny kod
 
 `apps/web/lib/routes.ts`:
 
 ```typescript
 /**
- * Kanoniczne ścieżki UI v1 — docs/frontend.md, SPEC-FRONTEND F-1…F-4, F-10.
+ * Kanoniczne ścieżki UI v1 - docs/frontend.md, SPEC-FRONTEND F-1…F-4, F-10.
  * Brak trasy detail UI (`/meetings/[id]`) w v1.
  */
 export const uiRoutes = {
@@ -122,7 +122,7 @@ export const uiRoutes = {
 
 export type UiRoute = (typeof uiRoutes)[keyof typeof uiRoutes];
 
-/** Świadomie poza v1 UI (docs/frontend.md — poza v1). */
+/** Świadomie poza v1 UI (docs/frontend.md - poza v1). */
 export const outOfScopeUiV1 = [
   "branding / design system produktowy",
   "osobna strona detail spotkania jako główna nawigacja",
@@ -137,7 +137,7 @@ export const outOfScopeUiV1 = [
 
 ```typescript
 /**
- * Powierzchnia BFF ↔ API — SPEC-KOMUNIKACJA K-6…K-7, docs/dokumentacja_komunikacji.md §2.
+ * Powierzchnia BFF ↔ API - SPEC-KOMUNIKACJA K-6…K-7, docs/dokumentacja_komunikacji.md §2.
  * BFF: proxy + cookie; bez ACL, bez enqueue poza wywołaniem api (Faza 3).
  */
 export type BffMethod = "GET" | "POST";
@@ -166,7 +166,7 @@ export const bffSurface: readonly BffSurfaceRoute[] = [
     method: "GET",
     bffPath: "/api/meetings/[id]/events",
     apiPath: "/meetings/:id/events",
-    notes: "SSE text/event-stream — żywy proxy w Fazie 3",
+    notes: "SSE text/event-stream - żywy proxy w Fazie 3",
   },
   {
     method: "POST",
@@ -184,7 +184,7 @@ export const bffForbidden = [
 
 **Biblioteki:** brak.
 
-**Testy:** typecheck — pliki kompilują się w `strict`; brak runtime testów wymaganych w tym kroku.
+**Testy:** typecheck - pliki kompilują się w `strict`; brak runtime testów wymaganych w tym kroku.
 
 **DoD (krok):**
 
@@ -193,25 +193,25 @@ export const bffForbidden = [
 
 ---
 
-### KROK 3 — Gotowość warstwy web do rozbudowy
+### KROK 3 - Gotowość warstwy web do rozbudowy
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **1.3** — warstwa web gotowa na layout i handlery BFF bez otwierania Fazy 1 backendu. Minimalny kontrakt env pod późniejszy proxy (bez sekretów w `NEXT_PUBLIC_*`).
+**Cel:** Spełnić major **1.3** - warstwa web gotowa na layout i handlery BFF bez otwierania Fazy 1 backendu. Minimalny kontrakt env pod późniejszy proxy (bez sekretów w `NEXT_PUBLIC_*`).
 
 **Artefakty:**
 
 - Nowy: `apps/web/lib/env.ts`
 - Nowy: `apps/web/.env.example` (tylko nazwy zmiennych / przykładowe wartości nie-sekretne)
-- Zmiana (fragment): `apps/web/app/layout.tsx` — metadata robocza (pełny layout roboczy w FAZIE 2)
+- Zmiana (fragment): `apps/web/app/layout.tsx` - metadata robocza (pełny layout roboczy w FAZIE 2)
 
-### Nowy plik — kompletny kod
+### Nowy plik - kompletny kod
 
 `apps/web/lib/env.ts`:
 
 ```typescript
 /**
- * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret — nie tu
+ * Konfiguracja procesu web. Wrażliwe sekrety vendorów / JWT secret - nie tu
  * (SPEC-FRONTEND F-16). API URL tylko server-side (BFF), bez NEXT_PUBLIC_.
  */
 export type WebServerEnv = {
@@ -231,14 +231,14 @@ export function readWebServerEnv(
 `apps/web/.env.example`:
 
 ```bash
-# Server-only: bazowy URL Nest API (użycie w żywym proxy — Faza 3 majoru frontu).
-# Przykład lokalny — bez sekretów.
+# Server-only: bazowy URL Nest API (użycie w żywym proxy - Faza 3 majoru frontu).
+# Przykład lokalny - bez sekretów.
 API_BASE_URL=http://localhost:3001
 ```
 
-### Refaktor — `teraz` → `zamień na`
+### Refaktor - `teraz` → `zamień na`
 
-Plik: `apps/web/app/layout.tsx` — tylko `metadata` (reszta layoutu w FAZIE 2 / KROK 1).
+Plik: `apps/web/app/layout.tsx` - tylko `metadata` (reszta layoutu w FAZIE 2 / KROK 1).
 
 **Teraz:**
 
@@ -254,7 +254,7 @@ export const metadata: Metadata = {
 ```typescript
 export const metadata: Metadata = {
   title: "Firmowy asystent spotkań (web)",
-  description: "Szkielet UI v1 — etap 0",
+  description: "Szkielet UI v1 - etap 0",
 };
 ```
 
@@ -277,36 +277,36 @@ Record v1 routes and BFF surface constants so Phase 2 can scaffold views without
 
 ---
 
-## FAZA 2 — Szkielet powierzchni UI i BFF
+## FAZA 2 - Szkielet powierzchni UI i BFF
 
-**Kotwica major:** Faza 2 — Szkielet powierzchni UI i BFF.  
-**Cel fazy:** placeholdery auth / sidebar / widoków, bazowy layout roboczy + tooling UI, szkielet Route Handlers BFF — gotowość do spięcia z API w Fazie 3.  
+**Kotwica major:** Faza 2 - Szkielet powierzchni UI i BFF.  
+**Cel fazy:** placeholdery auth / sidebar / widoków, bazowy layout roboczy + tooling UI, szkielet Route Handlers BFF - gotowość do spięcia z API w Fazie 3.  
 **Pass rozwojowy:** major **2.3** (layout/tooling) **przed** **2.1** (placeholdery); potem **2.2** (BFF).
 
-### KROK 1 — Bazowy layout roboczy i tooling UI
+### KROK 1 - Bazowy layout roboczy i tooling UI
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **2.3** (przesunięty rozwojowo) — czytelny layout roboczy bez brandingu; Tailwind już obecny; inicjalizacja shadcn/ui jako środki (nie cel). Odwołania: `docs/frontend.md`, `SPEC-FRONTEND` (stack, F-18).
+**Cel:** Spełnić major **2.3** (przesunięty rozwojowo) - czytelny layout roboczy bez brandingu; Tailwind już obecny; inicjalizacja shadcn/ui jako środki (nie cel). Odwołania: `docs/frontend.md`, `SPEC-FRONTEND` (stack, F-18).
 
 **Artefakty:**
 
 - Zmiana: `apps/web/app/globals.css`
 - Zmiana: `apps/web/app/layout.tsx`
 - Nowe (CLI shadcn): `components.json`, `lib/utils.ts`, wybrane `components/ui/*` (button, input, label, table, separator)
-- Nowy: `apps/web/components/app-shell.tsx` (szkielet ramki roboczej — bez sidebara dashboardu; ten w KROKU 2)
+- Nowy: `apps/web/components/app-shell.tsx` (szkielet ramki roboczej - bez sidebara dashboardu; ten w KROKU 2)
 
-**Implementacja — kolejność:**
+**Implementacja - kolejność:**
 
-1. W `apps/web`: `pnpm dlx shadcn@latest init` (Tailwind 4 / istniejący CSS) — akceptuj ścieżki `@/components`, `@/lib/utils`.
+1. W `apps/web`: `pnpm dlx shadcn@latest init` (Tailwind 4 / istniejący CSS) - akceptuj ścieżki `@/components`, `@/lib/utils`.
 2. Dodaj komponenty:
    ```bash
    pnpm dlx shadcn@latest add button input label table separator
    ```
-   (Źródło komendy: registry shadcn; pełny `sidebar` **nie** jest wymagany w v1 — prosty nav własny w KROKU 2 wystarczy, żeby nie ciągnąć design systemu.)
-3. Uprość motyw do layoutu roboczego (jasny, bez wymogu dark mode — `SPEC-FRONTEND` poza wersją).
+   (Źródło komendy: registry shadcn; pełny `sidebar` **nie** jest wymagany w v1 - prosty nav własny w KROKU 2 wystarczy, żeby nie ciągnąć design systemu.)
+3. Uprość motyw do layoutu roboczego (jasny, bez wymogu dark mode - `SPEC-FRONTEND` poza wersją).
 
-### Refaktor — `globals.css`
+### Refaktor - `globals.css`
 
 Plik: `apps/web/app/globals.css`
 
@@ -327,7 +327,7 @@ body {
 }
 ```
 
-**Zamień na:** (po `init` shadcn mogą dojść zmienne shadcn — **nie usuwaj** wymaganych przez CLI; usuń wymuszanie dark mode jako „produkt”. Docelowy body roboczy:)
+**Zamień na:** (po `init` shadcn mogą dojść zmienne shadcn - **nie usuwaj** wymaganych przez CLI; usuń wymuszanie dark mode jako „produkt”. Docelowy body roboczy:)
 
 ```css
 body {
@@ -337,9 +337,9 @@ body {
 }
 ```
 
-Jeśli shadcn dopisze własny blok `@theme` / zmienne — **scal**, nie walcz z CLI; zakaz: powrót do brandingowego dark hero create-next-app.
+Jeśli shadcn dopisze własny blok `@theme` / zmienne - **scal**, nie walcz z CLI; zakaz: powrót do brandingowego dark hero create-next-app.
 
-### Refaktor — root layout
+### Refaktor - root layout
 
 Plik: `apps/web/app/layout.tsx`
 
@@ -375,9 +375,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 ```
 
-*(Zachowaj istniejące fonty Geist albo zamień na font z init shadcn — jedna rodzina; bez dokładania brandingu.)*
+*(Zachowaj istniejące fonty Geist albo zamień na font z init shadcn - jedna rodzina; bez dokładania brandingu.)*
 
-### Nowy plik — kompletny kod
+### Nowy plik - kompletny kod
 
 `apps/web/components/app-shell.tsx`:
 
@@ -390,7 +390,7 @@ type AppShellProps = {
 };
 
 /**
- * Ramka robocza v1 — bez brandingu produktowego (docs/frontend.md).
+ * Ramka robocza v1 - bez brandingu produktowego (docs/frontend.md).
  * RSC; bez logiki sesji (Faza 3).
  */
 export function AppShell({ children, title }: AppShellProps) {
@@ -417,16 +417,16 @@ export function AppShell({ children, title }: AppShellProps) {
 **DoD (krok):**
 
 - shadcn zainicjalizowany; button/input/label/table/separator dostępne.
-- Root layout roboczy (PL, bez create-next-app hero styling jako domyślnej treści — treść strony w KROKU 2).
+- Root layout roboczy (PL, bez create-next-app hero styling jako domyślnej treści - treść strony w KROKU 2).
 - Layout nie blokuje formularza / tabeli / selecta limitu w Fazie 3.
 
 ---
 
-### KROK 2 — Placeholdery auth, sidebar i widoków
+### KROK 2 - Placeholdery auth, sidebar i widoków
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **2.1** — szkielet `/` (login/register), layout po „zalogowaniu” (atrapa) z sidebarem: widok domyślny + wyszukiwarka; brak trasy detail UI. `SPEC-FRONTEND` F-1, F-3, F-4, F-10…F-12 (mock bez wołań API).
+**Cel:** Spełnić major **2.1** - szkielet `/` (login/register), layout po „zalogowaniu” (atrapa) z sidebarem: widok domyślny + wyszukiwarka; brak trasy detail UI. `SPEC-FRONTEND` F-1, F-3, F-4, F-10…F-12 (mock bez wołań API).
 
 **Artefakty:**
 
@@ -438,11 +438,11 @@ export function AppShell({ children, title }: AppShellProps) {
 - Nowy: `apps/web/app/(dashboard)/search/page.tsx`
 - Nowy: `apps/web/lib/search-mock.ts`
 
-### Refaktor — strona główna auth
+### Refaktor - strona główna auth
 
 Plik: `apps/web/app/page.tsx`
 
-**Teraz:** domyślny landing create-next-app (Image / Templates) — **zamień cały plik**.
+**Teraz:** domyślny landing create-next-app (Image / Templates) - **zamień cały plik**.
 
 **Zamień na (kompletny plik):**
 
@@ -454,7 +454,7 @@ export default function AuthPage() {
   return (
     <AppShell title="Logowanie / rejestracja">
       <p className="mb-6 max-w-lg text-sm text-muted-foreground">
-        Szkielet UI v1. Sesja cookie HttpOnly i ochrona tras — Faza 3 (BFF →
+        Szkielet UI v1. Sesja cookie HttpOnly i ochrona tras - Faza 3 (BFF →
         API). Tu tylko placeholdery formularza.
       </p>
       <AuthModeToggle />
@@ -463,7 +463,7 @@ export default function AuthPage() {
 }
 ```
 
-### Nowy plik — kompletny kod
+### Nowy plik - kompletny kod
 
 `apps/web/components/auth-mode-toggle.tsx`:
 
@@ -481,7 +481,7 @@ import { uiRoutes } from "@/lib/routes";
 type AuthMode = "login" | "register";
 
 /**
- * Placeholder auth — przełączanie trybu (SPEC-FRONTEND F-1).
+ * Placeholder auth - przełączanie trybu (SPEC-FRONTEND F-1).
  * Atrapa „sukcesu”: nawigacja na dashboard bez cookie (żywe auth = Faza 3).
  */
 export function AuthModeToggle() {
@@ -593,7 +593,7 @@ export function DashboardSidebar() {
 }
 ```
 
-> Jeśli po `shadcn add button` eksport `buttonVariants` nie istnieje w lokalnym pliku — użyj klas Tailwind + `cn` zamiast `buttonVariants` (ten sam wygląd roboczy). Nie dodawaj logiki ACL.
+> Jeśli po `shadcn add button` eksport `buttonVariants` nie istnieje w lokalnym pliku - użyj klas Tailwind + `cn` zamiast `buttonVariants` (ten sam wygląd roboczy). Nie dodawaj logiki ACL.
 
 `apps/web/app/(dashboard)/layout.tsx`:
 
@@ -607,8 +607,8 @@ type DashboardLayoutProps = {
 };
 
 /**
- * Layout po atrapie logowania — sidebar domyślny ↔ wyszukiwarka (F-3).
- * Ochrona sesji (redirect na `/`) — Faza 3.
+ * Layout po atrapie logowania - sidebar domyślny ↔ wyszukiwarka (F-3).
+ * Ochrona sesji (redirect na `/`) - Faza 3.
  */
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
@@ -634,7 +634,7 @@ import {
 } from "@/components/ui/table";
 
 /**
- * Widok domyślny — miejsce na tabelę + Test (F-5…F-8 w Fazie 3).
+ * Widok domyślny - miejsce na tabelę + Test (F-5…F-8 w Fazie 3).
  * Brak trasy detail UI.
  */
 export default function MeetingsPage() {
@@ -642,14 +642,14 @@ export default function MeetingsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold tracking-tight">Spotkania</h1>
-        <Button type="button" disabled title="Podpięcie BFF/API — Faza 3">
+        <Button type="button" disabled title="Podpięcie BFF/API - Faza 3">
           Test
         </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
         Placeholder tabeli. Limit 10/25/50/100 + <code>page</code> oraz SSE po
-        Test — Faza 3.
+        Test - Faza 3.
       </p>
 
       <div className="flex items-center gap-2 text-sm">
@@ -678,7 +678,7 @@ export default function MeetingsPage() {
         <TableBody>
           <TableRow>
             <TableCell colSpan={3} className="text-muted-foreground">
-              Brak danych — lista z API przez BFF w Fazie 3.
+              Brak danych - lista z API przez BFF w Fazie 3.
             </TableCell>
           </TableRow>
         </TableBody>
@@ -692,7 +692,7 @@ export default function MeetingsPage() {
 
 ```typescript
 /**
- * Statyczny mock wyszukiwarki — SPEC-FRONTEND F-11…F-12.
+ * Statyczny mock wyszukiwarki - SPEC-FRONTEND F-11…F-12.
  * Zakaz wołań LLM / search / RAG z UI v1.
  */
 export type SearchMockHit = {
@@ -705,7 +705,7 @@ export const searchMockHits: readonly SearchMockHit[] = [
   {
     id: "mock-1",
     title: "Przykładowe spotkanie (atrapa)",
-    snippet: "Wynik hardcodowany — bez backendu AI.",
+    snippet: "Wynik hardcodowany - bez backendu AI.",
   },
   {
     id: "mock-2",
@@ -731,7 +731,7 @@ export default function SearchPage() {
       </p>
       <Input
         type="search"
-        placeholder="Szukaj (mock — bez API)"
+        placeholder="Szukaj (mock - bez API)"
         disabled
         aria-label="Pole wyszukiwania (mock)"
       />
@@ -748,7 +748,7 @@ export default function SearchPage() {
 }
 ```
 
-**Biblioteki:** `next/navigation` (`useRouter`, `usePathname`), `next/link` — App Router (Context7: layouty / nawigacja). `"use client"` tylko na interakcji (F-18).
+**Biblioteki:** `next/navigation` (`useRouter`, `usePathname`), `next/link` - App Router (Context7: layouty / nawigacja). `"use client"` tylko na interakcji (F-18).
 
 **Testy:** ręcznie: `/` przełącza login/register; stub submit → `/meetings`; sidebar → `/search` i z powrotem; **brak** linku do `/meetings/[id]`.
 
@@ -760,11 +760,11 @@ export default function SearchPage() {
 
 ---
 
-### KROK 3 — Szkielet BFF (proxy)
+### KROK 3 - Szkielet BFF (proxy)
 
 **Status:** `WYKONANY`
 
-**Cel:** Spełnić major **2.2** — placeholdery Route Handlers pod auth / meetings / demo / SSE; cienkie proxy w kontrakcie powierzchni; **bez** ACL i **bez** omijania `api`. `SPEC-KOMUNIKACJA` K-6…K-7, `SPEC-FRONTEND` F-13…F-14. Context7: Route Handlers zwracają `Response`; cookies przez `cookies()` / nagłówki — **żywe** ustawianie cookie w Fazie 3; tu stub `501`.
+**Cel:** Spełnić major **2.2** - placeholdery Route Handlers pod auth / meetings / demo / SSE; cienkie proxy w kontrakcie powierzchni; **bez** ACL i **bez** omijania `api`. `SPEC-KOMUNIKACJA` K-6…K-7, `SPEC-FRONTEND` F-13…F-14. Context7: Route Handlers zwracają `Response`; cookies przez `cookies()` / nagłówki - **żywe** ustawianie cookie w Fazie 3; tu stub `501`.
 
 **Artefakty:**
 
@@ -779,7 +779,7 @@ export default function SearchPage() {
 - Nowy: `apps/web/app/api/meetings/[id]/events/route.ts`
 - Nowy: `apps/web/app/api/demo/run-meeting/route.ts`
 
-### Nowy plik — kompletny kod
+### Nowy plik - kompletny kod
 
 `apps/web/lib/bff-stub.ts`:
 
@@ -809,7 +809,7 @@ export function bffStubResponse(input: {
     bffPath: input.bffPath,
     apiPath: input.apiPath,
     message:
-      "Szkielet BFF — żywy proxy (cookie, SSE, demo) w Fazie 3 majoru frontu. Bez ACL w BFF.",
+      "Szkielet BFF - żywy proxy (cookie, SSE, demo) w Fazie 3 majoru frontu. Bez ACL w BFF.",
   };
 
   return Response.json(body, {
@@ -939,7 +939,7 @@ type RouteContext = {
 };
 
 /**
- * Placeholder SSE. Żywy proxy `text/event-stream` — Faza 3
+ * Placeholder SSE. Żywy proxy `text/event-stream` - Faza 3
  * (Context7: streaming Response; tu bez strumienia).
  */
 export async function GET(
@@ -973,9 +973,9 @@ export function POST(): Response {
 
 - Brak Prisma / pg-boss / reguł „czy user widzi meeting” w handlerach.
 - Brak `NEXT_PUBLIC_*` z sekretami.
-- Brak pełnego proxy do API „na zapas” bez kontraktu Fazy 3 — stub ma być czytelny.
+- Brak pełnego proxy do API „na zapas” bez kontraktu Fazy 3 - stub ma być czytelny.
 
-**Biblioteki:** App Router Route Handlers (`route.ts`); `params` jako `Promise` (Next 15+ / 16 — Context7). Cookies API — **nie** wymagane w stubie `501`.
+**Biblioteki:** App Router Route Handlers (`route.ts`); `params` jako `Promise` (Next 15+ / 16 - Context7). Cookies API - **nie** wymagane w stubie `501`.
 
 **Testy:** `curl -i -X POST http://localhost:3000/api/auth/login` → `501` + JSON `BFF_STUB`; analogicznie `GET /api/meetings`, `GET /api/meetings/demo-id/events`, `POST /api/demo/run-meeting`. Typecheck przechodzi.
 
@@ -1012,9 +1012,9 @@ Provide auth/dashboard shells and 501 BFF handlers so Phase 3 can wire cookies, 
 | Element major frontu | Po implementacji tego wycinka |
 |----------------------|-------------------------------|
 | Faza 1 | `WYKONANY` |
-| MILESTONE — Stub web zaakceptowany pod UI v1 | `OSIĄGNIĘTY` |
+| MILESTONE - Stub web zaakceptowany pod UI v1 | `OSIĄGNIĘTY` |
 | Faza 2 | `WYKONANY` |
-| MILESTONE — Szkielet UI/BFF gotowy do spięcia z API | `OSIĄGNIĘTY` |
+| MILESTONE - Szkielet UI/BFF gotowy do spięcia z API | `OSIĄGNIĘTY` |
 | Faza 3+ | bez zmian (`NIE_ROZPOCZĘTY`) |
 
 Ten skill **nie** edytuje pliku major.

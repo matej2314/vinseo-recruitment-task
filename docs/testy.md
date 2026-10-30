@@ -1,5 +1,5 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -46,7 +46,7 @@ Frontend (`web`): bez Playwright w v1; co najwyżej lekkie testy jednostkowe czy
 
 ## Baza testowa
 
-- Ścieżka A (`docker-compose.db.yml`): jeden Postgres, dwie bazy — `vinseo` (runtime lokalny) i `vinseo_test` (integracje). Wejście: `pnpm db:up`.
+- Ścieżka A (`docker-compose.db.yml`): jeden Postgres, dwie bazy - `vinseo` (runtime lokalny) i `vinseo_test` (integracje). Wejście: `pnpm db:up`.
 - Przed suite integracyjnym lokalnie: `pnpm db:up`, potem migracje Prisma na `DATABASE_URL_TEST` (nie na `DATABASE_URL`).
 - Migracje Prisma odpalane na bazę testową przed suite integracyjnym.
 - **Bez** prawdziwych nagrań i danych klientów - wyłącznie fixture / mock.
@@ -83,7 +83,7 @@ Przykładowa tabela (rozszerzać w kodzie):
 
 ### Integracja - pipeline
 
-- Dwukrotne przetworzenie **tego samego** `externalMeetingId` → **jedno** spotkanie (idempotencja po tożsamości runu / vendora — nie po samym `fixtureKey` na ścieżce UI Test).
+- Dwukrotne przetworzenie **tego samego** `externalMeetingId` → **jedno** spotkanie (idempotencja po tożsamości runu / vendora - nie po samym `fixtureKey` na ścieżce UI Test).
 - Mock summarizera zwracający śmieci → status `failed`, brak kanonicznego summary.
 - Happy path → `completed` + zapisane zadania.
 - Katalog mocków dema obejmuje **10** kluczy; wybór na DEMO/Test jest **losowy po stronie API**.
@@ -92,13 +92,14 @@ Przykładowa tabela (rozszerzać w kodzie):
 
 - Login ustawia sesję (cookie); `/auth/me` działa.
 - `GET /meetings/:id` bez ACL → 404.
-- `POST /demo/run-meeting` przy ważnej sesji enqueue’uje job (asercja statusu / obecności joba lub spotkania) — **bez** bramki `DEMO_ENABLED` (flaga usunięta z kontraktu v1); każde wywołanie → nowe `externalMeetingId` (UUID) i `organizerId` sesji.
+- Po `completed` (lub fixtureze z zapisanym summary): `GET /meetings` zwraca w elemencie listy pola **`summary`** / **`failureReason`** zgodnie z kontraktem (`dokumentacja_komunikacji.md`) — nie tylko metadane statusu.
+- `POST /demo/run-meeting` przy ważnej sesji enqueue’uje job (asercja statusu / obecności joba lub spotkania) - **bez** bramki `DEMO_ENABLED` (flaga usunięta z kontraktu v1); każde wywołanie → nowe `externalMeetingId` (UUID) i `organizerId` sesji.
 - **Multi-tester DEMO:** dwóch użytkowników × Test → **dwa** spotkania; każdy przechodzi SSE / odczyt we **własnym** ACL; brak współdzielonego globalnego wiersza dema.
-- Ścieżka **DX** (`/dev/meetings/enqueue`) — poza tą zmianą normy dema (osobna idempotencja).
+- Ścieżka **DX** (`/dev/meetings/enqueue`) - poza tą zmianą normy dema (osobna idempotencja).
 
 ### Integracja - SSE
 
-- Uprawniony użytkownik: `GET /meetings/:id/events` emituje statusy pipeline (ścieżka testowa do statusu terminalnego lub emisja statusu) — w tym po własnym `meetingId` z odpowiedzi Test.
+- Uprawniony użytkownik: `GET /meetings/:id/events` emituje statusy pipeline (ścieżka testowa do statusu terminalnego lub emisja statusu) - w tym po własnym `meetingId` z odpowiedzi Test.
 - Brak ACL / brak zasobu → **404** (jak detail).
 
 ### Audyt (`audit_log`)
