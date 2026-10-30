@@ -144,7 +144,7 @@
 
 ## Faza 3 — UI v1: sesja, tabela + Test + SSE, mock wyszukiwarki
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Domknięcie minimalnego panelu etapu 0: auth z cookie przez BFF, dashboard z tabelą i paginacją, przycisk Test z aktualizacją wiersza przez SSE, mock wyszukiwarki. **Zależność:** MILESTONE „API sesji i ACL gotowe pod front” (lub równoważny stan Fazy 3) w [`vinseo-recruitment-task-backend_major-plan.md`](./vinseo-recruitment-task-backend_major-plan.md). Norma: `SPEC-FRONTEND`, przepływ Test: `docs/data_flow.md`.
 
@@ -161,7 +161,7 @@
 
 ### Krok 3.1 — Auth UI i ochrona tras
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Formularz login/register — klasyczny UX (jeden wspólny komponent). Doprecyzowanie względem: **Faza 2 / Krok 2.1** (WYKONANY; szkielet „przełączanie login/register”). Obowiązuje: tryb startowy **login**; CTA „Zaloguj się” / „Zarejestruj się”; pod formularzem linki tekstowe „Nie masz konta? Zarejestruj się!” / „Masz już konto? Zaloguj się!”; w register pole powtórz hasło (`passwordConfirm`) z **wymaganą** walidacją zgodności w UI przed submitem. Sukces → cookie przez BFF → redirect na dashboard. Brak sesji → redirect na `/`. Wylogowanie przez BFF/API.
 
@@ -173,7 +173,7 @@
 
 ### Krok 3.2 — BFF register + `passwordConfirm`
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Egzekucja kontraktu BFF dla `POST /api/auth/register` wg `SPEC-KOMUNIKACJA` K-6a / `docs/dokumentacja_komunikacji.md`: ciało z `email`, `password`, `passwordConfirm`; przed proxy sprawdzenie match; mismatch → HTTP 400 + envelope walidacji **bez** wołania Nest; przy OK proxy wyłącznie `{ email, password }` (`passwordConfirm` nie trafia do API). Login BFF bez `passwordConfirm`.
 
@@ -185,7 +185,7 @@
 
 ### Krok 3.3 — Dashboard: sidebar, tabela, paginacja
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Sidebar: widok domyślny vs wyszukiwarka. Tabela z listy API; select limitu ∈ {10,25,50,100} oraz `page`. Bez osobnej strony detail jako głównej nawigacji po wyniku pipeline.
 
@@ -196,7 +196,7 @@
 
 ### Krok 3.4 — Test, SSE i aktualizacja wiersza
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Przycisk Test zawsze widoczny po zalogowaniu → BFF → demo enqueue → otwarcie SSE dla `meetingId` → użytkownik zostaje na widoku; wiersz aktualizuje status (`pending` → `processing` → `completed` | `failed`) i po sukcesie skrót summary/zadań.
 
@@ -207,7 +207,7 @@
 
 ### Krok 3.5 — Mock wyszukiwarki i domknięcie bezpieczeństwa UI
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Podstrona wyszukiwarki z hardcodowanym mockiem i adnotacją atrapy; zakaz LLM/search/RAG. Brak wrażliwych sekretów w bundlu klienta; na prod bez logowania pełnego transcriptu w konsoli.
 
@@ -220,6 +220,8 @@
 
 ## MILESTONE — Panel v1 działa z API
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 3. Duży skok: minimalny front etapu 0 jest używalny ze spiętym backendem (sesja, lista, Test, statusy).
 
 **DoD (milestone):**
@@ -228,8 +230,6 @@
 - Spełnione kryteria akceptacji UI v1 z `SPEC-FRONTEND` (auth, sidebar, Test+SSE, mock search, limity, brak sekretów w Web Storage).
 - Zależność od Fazy 3 majoru backendu jest domknięta.
 - Prowadzący prace akceptuje przejście do Fazy 4.
-
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 

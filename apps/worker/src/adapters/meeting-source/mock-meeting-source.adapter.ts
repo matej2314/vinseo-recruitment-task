@@ -14,10 +14,17 @@ const FIXTURES: Record<string, string> = {
   'demo-client-budget-pl': 'demo-client-budget-pl.json',
 };
 
+/**
+ * Szukamy fixture niezależnie od tego, czy Nest ma cwd = `apps/worker`
+ * (pnpm --filter), czy root monorepo / Docker `working_dir: /app`.
+ */
 async function readFixtureFile(fileName: string): Promise<string> {
+  const cwd = process.cwd();
   const candidates = [
-    join(process.cwd(), 'dist/adapters/meeting-source/fixtures', fileName),
-    join(process.cwd(), 'src/adapters/meeting-source/fixtures', fileName),
+    join(cwd, 'src/adapters/meeting-source/fixtures', fileName),
+    join(cwd, 'dist/adapters/meeting-source/fixtures', fileName),
+    join(cwd, 'apps/worker/src/adapters/meeting-source/fixtures', fileName),
+    join(cwd, 'apps/worker/dist/adapters/meeting-source/fixtures', fileName),
   ];
 
   for (const candidate of candidates) {
@@ -29,7 +36,9 @@ async function readFixtureFile(fileName: string): Promise<string> {
     }
   }
 
-  throw new Error(`Meeting fixture file not found: ${fileName}`);
+  throw new Error(
+    `Meeting fixture file not found: ${fileName} (cwd=${cwd}; tried ${candidates.join(' | ')})`,
+  );
 }
 
 @Injectable()

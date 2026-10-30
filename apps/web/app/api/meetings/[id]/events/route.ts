@@ -1,21 +1,16 @@
-import { bffStubResponse } from "@/lib/bff-stub";
+import { bffProxySse } from "@/lib/bff-proxy";
 
 type RouteContext = {
   readonly params: Promise<{ id: string }>;
 };
 
-/**
- * Placeholder SSE. Żywy proxy `text/event-stream` — Faza 3
- * (Context7: streaming Response; tu bez strumienia).
- */
 export async function GET(
-  _request: Request,
+  request: Request,
   context: RouteContext,
 ): Promise<Response> {
   const { id } = await context.params;
-  return bffStubResponse({
-    method: "GET",
-    bffPath: `/api/meetings/${id}/events`,
+  return bffProxySse({
     apiPath: `/meetings/${id}/events`,
+    request,
   });
 }

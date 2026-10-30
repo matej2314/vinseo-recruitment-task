@@ -25,30 +25,41 @@ export class MeetingProcessOrchestrator {
     await this.meetings.upsertPending(externalMeetingId);
     await this.meetings.markProcessing(externalMeetingId);
 
-    const fetched = await this.source.fetch({
-      externalMeetingId,
-      fixtureKey:
-        payload.fixtureKey !== undefined
-          ? String(payload.fixtureKey)
-          : undefined,
-    });
+    try {
+      const fetched = await this.source.fetch({
+        externalMeetingId,
+        fixtureKey:
+          payload.fixtureKey !== undefined
+            ? String(payload.fixtureKey)
+            : undefined,
+      });
 
-    const redactedSegments = redactSegments(fetched.segments);
+      const redactedSegments = redactSegments(fetched.segments);
 
-    const summarized = await this.summarize.execute(redactedSegments);
-    if (!summarized.ok) {
-      await this.meetings.markFailed(externalMeetingId, summarized.reason);
-      this.logger.warn(
-        `Meeting ${externalMeetingId} failed: ${summarized.reason}`,
+      const summarized = await this.summarize.execute(redactedSegments);
+      if (!summarized.ok) {
+        await this.meetings.markFailed(externalMeetingId, summarized.reason);
+        this.logger.warn(
+          `Meeting ${externalMeetingId} failed: ${summarized.reason}`,
+        );
+        return;
+      }
+
+      await this.meetings.persistSuccess({
+        externalMeetingId,
+        source: fetched,
+        redactedSegments,
+        summary: summarized.summary,
+      });
+      this.logger.log(`Meeting ${externalMeetingId} completed`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await this.meetings.markFailed(externalMeetingId, message);
+      this.logger.error(
+        `Meeting ${externalMeetingId} crashed: ${message}`,
+        err instanceof Error ? err.stack : undefined,
       );
-      return;
+      throw err;
     }
-
-    await this.meetings.persistSuccess({
-      externalMeetingId,
-      source: fetched,
-      redactedSegments,
-      summary: summarized.summary,
-    });
   }
 }

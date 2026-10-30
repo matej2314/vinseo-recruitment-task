@@ -21,9 +21,21 @@ export class MeetingProcessWorker implements OnModuleInit {
       for (const job of jobs) {
         const data = job.data as MeetingProcessJobPayload;
         this.logger.log(
-          `Processing ${MEETING_PROCESS_JOB_NAME} job=${job.id}`,
+          `Processing ${MEETING_PROCESS_JOB_NAME} job=${job.id} externalMeetingId=${String(data.externalMeetingId)}`,
         );
-        await this.orchestrator.run(data);
+        try {
+          await this.orchestrator.run(data);
+          this.logger.log(
+            `Finished ${MEETING_PROCESS_JOB_NAME} job=${job.id} externalMeetingId=${String(data.externalMeetingId)}`,
+          );
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.error(
+            `Failed ${MEETING_PROCESS_JOB_NAME} job=${job.id}: ${message}`,
+            err instanceof Error ? err.stack : undefined,
+          );
+          throw err;
+        }
       }
     });
   }

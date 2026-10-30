@@ -14,3 +14,14 @@ export function readWebServerEnv(
     apiBaseUrl: raw && raw.length > 0 ? raw : undefined,
   };
 }
+
+/** BFF: brak API_BASE_URL → nie wołaj Nest (obserwowalny fail konfiguracji). */
+export function requireApiBaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const { apiBaseUrl } = readWebServerEnv(env);
+  if (!apiBaseUrl) {
+    throw new Error("API_BASE_URL is not configured");
+  }
+  return apiBaseUrl.replace(/\/$/, "");
+}

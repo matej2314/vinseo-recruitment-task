@@ -80,9 +80,11 @@ Admin — serwisowo — widzi wszystkie spotkania (w tym poufne); to świadomy w
 | Warstwa | Wybór | Dlaczego |
 |---------|-------|----------|
 | Capture + STT + mówcy | Fireflies (pilot) | Gotowy UX notetakera, diarizacja, szybki start bez budowy STT |
-| Streszczenie + decyzje + zadania | Nasz LLM (w rachunkach: GPT‑5.2) | Kontrola schematu wyniku, spójność z przyszłym Q&A, brak lock-inu na `summary` vendora |
+| Streszczenie + decyzje + zadania | **Gemini 3.5 Flash-Lite** (start); opcjonalnie **Claude Haiku 5.5** po testach jakości | Kontrola schematu wyniku, spójność z przyszłym Q&A, brak lock-inu na `summary` vendora; ten sam port `LlmClient` — wymiana modelu = konfiguracja |
 | Walidacja | Schemat (np. Zod): shortSummary, decisions, actionItems | Zły JSON modelu → jeden retry „popraw format”; nadal źle → status błędu, **bez** zapisu jako sukces |
 | Etap 0 w kodzie | Mock źródła + mock LLM | Oddanie bez credentiali i kosztów API; te same porty co prod |
+
+**Dlaczego Gemini na start, Anthropic później.** Tani eksperyment na UC1 (summary + Zod); kryterium przełączenia = jakość PL / skróty branżowe / stabilność JSON pod schemat (udział fail → retry → `failed`), nie „droższy model z nazwy”. Przy wolumenie z briefu delta kosztu tokenów jest marginalna względem capture — decyzja o Haiku to jakość / DPA / preferencja vendora.
 
 Jakość polskiego z wtrąceniami EN jest kryterium wyboru modelu i vendora capture; w pilocie mierzona feedbackiem zespołu, nie „paper benchmarkiem”.
 
@@ -90,34 +92,40 @@ Jakość polskiego z wtrąceniami EN jest kryterium wyboru modelu i vendora capt
 
 ## 5. Koszt miesięczny (narzędzia + VPS)
 
-Założenia: 300 h → **400** spotkań; 25 seatów FF; kurs **1 USD = 4 PLN**; LLM ~10k tokenów in + 800 out / spotkanie ≈ **0,0287 USD** / spotkanie ≈ **46 PLN** / mies. przy 400 spotkaniach; VPS Compose **80–150 PLN**.
+**Założenia (model decyzyjny, nie oferta):** 300 h → **400** spotkań; 25 seatów FF; kurs **1 USD = 4 PLN**; VPS Compose **80–150 PLN**; tokeny na spotkanie (założenie inżynierskie) **10 000** in + **800** out.
 
-**Wariant A — Fireflies + LLM + VPS (rekomendowany pilot)**
+**LLM — Gemini 3.5 Flash-Lite (cennik Standard):** 0,30 USD / 1M in + 2,50 USD / 1M out →  
+\(10\,000/10^6 \times 0{,}30 + 800/10^6 \times 2{,}50 = 0{,}005\) USD / spotkanie → \(400 \times 0{,}005 = 2\) USD ≈ **8 PLN** / mies.
+
+**LLM — Claude Haiku 5.5 (opcjonalnie, tier ≤100k):** 0,10 / 0,50 USD za 1M in/out → ≈ **0,0014 USD** / spotkanie → ≈ **2 PLN** / mies. przy 400 spotkaniach.
+
+**Wariant A — Fireflies + Gemini + VPS (rekomendowany pilot capture)**
 
 | Składnik | Obliczenie | PLN / mies. |
 |----------|------------|-------------|
 | Fireflies | 25 × 19 USD × 4 | **1 900** |
-| LLM | 11,48 USD × 4 | **≈ 46** |
+| LLM Gemini (400) | 2 USD × 4 | **≈ 8** |
 | VPS | widełki | **80–150** |
-| **Suma A** | | **≈ 2 026 – 2 096** |
+| **Suma A** | | **≈ 1 988 – 2 058** |
 
-Dominuje koszt seatów Fireflies. LLM przy tej skali jest rzędem wielkości tańszy.
-
-**Wariant B — bez Fireflies, wejście z Workspace (fallback) + LLM + VPS**
+**Wariant B — bez Fireflies, wejście z Workspace (fallback) + Gemini + VPS**
 
 Model kosztowy, gdy część lub całość ruchu idzie bez seatów FF (np. notatki Meet / Notes by Gemini jako zapasowe źródło tekstu).
 
 | Składnik | PLN / mies. |
 |----------|-------------|
 | Fireflies | **0** (przyrostowo względem opłaconego Workspace*) |
-| LLM (400) | **≈ 46** |
+| LLM Gemini (400) | **≈ 8** |
 | VPS | **80–150** |
-| **Suma B** | **≈ 126 – 196** |
+| **Suma B** | **≈ 88 – 158** |
 
 \*ewentualny koszt Gemini w planie Workspace — do weryfikacji u firmy.
 
-Koszt przyszłego Q&A = f(liczba pytań × kontekst); **nie** jest wliczony powyżej. Czas pracy zespołu / legal — poza tą tabelą.
+**Kotwica decyzyjna:** przy tej skali rachunek przesuwa **Fireflies (seaty)** albo ich brak — nie wybór Flash-Lite vs Haiku (delta LLM ≈ kilka PLN / mies.). Po testach jakości UC1 można przełączyć na Haiku bez zmiany architektury; sumy A/B z Haiku ≈ **1 982–2 052** / **82–152** PLN.
 
+Szczegóły i warianty zawężenia (mniej godzin / mniej seatów): `docs/koszty_i_warianty.md`.
+
+Koszt przyszłego Q&A = f(liczba pytań × kontekst); **nie** jest wliczony powyżej. Czas pracy zespołu / legal — poza tą tabelą.
 ---
 
 ## 6. Architektura
@@ -214,4 +222,4 @@ Bez prawdziwych nagrań klientów: przygotowane **fixture’y** (PL + EN wtrące
 
 ---
 
-*Dokument opiera się na ustaleniach przyjętych przy projektowaniu rozwiązania (skala, ACL v1, warianty A/B, retencja robocza, etapy 0–3). Liczby kosztowe są modelem decyzyjnym — do aktualizacji po fakturach vendorów.*
+*Dokument opiera się na ustaleniach przyjętych przy projektowaniu rozwiązania (skala, ACL v1, capture A/B, LLM Gemini → opcjonalnie Haiku, retencja robocza, etapy 0–3). Liczby kosztowe są modelem decyzyjnym — do aktualizacji po fakturach vendorów. Rozszerzony rachunek: `docs/koszty_i_warianty.md`.*

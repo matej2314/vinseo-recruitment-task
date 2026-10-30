@@ -1,9 +1,9 @@
-import { bffStubResponse } from "@/lib/bff-stub";
+import { bffProxyJson } from "@/lib/bff-proxy";
 
-export function GET(): Response {
-  return bffStubResponse({
+export async function GET(request: Request): Promise<Response> {
+  return bffProxyJson({
     method: "GET",
-    bffPath: "/api/auth/me",
     apiPath: "/auth/me",
+    request,
   });
 }

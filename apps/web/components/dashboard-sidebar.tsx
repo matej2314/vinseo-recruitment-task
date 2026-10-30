@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,11 +15,21 @@ const items = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function onLogout() {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+    router.replace(uiRoutes.auth);
+    router.refresh();
+  }
 
   return (
     <aside className="flex w-full flex-col gap-3 sm:w-48">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Panel (stub)
+        Panel
       </p>
       <nav className="flex flex-row gap-2 sm:flex-col">
         {items.map((item) => {
@@ -39,12 +49,16 @@ export function DashboardSidebar() {
         })}
       </nav>
       <Separator />
-      <Link
-        href={uiRoutes.auth}
-        className={cn(buttonVariants({ variant: "outline" }), "justify-start")}
+      <button
+        type="button"
+        onClick={onLogout}
+        className={cn(
+          buttonVariants({ variant: "outline" }),
+          "justify-start",
+        )}
       >
-        Wyloguj (stub)
-      </Link>
+        Wyloguj
+      </button>
     </aside>
   );
 }

@@ -5,8 +5,7 @@ export default function AuthPage() {
   return (
     <AppShell title="Logowanie / rejestracja" centered>
       <p className="mb-6 text-center text-sm text-muted-foreground">
-        Szkielet UI v1. Sesja cookie HttpOnly i ochrona tras — Faza 3 (BFF →
-        API). Tu tylko placeholdery formularza.
+        Sesja przez cookie HttpOnly (BFF → API). Brak tokenów w Web Storage.
       </p>
       <AuthModeToggle />
     </AppShell>

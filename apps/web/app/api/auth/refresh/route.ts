@@ -1,9 +1,9 @@
-import { bffStubResponse } from "@/lib/bff-stub";
+import { bffProxyJson } from "@/lib/bff-proxy";
 
-export function POST(): Response {
-  return bffStubResponse({
+export async function POST(request: Request): Promise<Response> {
+  return bffProxyJson({
     method: "POST",
-    bffPath: "/api/auth/refresh",
     apiPath: "/auth/refresh",
+    request,
   });
 }
