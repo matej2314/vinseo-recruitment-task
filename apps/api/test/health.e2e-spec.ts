@@ -10,6 +10,8 @@ describe('HealthController (e2e)', () => {
   beforeAll(async () => {
     process.env.DATABASE_URL ??=
       'postgresql://vinseo:vinseo@localhost:5432/vinseo?schema=public';
+    process.env.JWT_SECRET ??= 'test-jwt-secret-min-32-characters!!';
+    process.env.COOKIE_SECURE ??= 'false';
     process.env.API_PORT ??= '3001';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

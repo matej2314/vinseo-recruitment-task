@@ -3,3 +3,6 @@ export * from './processing-status.js';
 export * from './client-link-status.js';
 export * from './meeting-source.js';
 export * from './jobs.js';
+export * from './auth-api.js';
+export * from './meetings-api.js';
+export * from './http-error.js';

@@ -151,7 +151,9 @@
 **DoD (faza):**
 
 - Niezalogowany użytkownik na chronionych trasach trafia na `/`; po login/register — dashboard.
+- `/` startuje w trybie login; klasyczny UX auth (CTA, linki tekstowe, `passwordConfirm` + match w UI) zgodnie z `SPEC-FRONTEND`.
 - Sesja wyłącznie przez cookie HttpOnly (brak sekretów sesji w Web Storage).
+- BFF `POST /api/auth/register`: match `passwordConfirm` przed proxy; mismatch → 400 bez wołania API; przy OK strip do `{ email, password }` (`SPEC-KOMUNIKACJA` K-6a).
 - Tabela listuje spotkania z API (już po ACL); limity 10/25/50/100 + `page`.
 - Test enqueue’uje demo; SSE aktualizuje wiersz bez zmiany trasy; `failed` pokazuje status + komunikat.
 - Wyszukiwarka to jawny mock bez wołań LLM/search.
@@ -161,14 +163,27 @@
 
 **Status:** `NIE_ROZPOCZĘTY`
 
-**Opis:** Formularz login/register z przełączaniem trybu; sukces → cookie przez BFF → redirect na dashboard. Brak sesji → redirect na `/`. Wylogowanie przez BFF/API.
+**Opis:** Formularz login/register — klasyczny UX (jeden wspólny komponent). Doprecyzowanie względem: **Faza 2 / Krok 2.1** (WYKONANY; szkielet „przełączanie login/register”). Obowiązuje: tryb startowy **login**; CTA „Zaloguj się” / „Zarejestruj się”; pod formularzem linki tekstowe „Nie masz konta? Zarejestruj się!” / „Masz już konto? Zaloguj się!”; w register pole powtórz hasło (`passwordConfirm`) z **wymaganą** walidacją zgodności w UI przed submitem. Sukces → cookie przez BFF → redirect na dashboard. Brak sesji → redirect na `/`. Wylogowanie przez BFF/API.
 
 **DoD (krok):**
 
 - Ścieżka auth UI działa end-to-end względem API sesji z majoru backendu.
+- Obserwowalne: start w trybie login; CTA i linki tekstowe zgodne z `SPEC-FRONTEND` F-1; przy mismatch haseł w register UI nie wysyła submitu.
 - Brak przechowywania access/refresh w `localStorage` / `sessionStorage`.
 
-### Krok 3.2 — Dashboard: sidebar, tabela, paginacja
+### Krok 3.2 — BFF register + `passwordConfirm`
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Egzekucja kontraktu BFF dla `POST /api/auth/register` wg `SPEC-KOMUNIKACJA` K-6a / `docs/dokumentacja_komunikacji.md`: ciało z `email`, `password`, `passwordConfirm`; przed proxy sprawdzenie match; mismatch → HTTP 400 + envelope walidacji **bez** wołania Nest; przy OK proxy wyłącznie `{ email, password }` (`passwordConfirm` nie trafia do API). Login BFF bez `passwordConfirm`.
+
+**DoD (krok):**
+
+- Mismatch na BFF → 400, brak requestu do `POST /auth/register`.
+- Sukces BFF register → API dostaje tylko `{ email, password }`.
+- Zakazy BFF (ACL, enqueue poza wywołaniem `api`) nadal respektowane — wyjątek wyłącznie UI-only `passwordConfirm`.
+
+### Krok 3.3 — Dashboard: sidebar, tabela, paginacja
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -179,7 +194,7 @@
 - Lista odzwierciedla dane dozwolone przez ACL po stronie `api` (UI nie „dopuszcza po ID”).
 - Paginacja wysyła wymagane parametry do API przez BFF.
 
-### Krok 3.3 — Test, SSE i aktualizacja wiersza
+### Krok 3.4 — Test, SSE i aktualizacja wiersza
 
 **Status:** `NIE_ROZPOCZĘTY`
 
@@ -190,7 +205,7 @@
 - Ścieżka Test + SSE działa zgodnie z `SPEC-FRONTEND` / `docs/data_flow.md`.
 - Brak redirectu na detail po Test.
 
-### Krok 3.4 — Mock wyszukiwarki i domknięcie bezpieczeństwa UI
+### Krok 3.5 — Mock wyszukiwarki i domknięcie bezpieczeństwa UI
 
 **Status:** `NIE_ROZPOCZĘTY`
 

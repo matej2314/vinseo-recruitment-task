@@ -1,5 +1,5 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -30,7 +30,13 @@ Opis warstwy `apps/web` Firmowego asystenta spotkań: zakres UI w etapie 0 / v1 
 
 ### 1. Strona główna `/` — auth
 
-- Wspólny komponent **logowanie / rejestracja** z **przełączaniem trybu**.
+- Jeden wspólny komponent **logowanie / rejestracja** z klasycznym przełączaniem trybu (różne pola i CTA wg trybu).
+- **Tryb startowy:** login.
+- **CTA submit:** login — „Zaloguj się”; register — „Zarejestruj się”.
+- **Pod formularzem** tekstowe buttony przełączające tryb (bez innego, konkurencyjnego mechanizmu):
+  - w trybie login: „Nie masz konta? Zarejestruj się!”
+  - w trybie register: „Masz już konto? Zaloguj się!”
+- W trybie **register:** drugie pole hasła (powtórz) — `passwordConfirm`; **wymagana** zgodność z pierwszym polem **przed** submitem (UI nie wysyła rejestracji przy mismatch).
 - Po sukcesie **login lub register**: od razu cookie sesji → **redirect** na dashboard (widok domyślny).
 - Sesja: cookie **HttpOnly** (access JWT 15 min + refresh — `SPEC-AUTH_I_ACL`); **zakaz** `localStorage` / `sessionStorage` na sekrety.
 - Brak sesji na chronionych trasach → redirect na `/`.

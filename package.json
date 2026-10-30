@@ -8,8 +8,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev:api": "pnpm --filter @vinseo/api start:dev",
-    "dev:worker": "pnpm --filter @vinseo/worker start:dev",
+    "dev:api": "pnpm --filter @vinseo/contracts build && pnpm --filter @vinseo/api start:dev",
+    "dev:worker": "pnpm --filter @vinseo/contracts build && pnpm --filter @vinseo/worker start:dev",
     "dev:web": "pnpm --filter @vinseo/web dev",
     "dev:stack:up": "docker compose -f docker-compose.dev.yml up -d --build",
     "dev:stack:down": "docker compose -f docker-compose.dev.yml down",

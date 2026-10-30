@@ -1,5 +1,5 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -31,7 +31,13 @@ Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiw
 
 ### Routing i layout
 
-F-1. `/` — auth (login / register z przełączaniem trybu). Po sukcesie **login lub register** (oba ustawiają cookie sesji) → redirect na dashboard (widok domyślny).
+F-1. `/` — auth: jeden wspólny komponent login / register z klasycznym przełączaniem trybu.
+Zmiana względem: wcześniejsza norma F-1 („login/register z przełączaniem trybu” bez szczegółów UX). Obowiązuje teraz:
+- **tryb startowy:** login;
+- **CTA submit:** login — „Zaloguj się”; register — „Zarejestruj się”;
+- **pod formularzem** tekstowe buttony (bez innego, konkurencyjnego mechanizmu): w login — „Nie masz konta? Zarejestruj się!”; w register — „Masz już konto? Zaloguj się!”;
+- w trybie **register:** pole potwierdzenia hasła (`passwordConfirm`); **wymagana** walidacja zgodności z `password` w UI **przed** submitem (przy mismatch UI **nie** wysyła rejestracji);
+- po sukcesie **login lub register** (oba ustawiają cookie sesji) → redirect na dashboard (widok domyślny).
 
 F-2. Brak ważnej sesji na chronionych trasach UI → **redirect na `/`**.
 
@@ -89,6 +95,7 @@ F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, s
 
 - Next.js App Router + BFF w `app/api/*`.
 - Tailwind CSS + shadcn/ui; layout roboczy bez brandingu produktowego.
+- Auth UI: klasyczny UX login/register wg F-1 (start login, CTA, linki tekstowe, `passwordConfirm` + match przed submit w register).
 - Sidebar: domyślny ↔ wyszukiwarka.
 - Tabela + SSE po Test (aktualizacja in-place).
 - Mock wyszukiwarki bez backendu AI.
@@ -118,6 +125,8 @@ Wersje pakietów: zgodne z repo / aktualnym LTS — bez pinowania w tym SPEC.
 
 ## Kryteria akceptacji
 
+- [ ] `/` startuje w trybie **login**; CTA i linki tekstowe przełączania zgodne z F-1.
+- [ ] W trybie register przy mismatch `password` / `passwordConfirm` UI **nie** wysyła submitu rejestracji.
 - [ ] Niezalogowany użytkownik na dashboardzie trafia na `/`.
 - [ ] Sidebar przełącza widok domyślny i wyszukiwarkę; wyszukiwarka nie woła API LLM/search.
 - [ ] Test enqueue’uje demo; SSE aktualizuje wiersz tabeli bez zmiany trasy.

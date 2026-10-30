@@ -74,6 +74,7 @@ services:
         corepack enable
         pnpm config set store-dir /pnpm/store
         pnpm install
+        pnpm --filter @vinseo/contracts build
         pnpm db:generate
         pnpm db:migrate:deploy
 
@@ -100,6 +101,7 @@ services:
       - |
         set -e
         corepack enable
+        pnpm --filter @vinseo/contracts build
         pnpm --filter @vinseo/api start:dev
 
   worker:
@@ -122,6 +124,7 @@ services:
       - |
         set -e
         corepack enable
+        pnpm --filter @vinseo/contracts build
         pnpm --filter @vinseo/worker start:dev
 
   web:

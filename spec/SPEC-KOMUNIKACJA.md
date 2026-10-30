@@ -1,5 +1,5 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -78,7 +78,14 @@ K-5a. SSE — `GET /meetings/:id/events` (Nest `@Sse`, Observable `MessageEvent`
 
 ### BFF (`apps/web`, `app/api/*`)
 
-K-6. BFF **wolno:** przyjmować żądania UI (w tym Test i SSE), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu.
+K-6. BFF **wolno:** przyjmować żądania UI (w tym Test i SSE), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu; walidować pola **wyłącznie UI** przy rejestracji (`passwordConfirm` — K-6a) **bez** ACL treści ani reguł domenowych poza tą bramką.
+
+K-6a. BFF `POST /api/auth/register` — wyjątek względem domyślnej reguły „semantyka ciał BFF jak HTTP API” (zmiana względem wcześniejszego mapowania 1:1 dla wszystkich auth):
+- ciało BFF **wymaga** `email`, `password`, `passwordConfirm`;
+- przed proxy: `password === passwordConfirm`; przy mismatch → HTTP **400** + envelope (K-8), **bez** wołania Nest `POST /auth/register`;
+- przy OK: proxy do API wyłącznie `{ email, password }` — `passwordConfirm` **nie** trafia do `api`;
+- Nest `POST /auth/register` bez zmian semantyki (e-mail + hasło; K-2) — bez wymogu `passwordConfirm` po stronie API;
+- login BFF (`POST /api/auth/login`) bez `passwordConfirm` (jak API).
 
 K-7. BFF **nie wolno:** egzekwować ACL treści spotkań; enqueue’ować pg-boss bezpośrednio; wołać adapterów źródła / LlmClient z pominięciem `api` + `worker`.
 
@@ -89,7 +96,7 @@ Mapowanie (prefiks `/api` po stronie BFF dozwolony):
 | `POST /api/demo/run-meeting` | `POST /demo/run-meeting` |
 | `GET /api/meetings`, `GET /api/meetings/:id` | odpowiadające trasy |
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
-| `/api/auth/*` | `/auth/*` (w tym `refresh`) |
+| `/api/auth/*` | `/auth/*` (w tym `refresh`; register: strip `passwordConfirm` — K-6a) |
 
 ### Envelope błędów
 
@@ -148,7 +155,7 @@ K-15. Mapowanie Fireflies → port (tabela w `docs/dokumentacja_komunikacji.md`)
 ### Wymagane
 
 - DTO + ValidationPipe / class-validator na wejściach HTTP `api`.
-- BFF jako cienkie proxy (cookie, statusy, SSE) bez reguł domenowych.
+- BFF jako cienkie proxy (cookie, statusy, SSE) bez reguł domenowych — z wyjątkiem walidacji UI-only `passwordConfirm` na register (K-6a).
 - Nazwany job `meeting.process` + klucz idempotencji.
 - SSE statusu spotkania (`@Sse` / `text/event-stream`) z ACL jak przy odczycie.
 - Anti-corruption: mock/adapter mapuje na **port źródła**, nie na surowy schemat vendora w use case’ach.
@@ -183,6 +190,7 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 
 - [ ] Wejścia HTTP `api` odrzucają niepoprawne DTO kodem 400 + envelope.
 - [ ] Trasy auth / meetings / demo / SSE działają zgodnie z tabelą K-2; demo enqueue’uje `meeting.process` bez sprawdzania `DEMO_ENABLED`.
+- [ ] BFF register: mismatch `passwordConfirm` → 400 bez wołania API; przy OK proxy tylko `{ email, password }` (K-6a); Nest register bez `passwordConfirm`.
 - [ ] SSE wymaga auth+ACL; emituje statusy aż do `completed`/`failed`; BFF proxy’uje strumień.
 - [ ] BFF nie egzekwuje ACL i nie woła adapterów I/O bezpośrednio.
 - [ ] Job ma nazwę `meeting.process` i payload ze źródłem mock + kluczem idempotencji.

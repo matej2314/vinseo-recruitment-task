@@ -12,6 +12,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export interface EnqueueMeetingProcessInput {
   readonly fixtureKey: string;
   readonly requestId?: string;
+  /** Wymagane przy demo z sesją; DX może pominąć */
+  readonly organizerId?: string;
 }
 
 export interface EnqueueMeetingProcessResult {
@@ -39,11 +41,13 @@ export class EnqueueMeetingProcessUseCase {
       create: {
         externalMeetingId,
         processingStatus: 'pending',
+        ...(input.organizerId ? { organizerId: input.organizerId } : {}),
       },
       update: {
         // ponowne enqueue: update in place — bez drugiego wiersza
         processingStatus: 'pending',
         failureReason: null,
+        // nie nadpisuj organizatora przy ponownym enqueue (idempotencja)
       },
       select: { id: true, externalMeetingId: true, processingStatus: true },
     });

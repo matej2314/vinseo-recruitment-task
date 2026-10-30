@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma, ProcessingStatus } from '@prisma/client';
+import { Prisma, type ProcessingStatus } from '@prisma/client';
 import type { MeetingSourcePayload, SourceSegment } from '@vinseo/contracts';
 
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -59,7 +59,7 @@ export class MeetingRepository {
         clientId: link.clientId,
         externalParticipants:
           link.externalParticipants === null
-            ? null
+            ? Prisma.DbNull
             : (link.externalParticipants as unknown as Prisma.InputJsonValue),
       },
     });

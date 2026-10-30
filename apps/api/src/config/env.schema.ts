@@ -9,6 +9,12 @@ export const apiEnvSchema = z.object({
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
+  JWT_SECRET: z.string().min(32),
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

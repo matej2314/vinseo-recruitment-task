@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -126,9 +126,10 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 ### BFF jako drugi backend domenowy
 
-- **Unikać:** orkiestracja Prisma / jobów / redakcji w Route Handlers Next.
+- **Unikać:** orkiestracja Prisma / jobów / redakcji w Route Handlers Next; przenoszenie ACL treści lub reguł domenowych do BFF.
 - **Boli:** dwa miejsca prawdy, niespójne testy.
 - **Zamiast:** BFF = proxy, cookies, ewentualnie składanie DTO pod widok.
+- **Wyjątek (wymagany w tym produkcie):** wolno — i jest wymagane — walidować na BFF pola **wyłącznie UI** przed proxy auth register (`passwordConfirm` vs `password`; mismatch → 400 bez wołania API). To nie otwiera drogi do ACL treści, enqueue ani drugiego backendu domenowego w Next.
 
 ### Sekrety i klucze vendorów w `NEXT_PUBLIC_*` lub w web
 

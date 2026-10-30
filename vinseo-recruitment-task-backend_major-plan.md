@@ -209,7 +209,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ## Faza 3 — Auth, ACL i kontrakty API pod UI
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Prawdziwa sesja pracownika, ACL na odczycie spotkań, demo enqueue oraz SSE statusów — wyłącznie po stronie `api`. Zgodnie z `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA`, `SPEC-TESTY`. **Poza tym majorem:** implementacja UI, BFF, layoutu sidebara i zachowań przeglądarki (osobny major frontu).
 
@@ -223,7 +223,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 3.1 — Auth pracowników i sesja
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Register / login / logout / me / refresh; hasła hashowane; access + refresh (hash refresh w DB); cookie HttpOnly. Rejestracja v1 otwarta; po register od razu sesja — `SPEC-AUTH_I_ACL`.
 
@@ -234,7 +234,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 3.2 — ACL i odczyt spotkań
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Moduł / serwis `access`: **organizator** ∨ **uczestnik** ∨ **admin** (`SPEC-AUTH_I_ACL` ACL v1; bez membership). `GET /meetings` (paginacja limit ∈ {10,25,50,100} + page) oraz `GET /meetings/:id`. Deny → **404**.
 
@@ -246,7 +246,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 3.3 — Demo enqueue i SSE statusów
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** `POST /demo/run-meeting` — sesja wymagana; tylko enqueue (bez synchronicznego pipeline w requeście; bez wymogu flagi `DEMO_ENABLED` w kontrakcie). `GET /meetings/:id/events` — SSE statusów pipeline z ACL jak detail (`SPEC-KOMUNIKACJA`).
 
@@ -257,7 +257,7 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 ### Krok 3.4 — Testy auth/ACL (i SSE w miarę czasu)
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Testy tabeli ACL (`SPEC-TESTY`), auth cookie + deny→404, demo enqueue; SSE wg dostępnego czasu. Opcjonalnie zapis `audit_log` przy deny / fail joba (`SPEC-OBSERVABILITY`) — dogrywka tu lub w Fazie 5.
 
@@ -275,6 +275,8 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 ## MILESTONE — API sesji i ACL gotowe pod front
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 3. Duży skok: zaufana warstwa `api` oferuje sesję, ACL, demo i statusy pod spięcie z majorem frontu. UI nadal poza tym plikiem.
 
 **DoD (milestone):**
@@ -283,8 +285,6 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 - Auth cookie, ACL+404, demo enqueue oraz odczyt statusów (SSE lub równoważnie udokumentowany) działają.
 - Kontrakty HTTP potrzebne `docs/frontend.md` / `SPEC-FRONTEND` są spełnione po stronie `api`.
 - Prowadzący prace akceptuje przejście do Fazy 4 (oraz równoległy / kolejny major frontu nie blokuje CI i Części A).
-
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 
@@ -369,10 +369,16 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 
 **Opis:** Dopięcie luk testowych (ACL, redakcja, walidacja wyniku, idempotencja, auth cookie; SSE/audit jeśli luka); usunięcie martwego kodu i tajemnic z repo.
 
+**Jawna lista odroczeń z Fazy 3** (do domknięcia tu albo świadomie w README oddania):
+
+- Pełny happy-path SSE (emisja statusów `pending` → terminalny) — w Fazie 3 pokryty deny→404, bez e2e emisji eventów.
+- Pełny katalog audytu auth/demo/job (`auth.*`, `demo.run`, `job.enqueued` itd. wg O-11) — w Fazie 3 domknięty `meeting.access.denied`; reszta poza deny.
+
 **DoD (krok):**
 
 - Krytyczne scenariusze backendu z `SPEC-TESTY` / docs mają zielone testy albo jawną, świadomą listę odpuszczonych pozycji w README.
 - Brak oczywistych sekretów i dead code blokującego czytelność oddania.
+- Pozycje z listy odroczeń Fazy 3 są albo domknięte testami, albo nazwane w README oddania.
 
 ### Krok 5.3 — Smoke end-to-end i świadomy zakres
 

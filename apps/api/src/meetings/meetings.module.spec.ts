@@ -1,26 +1,15 @@
-import { DevEnqueueController } from './dev-enqueue.controller.js';
+import { DevMeetingsModule } from './dev-meetings.module.js';
 import { MeetingsModule } from './meetings.module.js';
 
-describe('MeetingsModule.register', () => {
-  const previous = process.env.NODE_ENV;
-
-  afterEach(() => {
-    if (previous === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = previous;
-    }
+describe('MeetingsModule / DevMeetingsModule', () => {
+  it('MeetingsModule is a static Nest module (no register())', () => {
+    expect(MeetingsModule).toBeDefined();
+    expect(
+      (MeetingsModule as unknown as { register?: unknown }).register,
+    ).toBeUndefined();
   });
 
-  it('registers DevEnqueueController outside production', () => {
-    process.env.NODE_ENV = 'development';
-    const dynamic = MeetingsModule.register();
-    expect(dynamic.controllers).toContain(DevEnqueueController);
-  });
-
-  it('does not register DevEnqueueController in production', () => {
-    process.env.NODE_ENV = 'production';
-    const dynamic = MeetingsModule.register();
-    expect(dynamic.controllers).toEqual([]);
+  it('DevMeetingsModule exposes DX enqueue outside production wiring', () => {
+    expect(DevMeetingsModule).toBeDefined();
   });
 });

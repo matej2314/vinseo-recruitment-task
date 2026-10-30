@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-30
 ---
@@ -186,7 +186,29 @@ Krótka warstwa między przeglądarką a `api`.
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
 | trasy auth pod `/api/auth/*` | `/auth/*` (w tym `refresh`) |
 
-Dokładne ścieżki BFF mogą dodać prefiks `/api`; semantyka ciał i kodów jak w sekcji HTTP API.
+Dokładne ścieżki BFF mogą dodać prefiks `/api`; semantyka ciał i kodów jak w sekcji HTTP API — **z wyjątkiem rejestracji** (poniżej).
+
+### Auth BFF — wyjątek `passwordConfirm` przy rejestracji
+
+Zmiana względem dotychczasowej reguły „semantyka ciał BFF jak HTTP API”: **wyłącznie** dla `POST /api/auth/register`. Login BFF (`POST /api/auth/login`) pozostaje bez `passwordConfirm` — ciało jak API (`email`, `password`).
+
+**Ciało BFF** `POST /api/auth/register` (przykład):
+
+```json
+{
+  "email": "anna@company.example",
+  "password": "********",
+  "passwordConfirm": "********"
+}
+```
+
+| Krok BFF | Zachowanie |
+|----------|------------|
+| Match | BFF sprawdza `password === passwordConfirm` **przed** proxy |
+| Fail (mismatch) | HTTP **400** + envelope walidacji (jak sekcja 1.4); **bez** wołania Nest `POST /auth/register` |
+| OK | Proxy do API wyłącznie `{ email, password }` — `passwordConfirm` **nie** trafia do Nest |
+
+Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 
 ---
 
