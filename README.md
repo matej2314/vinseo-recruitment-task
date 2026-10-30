@@ -1,9 +1,9 @@
-# Vinseo - Firmowy asystent spotkań
+# Vinseo — Firmowy asystent spotkań
 
-Zadanie rekrutacyjne: **Mid Fullstack Developer** (Vinseo / DEKA).  
-Cel produktu: po spotkaniu mieć transkrypcję (PL, mówcy), krótkie streszczenie, listę ustaleń i zadań oraz (w kolejnych etapach) pytania do historii spotkań ze wskazaniem źródła - przy kontroli dostępu i ograniczeniu wynoszenia danych klientów.
+Zadanie rekrutacyjne: **Mid Fullstack Developer** (Vinseo).  
+Cel produktu: po spotkaniu mieć transkrypcję (PL, mówcy), krótkie streszczenie, listę ustaleń i zadań oraz (w kolejnych etapach) pytania do historii spotkań ze wskazaniem źródła — przy kontroli dostępu i ograniczeniu wynoszenia danych klientów.
 
-> Stan: **szkielet zamierzony / w budowie**. Poniższy opis to docelowa architektura i stack. Komendy i zachowanie będą uzupełniane w miarę realizacji.
+**Stan repo (Faza 1 — fundament):** monorepo pnpm z `apps/api`, `apps/worker`, `apps/web` (stub), `packages/contracts`, Prisma + migracje, Compose ścieżka A (`db:*`) i B (`dev:stack:*`). Pipeline, auth/ACL HTTP, pełne UI — kolejne fazy.
 
 ---
 
@@ -14,38 +14,37 @@ Budujemy **własny** system pamięci spotkań (model danych, uprawnienia, pipeli
 
 | Warstwa | Rola |
 |---------|------|
-| Google Workspace + Meet | Kalendarz / spotkania w organizacji |
-| Fireflies.ai | Adapter pozyskania nagrania/transkrypcji (w kodzie MVP: **mock** o tym samym kontrakcie) |
+| Google Workspace + Meet | Kalendarz / spotkania w organizacji (prod później; w kodzie: mock) |
+| Fireflies / Notes by Gemini | Adapter pozyskania materiału (MVP: **mock** o stabilnym kontrakcie) |
 | Nasza aplikacja | Normalizacja, redakcja, streszczenie/zadania, ACL, retencja, API + panel |
+
+Szczegóły koncepcji, RODO, kosztów i etapów: katalog [`docs/`](./docs/README.md). Normy implementacji: [`spec/`](./spec/SPEC-README.md).
 
 ---
 
-## Stack (docelowy)
+## Stack
 
-| Obszar | Wybór | Uzasadnienie (skrót) |
-|--------|--------|----------------------|
-| API | NestJS (`api/`) | Zgodność z profilem stanowiska; moduły, DI, testowalność |
-| Worker | Osobny proces Nest (`worker/`) | Oddzielenie HTTP od długich jobów |
-| Frontend | Next.js (`web/`) + BFF | Panel i cienka warstwa przed API; MVP: sidebar (tabela+Test+SSE + mock wyszukiwarki) |
-| DB | PostgreSQL | Relacje uczestników, uprawnień, zadań |
-| Kolejka | **pg-boss** | Kolejka w Postgresie - **mniej kontenerów i ruchomych części** niż Redis + BullMQ |
-| DTO / HTTP | `class-validator` + `class-transformer` | Walidacja na granicy API |
-| Kontrakt AI / summary | Zod | Ścisły kształt wyniku streszczenia; reject przy niepoprawnym payloadzie |
-| Transkrypcja / LLM w MVP | Mocki | Realny kształt portów; **bez** wychodzących requestów do vendorów |
-| Testy | Jest | Jednolity runner w monorepo |
-| Lokalnie | Docker Compose (Postgres) | Powtarzalne środowisko |
-| Prod | VPS | Prosty hosting pod Compose / reverse proxy |
-| CI/CD | GitHub Actions | Testy na PR; ręczne odpalenie testów z wyborem brancha; `main` bez bezpośredniego pusha |
+| Obszar | Wybór |
+|--------|--------|
+| API | NestJS (`apps/api`) |
+| Worker | Osobny proces Nest (`apps/worker`) |
+| Frontend | Next.js (`apps/web`) — obecnie **stub**; BFF/dashboard w kolejnych fazach |
+| DB | PostgreSQL + Prisma 7 (adapter `pg`) |
+| Kolejka | pg-boss (ta sama baza; konsumpcja w Fazie 2) |
+| Kontrakty typów | `packages/contracts` (bez Zod w paczce) |
+| Walidacja HTTP / env | class-validator; Zod w appkach (env, później summary) |
+| Testy | Jest (`@vinseo/api`) |
+| Lokalnie | Compose A: tylko Postgres; Compose B: pełny stack |
 
 ---
 
 ## Architektura (wysoki poziom)
 
 ```text
-[Mock Fireflies / docelowo webhook Fireflies]
+[Mock źródła / docelowo Workspace lub Fireflies]
                     │
                     ▼
-              [pg-boss job]
+              [pg-boss job]          ← Faza 2
      fetch → normalize → redact → summarize(mock+Zod) → persist
                     │
                     ▼
@@ -56,114 +55,128 @@ Budujemy **własny** system pamięci spotkań (model danych, uprawnienia, pipeli
      [api - ACL]         [worker]
           │
           ▼
-   [web - BFF + sidebar (tabela/Test + mock search)]
+   [web - BFF + panel]   ← Faza frontu / po stubie
 ```
 
-- **API** egzekwuje dostęp do spotkań i streszczeń.  
-- **Worker** przetwarza kolejkę; ponowne uruchomienie / awaria w połowie nie mogą tworzyć duplikatów ani gubić spotkań.  
-- Przed „wywołaniem zewnętrznym” (w MVP: wejście do mocka summarizera) działa **redakcja** wrażliwych danych - z testami.
-
-Szczegółowy diagram, RODO, koszty i plan wdrożenia: dokument Części A (TODO poniżej).
+- **API** egzekwuje dostęp (ACL v1: organizator ∨ uczestnik ∨ admin — Faza 3).  
+- **Worker** przetwarza kolejkę (Faza 2).  
+- Przed wywołaniem LlmClient: redakcja PII (Faza 2).
 
 ---
 
-## Struktura repozytorium (docelowa)
+## Struktura repozytorium
 
 ```text
-api/       # NestJS - HTTP, ACL
-worker/    # osobny proces - joby pg-boss
-web/       # Next.js - BFF + sidebar (tabela+Test / mock wyszukiwarka)
-packages/  # (opcjonalnie) wspólne typy / contracts (bez Zod w packages)
-docker-compose.yml
-.github/workflows/
+apps/
+  api/                 # Nest — HTTP, health; (później auth, ACL, demo)
+  worker/              # Nest — ApplicationContext; (później pipeline)
+  web/                 # Next — stub strony startowej
+packages/
+  contracts/           # wspólne typy (m.in. statusy, client-link, job payload)
+prisma/
+  schema.prisma
+  migrations/          # init_etap0 + align_acl_v1_client_link
+docs/                  # dokumentacja produktowa / architektoniczna
+spec/                  # normy implementacji
+docker-compose.yml     # ścieżka A — Postgres (+ baza testowa)
+docker-compose.dev.yml # ścieżka B — Postgres + api + worker + web
+docker/dev/            # Dockerfile stacku B
 ```
-
-Obecnie w workspace jest m.in. scaffold `api/` (Nest). Reszta monorepo - w trakcie składania.
 
 ---
 
-## Uruchomienie
+## Uruchomienie (scaffold — po Fazie 1)
 
-> TODO: finalne komendy po złożeniu workspaces i Compose.
+Wymagania: **Node ≥ 22**, **pnpm**, **Docker**.
 
-Planowany przepływ:
+**Nie** uruchamiaj ścieżki A i B jednocześnie na tych samych portach (5432 / 3000 / 3001). Najpierw `pnpm db:down` albo `pnpm dev:stack:down`.
+
+### Ścieżka A — Postgres w Compose, appki na hoście
 
 ```bash
-# 1. Zależności (root monorepo)
-pnpm install   # lub npm/yarn - TBD po ustaleniu workspaces
+# 1. Zależności
+pnpm install
 
-# 2. Infrastruktura
-docker compose up -d
+# 2. Env
+cp .env.example .env
 
-# 3. Migracje / seed
-# TODO: np. pnpm --filter api migrate && pnpm demo:seed
+# 3. Postgres (skrypty root — A-7)
+pnpm db:up
+# pnpm db:logs   # opcjonalnie
+# pnpm db:down   # zatrzymanie
 
-# 4. Procesy (osobno)
-pnpm --filter api start:dev
-pnpm --filter worker start:dev
-pnpm --filter web dev
+# 4. Prisma
+pnpm db:generate
+pnpm db:migrate:deploy
+# (iteracyjnie przy zmianie schematu) pnpm db:migrate
 
-# 5. Demo: przykładowe spotkanie przez pipeline
-# TODO: pnpm demo:process-meeting
+# 5. Procesy (osobne terminale)
+pnpm dev:api      # http://localhost:3001/health → {"status":"ok"}
+pnpm dev:worker   # log: Worker application context started
+pnpm dev:web      # stub Next (domyślnie :3000)
 ```
 
-### Co powinno działać po MVP kodu (Część B)
+### Ścieżka B — pełny stack w kontenerach (obowiązkowe DX)
 
-- Model danych spotkań, uczestników, transkrypcji, streszczeń, zadań, uprawnień.
-- Pipeline od mocka źródła do zapisanego, zwalidowanego streszczenia.
-- Idempotencja jobów; obsługa niepoprawnego wyniku „modelu”.
-- Redakcja przed zewnętrznym krokiem + testy.
-- ACL na API + testy reguł.
-- Uruchomienie Compose + demo jedną lub kilkoma komendami.
+```bash
+pnpm install          # na hoście opcjonalne; kontenery i tak instalują w wolumenach
+cp .env.example .env  # DATABASE_URL z localhost jest OK — compose nadpisuje hostem `postgres`
+
+pnpm dev:stack:up     # docker-compose.dev.yml: postgres + deps + api + worker + web
+# pnpm dev:stack:logs
+# pnpm dev:stack:down
+```
+
+Serwis one-shot **`deps`** robi `pnpm install`, `db:generate` i **`db:migrate:deploy`** (w tym migrację `align_acl_v1_client_link`), zanim wystartują `api` / `worker` / `web`. Kod z hosta jest bind-mountowany; `node_modules` w wolumenach Docker.
+
+### Smoke testów API
+
+```bash
+pnpm --filter @vinseo/api test
+pnpm --filter @vinseo/api test:e2e
+```
+
+(E2E health oczekuje działającego procesu / konfiguracji jak w `apps/api/test`.)
+
+### Demo (jeszcze nie w Fazie 1)
+
+`POST /demo/run-meeting` + UI Test + SSE — **Faza 3** (backend) / major frontu. Po Fazie 1 nie ma jeszcze enqueue pipeline.
 
 ---
 
 ## Co działa / atrapa / poza zakresem
 
-> TODO (wypełnić przed oddaniem):
-
 | Element | Status | Uwagi |
 |---------|--------|--------|
-| Model danych + migracje | TODO | |
-| Pipeline + pg-boss | TODO | |
-| Mock źródła (Fireflies) | TODO | atrapa |
-| Mock summarizera (kontrakt pod LLM) | TODO | bez requestów sieciowych |
-| Redakcja + testy | TODO | |
-| ACL + testy | TODO | |
-| API | TODO | |
-| Next.js BFF + sidebar (tabela+Test+SSE, mock wyszukiwarki) | TODO | nie pełny UI produktu; bez osobnej strony detail |
-| Prawdziwa integracja Google / Fireflies | poza MVP | zaślepka / opis w Części A |
-| Q&A ze źródłami / RAG | poza MVP | architektura przewidziana w Części A |
-| Powiadomienia | poza MVP | |
-| Produkcyjny deploy na VPS | TODO / opis | Actions + checklista |
+| Monorepo pnpm (`api` / `worker` / `web` / `contracts`) | działa | |
+| Compose A (`pnpm db:up`) + Compose B (`pnpm dev:stack:up`) | działa | nie równolegle na tych samych portach |
+| Prisma schema + migracje | działa | model pod etap 0 + align ACL/client-link (deploy przy A ręcznie / przy B w `deps`) |
+| `GET /health` na api | działa | smoke Jest e2e |
+| Szkielet worker (Nest context) | działa | bez konsumpcji jobów |
+| Stub `web` | działa | bez BFF / dashboardu |
+| Pipeline + pg-boss + mock źródła / LLM | atrapa / nie | Faza 2 |
+| Redakcja + testy | nie | Faza 2 |
+| Auth cookie + ACL v1 + testy | nie | Faza 3 |
+| Demo Test + SSE | nie | Faza 3 + front |
+| Prawdziwy Google / Fireflies / LLM | poza etapem 0 | mocki za portami |
+| Q&A / RAG, HubSpot, erase UI | poza etapem 0 | opis w `docs/` |
+| CI GitHub Actions + ochrona `main` | TODO | przed oddaniem |
 
 ---
 
 ## CI/CD (zamierzone)
 
-> TODO: dodać pliki workflow i włączyć branch protection na GitHubie.
+- **Pull request** → install → Postgres test → migracje → **Jest**.
+- **workflow_dispatch** → ręczne testy z wyborem brancha.
+- Branch **`main`**: tylko PR (branch protection).
 
-- **Pull request** → instalacja zależności, lint (jeśli jest), **testy Jest**.
-- **workflow_dispatch** → ręczne uruchomienie testów z **wyborem brancha**.
-- Branch **`main`**: brak bezpośredniego pusha (tylko PR); reguły w ustawieniach repozytorium GitHub.
-
-Deploy na **VPS** (docelowo z Actions po merge) - szczegóły w Części A / TODO w tej sekcji.
+Automatyczny CD na VPS — poza v1; checklista w [`docs/deployment.md`](./docs/deployment.md).
 
 ---
 
 ## Dokumentacja decyzyjna (Część A)
 
-> TODO: dodać plik (np. `docs/ARCHITEKTURA.md` lub PDF), maks. ~5 stron, dla osoby decyzyjnej:
-
-1. Źródło nagrań/transkrypcji i minimalne uprawnienia Google / Fireflies  
-2. Bezpieczeństwo, zgody, RODO, retencja, dane u vendorów, edge case’y  
-3. Model dostępu i ochrona przed wyciekiem przez wyszukiwanie/asystenta  
-4. Wybór narzędzi STT / diarization / summary (jakość PL, koszt, prywatność)  
-5. Koszt miesięczny - ≥2 warianty z obliczeniami  
-6. Architektura, przepływ, awarie kroków  
-7. Środowiska bez prawdziwych nagrań firmy  
-8. Plan wdrożenia etapami i kryteria sukcesu  
-9. Ryzyka i pytania do firmy  
+Materiał merytoryczny jest w [`docs/`](./docs/README.md) (m.in. koncepcja, bezpieczeństwo/RODO, koszty, plan etapów, architektura). Przed oddaniem: skondensowany dokument ≤5 stron w repo lub PDF (TODO oddania).
 
 ---
 

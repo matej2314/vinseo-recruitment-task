@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Architektura (monolit, procesy, warstwy)
@@ -54,6 +54,10 @@ A-5. `apps/web` nie zawiera egzekucji ACL do treści spotkań ani orkiestracji p
 
 A-6. Konfiguracja `api` i `worker`: na starcie procesu **fail-closed** — brak lub niepoprawne wymagane zmienne środowiskowe → proces **nie** startuje. Zakaz odczytu `process.env` ad hoc w use case’ach, redakcji, ACL i adapterach (poza warstwą config).
 
+A-7. Ścieżka A (host): root `package.json` **musi** udostępniać skrypty `db:up` / `db:down` (opcjonalnie `db:logs`) opakowujące `docker-compose.yml` (tylko Postgres) oraz `dev:api` / `dev:worker` / `dev:web` na hoście. Opis: `docs/deployment.md`, root `README.md`.
+
+A-8. Ścieżka B (compose.dev) — **obowiązkowa** w Fazie 1: w rootcie istnieje `docker-compose.dev.yml` oraz `docker/dev/Dockerfile` (obraz bazowy Node+pnpm, **nie** prod). Compose podnosi Postgres + `api` + `worker` + `web` z **bind mountem** kodu monorepo i **wolumenami** na `node_modules` / store pnpm. Root `package.json` **musi** mieć skrypty `dev:stack:up` / `dev:stack:down` / `dev:stack:logs` (bez usuwania ani zmiany semantyki skryptów z A-7). `DATABASE_URL` w kontenerach wskazuje usługę `postgres`. Zakaz równoległego A+B na tych samych portach. CI v1 **nie** wymaga pełnego stacku B jako bramki testów (`SPEC-TESTY`).
+
 ## Norma: wzorce i struktura
 
 ### Wymagane
@@ -92,8 +96,9 @@ A-6. Konfiguracja `api` i `worker`: na starcie procesu **fail-closed** — brak 
 | Monorepo | **pnpm workspaces** |
 | API / worker | NestJS (osobne procesy / entry) |
 | Web | Next.js (App Router) + BFF |
-| DB | PostgreSQL |
-| ORM / migracje | Prisma (schemat w rootcie `prisma/`) |
+| DB | PostgreSQL (lokalnie A: `pnpm db:up`; B: usługa w `docker-compose.dev.yml`) |
+| Local DX stack B | `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `pnpm dev:stack:*` (obowiązkowe) |
+| ORM / migracje | Prisma (schemat w rootcie `prisma/`; skrypty `db:generate` / `db:migrate` / `db:migrate:deploy`) |
 | Kolejka | pg-boss (w Postgresie; bez Redis jako brokera v1) |
 | Kontrakty współdzielone | `packages/contracts` — typy TS |
 | Walidacja HTTP | `class-validator` + `class-transformer` (DTO Nest) |
@@ -121,11 +126,13 @@ C-3. Wartości konfiguracyjne injectowane do serwisów / adapterów z warstwy co
 - [ ] `apps/web` nie egzekwuje ACL treści ani nie enqueue’uje jobów poza BFF→API.
 - [ ] Start `api` i `worker` z brakującym wymaganym env kończy się błędem bootstrapu.
 - [ ] Układ katalogów zgodny z intencją `docs/architektura_katalogi_pliki.md` (moduły per odpowiedzialność).
+- [ ] Root `package.json` ma `db:up` / `db:down` (i spójne `dev:*`) oraz `dev:stack:up` / `down` / `logs`.
+- [ ] Istnieją `docker-compose.dev.yml` i `docker/dev/Dockerfile`; ścieżka B podnosi postgres+api+worker+web z bind mountem.
 
 ## Poza zakresem
 
 - Szczegóły ścieżek HTTP, payloadów joba i portu źródła.
-- Reguły ACL (uczestnik / membership / admin) i auth cookie.
+- Reguły ACL v1 (organizator / uczestnik / admin) i auth cookie — `SPEC-AUTH_I_ACL`.
 - Orkiestracja kroków `meeting.process` i redakcja PII.
 - Implementacja UC1/UC2 LLM.
 - Widoki Next / shadcn.

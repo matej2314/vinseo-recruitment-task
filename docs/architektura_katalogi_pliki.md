@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 7
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Architektura katalogów i plików
@@ -59,11 +59,18 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 ├── spec/                             # artefakty Spec-Driven Development (osobno od docs)
 ├── .github/
 │   └── workflows/                    # PR tests, workflow_dispatch, ...
-├── docker-compose.yml                # Postgres (+ volume); kolejka = pg-boss w DB
-├── package.json                      # workspaces / skrypty root
+├── docker-compose.yml                # ścieżka A: tylko Postgres (+ volume); kolejka = pg-boss w DB
+├── docker-compose.dev.yml            # ścieżka B: Postgres + api/worker/web (bind mount)
+├── docker/
+│   ├── postgres/                     # init DB testowej
+│   └── dev/
+│       └── Dockerfile                # obraz bazowy Node+pnpm pod compose.dev (nie prod)
+├── package.json                      # workspaces / skrypty root (`db:*`, `dev:*`, `dev:stack:*`)
 ├── pnpm-workspace.yaml
 └── README.md
 ```
+
+Rootowe skrypty: ścieżka A — `pnpm db:up` / `db:down` / `db:logs` + `dev:api` / `dev:worker` / `dev:web`. Ścieżka B — `pnpm dev:stack:up` / `dev:stack:down` / `dev:stack:logs`. Migracje: `pnpm db:generate` / `db:migrate` / `db:migrate:deploy`. Szczegóły: `deployment.md`, root `README.md`.
 
 ## Zasady rozmieszczenia
 
@@ -74,6 +81,8 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 | `apps/web` | App Router, BFF w `app/api/*`, dashboard (sidebar: tabela+Test / mock wyszukiwarka), cookie HttpOnly wg auth | Reguły ACL do treści spotkań; Zod „źródło prawdy” dla całego monorepo |
 | `packages/contracts` | Współdzielone **typy** i kształty kontraktów między api / worker / web | Zod, bcrypt, Prisma Client, logika redakcji, reguły ACL |
 | `prisma/` | Jedyny schemat i migracje dla całej instalacji (w tym model `audit_log`) | Osobne schema per aplikacja; treść transcriptu w tabeli audytu |
+| `docker-compose.yml` + skrypty `db:*` | Ścieżka A / CI: lokalny Postgres (w tym DB testowa); `pnpm db:up` | Sekretów w compose; zastępowania `compose.dev` |
+| `docker-compose.dev.yml` + `docker/dev/` + `dev:stack:*` | Ścieżka B (obowiązkowa): Postgres + procesy app w kontenerach, bind mount kodu, wolumeny zależności | Obrazów produkcyjnych VPS; równoległego `db:up` na tych samych portach |
 | `docs/` | Dokumentacja koncepcyjna i architektoniczna | Normy egzekwowalne SPEC (to `spec/`) |
 | `spec/` | Artefakty SDD / SPEC uzgodnione w procesie projektu | Zastępowanie treści z `docs/` |
 
@@ -83,7 +92,7 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 - **Porty / adaptery na I/O** → `apps/worker/src/adapters/` (źródło spotkań + **llm**); UC2 ask później w `apps/api` na tym samym kontrakcie LlmClient; typy w `packages/contracts`.
 - **ACL jako osobna odpowiedzialność** → `apps/api/src/access/`, nie schowane wyłącznie w controllerze meetings.
 - **Pipeline jako orkiestracja** → `apps/worker/src/pipeline/` + `jobs/`.
-- **Jedna baza** → rootowe `prisma/` + Postgres w Compose; worker i api korzystają z tego samego schematu.
+- **Jedna baza** → rootowe `prisma/` + Postgres w Compose (`pnpm db:up` albo usługa w `compose.dev`); worker i api korzystają z tego samego schematu.
 - **Bez Zod w paczce kontraktów** → walidacja Zod tylko wewnątrz konkretnej aplikacji, która egzekwuje kontrakt na swojej granicy.
 
 ## Konwencje nazewnictwa (katalogi)

@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Auth i ACL
@@ -15,7 +15,7 @@ Norma implementacji uwierzytelniania pracowników oraz kontroli dostępu do spot
 - Reguły ACL odczytu spotkań i artefaktów; egzekucja wyłącznie w `apps/api`.
 - Paginacja listy spotkań po stronie backendu.
 
-**Poza tą wersją:** reset hasła, 2FA, SSO / OAuth Google, konta klientów zewnętrznych, ACL pod UC2 / retrieval asystenta, auth webhooka Fireflies.
+**Poza tą wersją:** reset hasła, 2FA, SSO / OAuth Google, konta klientów zewnętrznych, ACL przez `ProjectMembership` (zespół klienta), auth webhooka Fireflies, HTTP erase admin.
 
 ## Powiązanie ze stylem z docs
 
@@ -64,13 +64,15 @@ AU-8. Ciało odpowiedzi auth **nie** musi zwracać sekretów tokenów w JSON, je
 
 ## Wymagania — ACL
 
-AC-1. Odczyt spotkania i artefaktów (lista elementów, detail, transcript / summary / zadania w detail) tylko gdy zachodzi **co najmniej jedno**:
+AC-1. Odczyt spotkania i artefaktów (lista elementów, detail, transcript / summary / zadania w detail) tylko gdy zachodzi **co najmniej jedno** (**ACL v1**):
 
-1. użytkownik jest **uczestnikiem** spotkania, albo  
-2. użytkownik ma **membership** w zespole projektu / klienta powiązanego ze spotkaniem, albo  
-3. użytkownik ma rolę **admin** — widzi **wszystkie** spotkania.
+1. użytkownik jest **organizatorem** spotkania (`Meeting.organizerId`), albo  
+2. użytkownik jest **uczestnikiem** wewnętrznym (`MeetingParticipant`), albo  
+3. użytkownik ma rolę **admin** — widzi **wszystkie** spotkania (w tym `confidential`).
 
-AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę i detail (oraz inne odczyty treści spotkań w v1).
+Zmiana względem wcześniejszej reguły z membership projektu/klienta: **`ProjectMembership` nie przyznaje odczytu w tej wersji** (kolejna faza produktowa — docs). `clientId` / `clientLinkStatus` to metadane, nie ACL.
+
+AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę, detail, SSE oraz — gdy powstaną — wyszukiwanie i asystent (UC2).
 
 AC-3. `GET /meetings/:id`: spotkanie nie istnieje **lub** brak ACL → odpowiedź **404** (identyczny kształt na zewnątrz — bez wycieku istnienia).
 
@@ -105,6 +107,7 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 - Domyślnego polegania na `Authorization: Bearer` z kodu UI (cookie + BFF).
 - Zwracania plaintext hasła lub refresh tokena w logach / `audit_log` / pino.
 - Filtrowania ACL wyłącznie po stronie klienta.
+- Przyznawania ACL na podstawie `ProjectMembership`, grup Google Workspace lub samego `clientId` w tej wersji.
 
 ## Zatwierdzony stack (obszar)
 
@@ -123,16 +126,18 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 - [ ] Po loginie UI działa na cookie HttpOnly; brak sekretów sesji w Web Storage.
 - [ ] Access wygasa po ~15 min; `POST /auth/refresh` wydaje nową parę; reuse zużytego refresh → 401 + revoke rodziny.
 - [ ] Logout czyści cookie i unieważnia refresh.
-- [ ] Admin widzi wszystkie spotkania; zwykły user tylko uczestnictwo / membership.
+- [ ] Admin widzi wszystkie spotkania; zwykły user tylko organizatorstwo / uczestnictwo (nie membership).
 - [ ] Detail bez ACL → 404; lista nigdy nie zawiera niedozwolonych id.
 - [ ] `limit` spoza {10,25,50,100} → 400; lista paginuje po `page` + `limit` po stronie API.
 - [ ] `POST /auth/register` ustawia cookie sesji; UI może przejść na dashboard bez osobnego loginu.
-- [ ] Testy jednostkowe / integracyjne pokrywają tablicę przypadków ACL (wymóg jakości → `SPEC-TESTY`).
+- [ ] Testy jednostkowe / integracyjne pokrywają tablicę przypadków ACL v1 (wymóg jakości → `SPEC-TESTY`).
 
 ## Poza tą wersją
 
 - Reset / forgot password, weryfikacja e-mail, 2FA.
 - SSO, OAuth Google Workspace.
 - Role poza pracownikiem + admin (np. zewnętrzny guest).
-- ACL dla asystenta Q&A / RAG (UC2).
+- ACL przez membership zespołu klienta / ekspansję grup Calendar.
+- Implementacja retrieval UC2 (reguła ACL ta sama, gdy powstanie).
 - Produkcyjny auth webhooków vendora.
+- Endpoint / UI erase treści (norma produktowa w docs).

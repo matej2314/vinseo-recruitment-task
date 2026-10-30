@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Pipeline spotkania
@@ -14,7 +14,7 @@ Norma implementacji orkiestracji joba `meeting.process` w `apps/worker`. Przepł
 - Idempotencja, statusy, fail-closed, redakcja PII przed LlmClient.
 - Granica: worker **nie** egzekwuje ACL użytkownika.
 
-**Poza tą wersją:** produkcyjny webhook Fireflies, NER/imiona-nazwiska poza E+T+P+K, równoległe joby per segment, osobne retry sieciowe vendora poza jednym retry Zod JSON.
+**Poza tą wersją:** produkcyjny webhook Fireflies / real Workspace, NER/imiona-nazwiska poza E+T+P+K, równoległe joby per segment, osobne retry sieciowe vendora poza jednym retry Zod JSON, HTTP erase admin.
 
 ## Powiązanie ze stylem z docs
 
@@ -48,6 +48,10 @@ P-2. Wejście joba: payload jak w `SPEC-KOMUNIKACJA` (`externalMeetingId`, `sour
 P-3. **Zakaz** użycia `summary.*` (lub równoważnego) z Fireflies / vendora jako wejścia do DB lub do kroku summarize — kanon powstaje wyłącznie z UC1 na bazie (zredagowanego) transcriptu.
 
 P-4. Worker **pomija** ACL użytkownika. Kontrola odczytu wyłącznie przy HTTP w `api` (`SPEC-AUTH_I_ACL`).
+
+P-4a. **Metadata-only:** gdy źródło nie dostarcza treści (brak zgody / brak notatek) — wolno zapisać fakt spotkania (metadane) **bez** wywołania UC1; status terminalny bez kanonicznego summary (np. `completed` z pustą treścią albo osobny kod — spójnie w implementacji i contracts), **bez** udawania streszczenia AI.
+
+P-4b. **Client link:** matching domeny e-mail zewnętrznego → `Client`; brak matcha → `clientLinkStatus = unmatched`, `clientId = null`; **nie** blokuje pipeline ani UC1. Spotkanie bez zewnętrznych → `internal`.
 
 ### Statusy
 

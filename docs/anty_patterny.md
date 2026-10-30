@@ -1,7 +1,7 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Anty-patterny
@@ -41,6 +41,18 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 - **Zamiast:** zwalidowany obiekt konfiguracji na starcie procesu (`config/`).
 
 ## ACL, bezpieczeństwo, dane
+
+### ACL przez grupę Google / dział / „wszyscy pracownicy”
+
+- **Unikać:** traktowania zaproszenia grupy Workspace (zwłaszcza all-company) lub membership działu jako ACL do treści spotkań.
+- **Boli:** wyciek ustaleń do osób bez realnej obecności na callu; Workspace ≠ grupy klienckie.
+- **Zamiast:** ACL v1 = organizator ∨ uczestnik ∨ admin; membership klienta dopiero w kolejnej fazie i tylko w naszej DB.
+
+### ACL przez `ProjectMembership` w v1
+
+- **Unikać:** `canView` oparte o membership „na zapas”, bez źródła prawdy zespołu klienta.
+- **Boli:** fałszywe poczucie onboardingowego dostępu; rozjazd z polityką firmy.
+- **Zamiast:** `clientId` jako metadane; membership poza egzekucją `access` do czasu etapu 3.
 
 ### ACL tylko na froncie / w BFF
 

@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Komunikacja (powierzchnie I/O)
@@ -57,7 +57,7 @@ K-2. Trasy v1 (semantyka jak w docs; ścieżki bazowe):
 
 K-3. Sesja w komunikacji: cookie **HttpOnly**; atrybuty **Secure** / **SameSite** według środowiska. Ciało odpowiedzi logowania **nie** musi duplikować sekretu sesji w JSON. Szczegóły hashowania i reguł ACL → `SPEC-AUTH_I_ACL`.
 
-K-4. Brak uprawnień do istniejącego spotkania: odpowiedź jak **404** (bez wycieku istnienia zasobu). Pełne reguły „kto widzi” → `SPEC-AUTH_I_ACL`.
+K-4. Brak uprawnień do istniejącego spotkania: odpowiedź jak **404** (bez wycieku istnienia zasobu). Pełne reguły „kto widzi” (ACL v1: organizator ∨ uczestnik ∨ admin) → `SPEC-AUTH_I_ACL`.
 
 K-5. Demo (`POST /demo/run-meeting`):
 

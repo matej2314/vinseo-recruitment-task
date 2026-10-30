@@ -1,7 +1,7 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Przepływy danych
@@ -194,7 +194,7 @@ Szczegóły: `llm_i_asystent.md`.
 | Użytkownik + hash hasła | api (register/login) | PostgreSQL |
 | Job pipeline | api (demo / prod enqueue) | pg-boss (w Postgres) |
 | Transcript znormalizowany + summary + action items | worker (po UC1 + Zod) | PostgreSQL — **jeden** persist po udanej walidacji (nie z FF summary; nie przed LlmClient) |
-| Decyzja ACL | api (`access`) | odpowiedź HTTP (reguły + membership w DB); deny → `audit_log` |
+| Decyzja ACL | api (`access`) | odpowiedź HTTP (organizator ∨ uczestnik ∨ admin); deny → `audit_log` |
 | Zdarzenia audytu | api + worker | tabela `audit_log` (retencja 90 dni; odczyt ops/DB) |
 
 ## Mapowanie na inne dokumenty

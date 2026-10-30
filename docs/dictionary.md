@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Słownik
@@ -16,9 +16,16 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Spotkanie** (meeting) | Rekord callu w systemie: metadane, powiązania z klientem/projektem, status przetwarzania, powiązane artefakty. |
 | **Uczestnik** (participant) | Osoba obecna na spotkaniu (pracownik lub osoba zewnętrzna). Konto w systemie ma tylko pracownik. |
 | **Pracownik** (employee / internal user) | Użytkownik z kontem (e-mail + hasło); jedyny typ konta w v1. |
-| **Klient** (client) | Firma lub osoba, dla której agencja prowadzi działania (np. na marketplace); powiązanie spotkań przez `clientId`. |
-| **Projekt** (project) | Wewnętrzna jednostka pracy przy kliencie; membership zespołu w projekcie wpływa na ACL (`projectId`). |
-| **Zespół projektu** (project team) | Pracownicy przypisani do projektu/klienta; mogą widzieć spotkania projektu także bez obecności na callu. |
+| **Klient** (client) | Firma lub osoba, dla której agencja prowadzi działania; w systemie: rekord z domeną e-mail do matchingu; powiązanie spotkań przez opcjonalne `clientId`. |
+| **Domena klienta** (`emailDomain`) | Domena z e-maili zewnętrznych uczestników używana do automatycznego matchingu (bez HubSpot). |
+| **Status linku klienta** (`clientLinkStatus`) | `internal` \| `matched` \| `unmatched` — wynik próby powiązania spotkania z `Client`. |
+| **Projekt** (project) | Jednostka pracy przy kliencie; w schemacie pod przyszłość; **nie** egzekwuje ACL v1. |
+| **Zespół projektu** (project team) | Membership User↔Project — **kolejna faza** ACL (onboarding historii); Workspace nie ma grup klienckich. |
+| **Organizator** (organizer) | Pracownik będący organizatorem wydarzenia; ścieżka ACL v1. |
+| **Uczestnik zewnętrzny** | E-mail poza domeną firmy; tylko metadane (bez konta). |
+| **Spotkanie poufne** (`confidential`) | Flaga ręczna (1:1, rekrutacja, zarząd itd.). |
+| **Metadata-only** | Rekord spotkania bez transcriptu/summary (brak zgody / brak treści ze źródła). |
+| **Erase treści** | Usunięcie transcriptu/summary (i nagrań u vendora); fakt callu (title, daty, duration, status, clientId) zostaje. |
 | **Kampania** (campaign) | Działanie reklamowe / sprzedażowe (często na Allegro lub innym marketplace); bywa tematem ustaleń w transkrypcie (wtrącenia EN). |
 | **Marketplace** | Platforma sprzedaży (np. Allegro), w kontekście której toczą się spotkania z klientami. |
 | **Transkrypcja** (transcript) | Tekst rozmowy z podziałem na mówców; język PL z możliwymi wtrąceniami EN. |
@@ -35,7 +42,7 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Port źródła** (meeting source port) | Ustalony kształt wejścia do pipeline (m.in. `externalId`, uczestnicy, segmenty) - niezależny od schemy vendora. |
 | **Notetaker / Fireflies** | Zewnętrzna usługa capture/transkrypcji; w architekturze adapter wejścia, nie firmowy system docelowy. |
 | **ACL** (access control) | Reguły kto może odczytać spotkanie i artefakty; egzekwowane na API. |
-| **Widoczność spotkania** | Uczestnik **lub** członek zespołu projektu/klienta **lub** admin. |
+| **Widoczność spotkania (ACL v1)** | Organizator **lub** uczestnik wewnętrzny **lub** admin. Egzekucja na `api` (także wyszukiwanie / asystent później). |
 
 ## Przetwarzanie i jakość danych
 
@@ -64,6 +71,8 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **packages/contracts** | Wspólne typy / kształty kontraktów między api, worker i web; **bez Zod**. |
 | **Prisma** | ORM i migracje; schemat w rootowym `prisma/`. |
 | **PostgreSQL** | Jedyna baza stanu aplikacji, kolejek pg-boss i tabeli `audit_log`. |
+| **Docker Compose — ścieżka A** | Rootowy `docker-compose.yml` tylko pod Postgres (+ DB testowa). Wejście: `pnpm db:up` / `db:down` / `db:logs`. Procesy app na hoście (`dev:*`). |
+| **Compose dev stack — ścieżka B** | `docker-compose.dev.yml` + `docker/dev/Dockerfile`: Postgres oraz `api`/`worker`/`web` w kontenerach; bind mount kodu; wolumeny na `node_modules`. Wejście: `pnpm dev:stack:up` / `down` / `logs`. Obowiązkowe DX Fazy 1; nie mylić z Compose produkcyjnym na VPS. |
 | **pg-boss** | Kolejka jobów w Postgresie (bez osobnego Redisa w v1). |
 | **Dziennik audytu** (`audit_log`) | Tabela w Postgresie na kluczowe zdarzenia biznesowe (auth, ACL, joby, demo, błędy walidacji summary); retencja 90 dni; odczyt v1 tylko ops/DB, bez HTTP. |
 | **Logi techniczne** (pino) | Strukturalne logi procesu na stdout - diagnostyka; nie zamiennik `audit_log`. |

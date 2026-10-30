@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  # pnpm 12: wartości muszą być true|false (placeholder "set this to true or false" → ERR_PNPM_IGNORED_BUILDS w CI/Docker)
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  bcrypt: true
+  prisma: true
+  unrs-resolver: true

@@ -1,21 +1,35 @@
 {
   "name": "vinseo-recruitment-task",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Firmowy asystent spotkań — monorepo (api / worker / web)",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:api": "pnpm --filter @vinseo/api start:dev",
+    "dev:worker": "pnpm --filter @vinseo/worker start:dev",
+    "dev:web": "pnpm --filter @vinseo/web dev",
+    "dev:stack:up": "docker compose -f docker-compose.dev.yml up -d --build",
+    "dev:stack:down": "docker compose -f docker-compose.dev.yml down",
+    "dev:stack:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "build": "pnpm -r run build",
+    "test": "pnpm --filter @vinseo/api test",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "typecheck:contracts": "pnpm --filter @vinseo/contracts typecheck"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/matej2314/vinseo-recruitment-task.git"
+  "devDependencies": {
+    "dotenv": "^16.4.7",
+    "prisma": "^7.10.1",
+    "typescript": "^5.9.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/matej2314/vinseo-recruitment-task/issues"
-  },
-  "homepage": "https://github.com/matej2314/vinseo-recruitment-task#readme"
+  "dependencies": {
+    "@prisma/client": "^7.10.1"
+  }
 }

@@ -1,7 +1,7 @@
 ---
-wersja: 4
+wersja: 6
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Wdrożenie i środowiska
@@ -12,15 +12,17 @@ data_modyfikacji: 2026-10-29
 
 | Środowisko | Cel | Skład |
 |------------|-----|--------|
-| **local** | Development | Docker Compose: Postgres (+ opcjonalnie osobna baza testowa); procesy `api`, `worker`, `web` na hoście lub w Compose |
-| **ci** | Testy na PR / dispatch | Compose z bazą testową; Jest (unit + integracja); bez deployu na VPS |
-| **production** | VPS | Compose: `web`, `api`, `worker`, Postgres; reverse proxy **Nginx** + TLS |
+| **local (A)** | Dev na hoście | `docker-compose.yml` → Postgres; `pnpm db:up`; procesy `api`/`worker`/`web` na hoście (`pnpm dev:*`) |
+| **local (B)** | Dev w kontenerach | `docker-compose.dev.yml` → Postgres + `api`/`worker`/`web`; bind mount kodu + wolumeny `node_modules`; `pnpm dev:stack:up` (**obowiązkowe DX Fazy 1**) |
+| **ci** | Testy na PR / dispatch | Compose z bazą testową (`db:up` lub równoważne); Jest; bez pełnego `compose.dev` jako bramki |
+| **production** | VPS | Compose produkcyjny: `web`, `api`, `worker`, Postgres; reverse proxy **Nginx** + TLS (osobne od `compose.dev`) |
 
 Zasady:
 
 - Żadnych sekretów w git (`.env` lokalnie / na serwerze; w CI - GitHub Secrets gdy potrzebne).
 - Demo (`POST /demo/run-meeting`) wymaga sesji pracownika; **brak** osobnej flagi `DEMO_ENABLED` w kontrakcie v1 (na prod ograniczać dostęp sieciowo / kontami, nie wyłącznikiem env).
 - Health: publicznie głównie api (+ web); health workera - sieć wewnętrzna / localhost (patrz `observability.md`).
+- **Nie** uruchamiać ścieżki A i B jednocześnie na tych samych portach (5432 / 3000 / 3001) — najpierw `pnpm db:down` albo `pnpm dev:stack:down`.
 
 ## Topologia produkcji (docelowa)
 
@@ -102,12 +104,23 @@ Automatyzacja tej listy w Actions - TODO poza v1.
 
 ## Lokalny start (skrót)
 
-Szczegóły komend - root `README` projektu. Logicznie:
+Szczegóły komend - root `README` projektu. Dwie ścieżki DX (skrypty root `package.json`):
 
-1. `docker compose up -d` (Postgres + DB testowa wg compose).
-2. Migracje Prisma (seed nie jest wymagany w v1).
-3. `api`, `worker`, `web` jako osobne procesy.
-4. Demo: zalogowany pracownik → przycisk Test / `POST /demo/run-meeting` (+ SSE statusów).
+### Ścieżka A — baza w Compose, appki na hoście
+
+1. `pnpm db:up` — `docker-compose.yml` (Postgres + DB testowa). Zatrzymanie: `pnpm db:down`; logi: `pnpm db:logs`.
+2. Migracje: `pnpm db:generate` + `pnpm db:migrate` (dev).
+3. Procesy: `pnpm dev:api`, `pnpm dev:worker`, `pnpm dev:web`.
+4. Demo: zalogowany pracownik → Test / `POST /demo/run-meeting` (+ SSE).
+
+### Ścieżka B — pełny stack w kontenerach (**obowiązkowa implementacja Fazy 1**)
+
+1. `cp .env.example .env` (jeśli brak).
+2. `pnpm dev:stack:up` — `docker-compose.dev.yml`: Postgres + `api` + `worker` + `web`; kod z bind mountu; zależności w wolumenach Docker; obraz bazowy `docker/dev/Dockerfile`.
+3. Logi: `pnpm dev:stack:logs`; stop: `pnpm dev:stack:down`.
+4. W kontenerach `DATABASE_URL` wskazuje host `postgres` (nadpisanie w compose); migracje odpala serwis `api` przy starcie (`db:migrate:deploy`).
+
+`compose.dev` **nie** zastępuje obrazów produkcyjnych z checklisty VPS — to wyłącznie DX z hot-reload.
 
 ## Świadomie poza v1
 

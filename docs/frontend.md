@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Frontend
@@ -46,8 +46,9 @@ Prosty sidebar przełącza:
 
 ### 3. Widok domyślny — tabela + Test
 
-- Lista spotkań z API (już po ACL); paginacja backendowa: select limitu **10 / 25 / 50 / 100** + parametr **`page`** (1-based).
+- Lista spotkań z API (już po ACL v1: organizator / uczestnik / admin); paginacja backendowa: select limitu **10 / 25 / 50 / 100** + parametr **`page`** (1-based).
 - **Brak** osobnej strony detail (`/meetings/:id`) w UI v1 — wynik pipeline widać w **wierszu tabeli**.
+- Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) — **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
 - **Przycisk Test** — zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
 - Po Test: `POST` demo → otwarcie **SSE** dla `meetingId` → użytkownik **zostaje** na widoku; tabela **aktualizuje wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail.
 - Wylogowanie: BFF/API.

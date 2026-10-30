@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Testy
@@ -35,7 +35,7 @@ T-1. Runner: **Jest** we workspaces (`apps/api`, `apps/worker`; web: smoke / lek
 
 T-2. HTTP API: **supertest** + `@nestjs/testing`.
 
-T-3. Integracja: osobna baza PostgreSQL testowa (Compose / override, np. `meeting_memory_test`); migracje Prisma przed suite; **zakaz** współdzielenia bazy z dev bez izolacji.
+T-3. Integracja: osobna baza PostgreSQL testowa (Compose / override, np. `vinseo_test`); lokalnie typowo **`pnpm db:up`** (ścieżka A, A-7). Pełny stack B (`dev:stack:up` / A-8) **nie** jest wymagany do DoD ani CI v1. Migracje Prisma na `DATABASE_URL_TEST` przed suite; **zakaz** współdzielenia bazy z dev bez izolacji.
 
 T-4. Wyłącznie fixture / mock — bez prawdziwych nagrań i danych klientów.
 
@@ -47,10 +47,11 @@ T-6. **ACL (`access`)** — tabela przypadków (rozszerzalna):
 
 | Użytkownik | Spotkanie | Oczekiwane |
 |------------|-----------|------------|
+| Organizator | to spotkanie | allow |
 | Uczestnik wewnętrzny | to spotkanie | allow |
-| Członek zespołu projektu, nie na callu | spotkanie projektu | allow |
-| Obcy pracownik | cudze / inny projekt | deny → API **404** |
-| Admin | dowolne | allow |
+| Membership projektu, nie organizer/uczestnik | spotkanie z project/client | **deny → 404** (poza ACL v1) |
+| Obcy pracownik | cudze spotkanie | deny → API **404** |
+| Admin | dowolne (w tym confidential) | allow |
 
 T-7. **Redakcja** — klasy **E+T+P+K** maskowane przed LlmClient; idempotencja na już zredagowanym tekście (`SPEC-PIPELINE`).
 
@@ -104,7 +105,7 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 |---------|--------|
 | Runner | Jest |
 | API HTTP | supertest + `@nestjs/testing` |
-| DB test | PostgreSQL (Compose) + Prisma |
+| DB test | PostgreSQL (Compose via `pnpm db:up` / ścieżka A) + Prisma; stack B nie jest bramką CI |
 | CI | GitHub Actions (PR + `workflow_dispatch`) |
 | Web | smoke build / typecheck |
 

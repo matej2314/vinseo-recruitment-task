@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Dokumentacja - Firmowy asystent spotkań
@@ -36,7 +36,7 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | [testy.md](./testy.md) | Piramida testów, Jest, CI |
 | [observability.md](./observability.md) | pino, health, `audit_log` |
 | [deployment.md](./deployment.md) | Środowiska, VPS, Nginx, CI, checklista deploy |
-| [bezpieczenstwo_i_rodo.md](./bezpieczenstwo_i_rodo.md) | Zgody, retencja, vendorzy, edge case’y |
+| [bezpieczenstwo_i_rodo.md](./bezpieczenstwo_i_rodo.md) | Zgody, retencja 90/12, erase faktu callu, ACL v1, vendorzy |
 | [koszty_i_warianty.md](./koszty_i_warianty.md) | Warianty A / A’ / B z obliczeniami |
 | [plan_wdrozenia_etapy.md](./plan_wdrozenia_etapy.md) | Etapy 0–3, kryteria sukcesu, root README oddania |
 

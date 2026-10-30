@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Koszty i warianty
@@ -71,9 +71,9 @@ Capture/transkrypcja przez Fireflies dla wolumenu jak w założeniach; własne s
 
 ---
 
-## Wariant A’ - Fireflies seats + tylko callе zewnętrzne (~40% godzin) + GPT-5.2 + VPS
+## Wariant A’ - Fireflies seats + zawężony wolumen (~40% godzin) + GPT-5.2 + VPS
 
-Priorytet produktowy: najpierw spotkania z klientem. Założenie: **40% godzin** = \(0{,}4 \times 300 = 120\) h →
+Produktowo typy spotkań mają **równy priorytet**; A’ to **wariant kosztowy** (mniej godzin capture/LLM), nie „najpierw tylko klienci”. Założenie modelowe: **40% godzin** = \(0{,}4 \times 300 = 120\) h →
 
 \[
 N = 120 / 0{,}75 = 160\ \mathrm{spotkań}
@@ -148,7 +148,8 @@ Praca własna zespołu (dev) i ewentualny DPA/legal - **poza** tą tabelą opex 
 
 ## Mapowanie na inne dokumenty
 
-- Skala i priorytet calli: `dokumentacja_koncepcyjna.md`
+- Skala i równy priorytet typów spotkań: `dokumentacja_koncepcyjna.md`
+- Brak HubSpot w stacku integracji (tylko wzmianka decyzyjna)
 - LLM use case’y: `llm_i_asystent.md`
 - Vendorzy / RODO: `bezpieczenstwo_i_rodo.md`
 - Hosting: `deployment.md`

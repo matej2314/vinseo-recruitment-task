@@ -1,7 +1,7 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Dokumentacja komunikacji (kontrakty I/O)
@@ -71,7 +71,8 @@ Przykład ciała logowania:
 | `GET` | `/meetings/:id` | Szczegóły po ACL (API; UI v1 nie ma osobnej strony detail — tabela + SSE) | tak |
 | `GET` | `/meetings/:id/events` | **SSE** statusów pipeline (`pending`→…→`completed`\|`failed`); ACL jak detail | tak |
 
-**ACL (przypomnienie kontraktowe):** uczestnik spotkania **lub** membership w zespole projektu/klienta powiązanego ze spotkaniem **lub** admin.  
+**ACL v1 (przypomnienie kontraktowe):** **organizator** spotkania **lub** uczestnik wewnętrzny **lub** admin.  
+`clientId` / membership projektu **nie** przyznają odczytu w v1.  
 Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku istnienia) — także dla SSE.
 
 Element listy (kształt logiczny; typy współdzielone w `packages/contracts`):
@@ -81,13 +82,16 @@ Element listy (kształt logiczny; typy współdzielone w `packages/contracts`):
   "id": "uuid",
   "title": "Sync budżet - klient X",
   "startedAt": "2026-10-01T10:00:00.000Z",
+  "durationSeconds": 2700,
+  "organizerId": "uuid",
   "clientId": "uuid",
-  "projectId": "uuid",
+  "clientLinkStatus": "matched",
+  "confidential": false,
   "processingStatus": "completed"
 }
 ```
 
-Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników - zawsze po przejściu ACL.
+Detail może rozszerzać o `summary`, `actionItems`, skrót uczestników (wewnętrzni + zewnętrzni jako info) — zawsze po przejściu ACL. Po erase treści: te same metadane faktu, bez transcriptu/summary.
 
 ### 1.3 Demo - uruchomienie pipeline (przycisk Test)
 

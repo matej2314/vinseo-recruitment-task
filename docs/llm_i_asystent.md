@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # LLM i asystent
@@ -34,7 +34,7 @@ Wspólny port / adapter klienta LLM (redakcja przed wysyłką; w prod później:
 | | **UC1 - summarizeMeeting** | **UC2 - answerQuestion** |
 |--|----------------------------|---------------------------|
 | Kiedy | Etap 0: mock; etap 1+: prawdziwy model | Etap 2+ (koncepcja; stub poza MVP kodu) |
-| Wejście | Zredagowany transcript (segmenty) | Pytanie użytkownika + **wyłącznie** fragmenty z DB w ACL |
+| Wejście | Zredagowany transcript (segmenty) | Pytanie użytkownika + **wyłącznie** fragmenty z DB w **ACL v1** (organizator ∨ uczestnik ∨ admin) |
 | Wyjście | JSON → Zod (`shortSummary`, `decisions`, `actionItems`) | Odpowiedź + wskazanie źródeł (meeting id / fragment) |
 | Gdzie | Worker, job `meeting.process` | API (po retrieval) |
 

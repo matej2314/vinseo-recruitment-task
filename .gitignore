@@ -2,5 +2,13 @@ Workflow.md
 ZADANIE_Mid_FullStack.md
 DECISIONS.md
 
-apps/api/.env
-apps/worker/.env
+node_modules/
+dist/
+.next/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+apps/*/pnpm-lock.yaml

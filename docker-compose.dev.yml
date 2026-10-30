@@ -1,0 +1,158 @@
+# Full local DX stack: Postgres + api / worker / web with bind-mounted source.
+# Do not run together with `pnpm db:up` (docker-compose.yml) on the same ports.
+# Entry: `pnpm dev:stack:up`
+#
+# F-01: one-shot `deps` (install + generate + migrate) before app services.
+# F-02: `.env` is optional (`required: false`); compose still sets DATABASE_URL for containers.
+
+name: vinseo-dev
+
+x-app-volumes: &app-volumes
+  - .:/app
+  - vinseo_dev_root_modules:/app/node_modules
+  - vinseo_dev_api_modules:/app/apps/api/node_modules
+  - vinseo_dev_worker_modules:/app/apps/worker/node_modules
+  - vinseo_dev_web_modules:/app/apps/web/node_modules
+  - vinseo_dev_contracts_modules:/app/packages/contracts/node_modules
+  - vinseo_dev_pnpm_store:/pnpm/store
+
+x-app-build: &app-build
+  context: .
+  dockerfile: docker/dev/Dockerfile
+
+x-optional-env-file: &optional-env-file
+  - path: .env
+    required: false
+
+x-db-env: &db-env
+  DATABASE_URL: postgresql://vinseo:vinseo@postgres:5432/vinseo?schema=public
+  DATABASE_URL_TEST: postgresql://vinseo:vinseo@postgres:5432/vinseo_test?schema=public
+  PNPM_STORE_DIR: /pnpm/store
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vinseo-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vinseo
+      POSTGRES_PASSWORD: vinseo
+      POSTGRES_DB: vinseo
+    ports:
+      - "5432:5432"
+    volumes:
+      - vinseo_dev_pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/01-init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vinseo -d vinseo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: shared install into volumes, then migrate (apps must not race install).
+  deps:
+    build: *app-build
+    container_name: vinseo-dev-deps
+    working_dir: /app
+    volumes: *app-volumes
+    env_file: *optional-env-file
+    environment:
+      NODE_ENV: development
+      <<: *db-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        # Wymuś URL usługi Compose (bind-mounted .env ma localhost — poza kontenerem).
+        export DATABASE_URL="postgresql://vinseo:vinseo@postgres:5432/vinseo?schema=public"
+        export DATABASE_URL_TEST="postgresql://vinseo:vinseo@postgres:5432/vinseo_test?schema=public"
+        corepack enable
+        pnpm config set store-dir /pnpm/store
+        pnpm install
+        pnpm db:generate
+        pnpm db:migrate:deploy
+
+  api:
+    build: *app-build
+    container_name: vinseo-dev-api
+    working_dir: /app
+    volumes: *app-volumes
+    ports:
+      - "3001:3001"
+    env_file: *optional-env-file
+    environment:
+      NODE_ENV: development
+      API_PORT: "3001"
+      <<: *db-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        pnpm --filter @vinseo/api start:dev
+
+  worker:
+    build: *app-build
+    container_name: vinseo-dev-worker
+    working_dir: /app
+    volumes: *app-volumes
+    env_file: *optional-env-file
+    environment:
+      NODE_ENV: development
+      <<: *db-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        pnpm --filter @vinseo/worker start:dev
+
+  web:
+    build: *app-build
+    container_name: vinseo-dev-web
+    working_dir: /app
+    volumes: *app-volumes
+    ports:
+      - "3000:3000"
+    env_file: *optional-env-file
+    environment:
+      NODE_ENV: development
+      PNPM_STORE_DIR: /pnpm/store
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        pnpm --filter @vinseo/web exec next dev --hostname 0.0.0.0 --port 3000
+
+volumes:
+  vinseo_dev_pg_data:
+  vinseo_dev_root_modules:
+  vinseo_dev_api_modules:
+  vinseo_dev_worker_modules:
+  vinseo_dev_web_modules:
+  vinseo_dev_contracts_modules:
+  vinseo_dev_pnpm_store:

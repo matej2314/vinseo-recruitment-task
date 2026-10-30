@@ -18,28 +18,30 @@
 
 ## Faza 1 — Fundament monorepo i szkielet procesów
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Pierwszy etap prac: dogranie **struktury całego repo** (backend, frontend jako stub, worker) oraz lokalnej gotowości do dalszych faz. Po Fazie 1 da się podnieść środowisko danych, uruchomić szkielety procesów oraz mieć startowy model danych i minimalne kontrakty typów pod pipeline i auth — zgodnie z `docs/architektura_katalogi_pliki.md`, `docs/architektura.md`, `SPEC-ARCHITEKTURA`, `SPEC-DANE`.
+**Opis:** Pierwszy etap prac: dogranie **struktury całego repo** (backend, frontend jako stub, worker) oraz lokalnej gotowości do dalszych faz. Po Fazie 1 działa **ścieżka A** (`pnpm db:up` + `dev:*` na hoście) oraz **obowiązkowa ścieżka B** (`docker-compose.dev.yml` + `pnpm dev:stack:up` — Postgres i procesy w kontenerach z bind mountem), startowy model danych i kontrakty typów — zgodnie z `docs/architektura_katalogi_pliki.md`, `docs/deployment.md`, `SPEC-ARCHITEKTURA` (**A-7**, **A-8**), `SPEC-DANE`.
 
 **DoD (faza):**
 
-- Układ monorepo odzwierciedla docelowe drzewo z docs (procesy `api` / `worker` / `web`, wspólne kontrakty, wspólny model danych w rootcie).
-- Środowisko lokalne z bazą działa; `api` i `worker` startują jako osobne procesy; stub `web` startuje w minimalnym zakresie.
-- Smoke jakości w `api` przechodzi; README opisuje komendy po scaffoldzie.
+- Układ monorepo odzwierciedla docelowe drzewo z docs (procesy `api` / `worker` / `web`, wspólne kontrakty, wspólny model danych w rootcie; `docker-compose.yml` + `docker-compose.dev.yml` + `docker/dev/`).
+- Ścieżka A: `db:up` / `db:down` / `db:logs` + `dev:*` na hoście.
+- Ścieżka B (**obowiązkowa**): `dev:stack:up` / `down` / `logs` podnosi postgres + api + worker + web z bind mountem kodu.
+- Smoke jakości w `api` przechodzi; README opisuje obie ścieżki bez domysłów spoza repo.
 - Fundament wystarcza do startu Fazy 2 (pipeline) i Fazy 3 (auth/ACL) bez przebudowy układu repo.
 
 ### Krok 1.1 — Struktura całego repozytorium
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Utworzenie / dogranie struktury całego monorepo: miejsca na `api`, `worker`, `web`, pakiet wspólnych kontraktów typów oraz schemat danych w rootcie. Jeden root repozytorium (bez zagnieżdżonych historii gita pod aplikacjami). Workspaces i wspólne skrypty startowe root zgodne z docs.
+**Opis:** Utworzenie / dogranie struktury całego monorepo: miejsca na `api`, `worker`, `web`, pakiet wspólnych kontraktów typów, schemat danych w rootcie oraz pliki Compose (A + B). Jeden root repozytorium. Workspaces i skrypty root (`dev:*`, `db:*`, `dev:stack:*`) zgodne z docs / `SPEC-ARCHITEKTURA`.
 
 **DoD (krok):**
 
-- Drzewo katalogów jest zgodne z `docs/architektura_katalogi_pliki.md` w zakresie etapu 0.
+- Drzewo katalogów jest zgodne z `docs/architektura_katalogi_pliki.md` w zakresie etapu 0 (w tym `docker-compose.dev.yml`, `docker/dev/`).
 - Współdzielone typy żyją wyłącznie w uzgodnionym pakiecie kontraktów; nie ma tam walidacji runtime ani logiki domenowej (zgodnie z `SPEC-ARCHITEKTURA`).
 - Jest jeden root repo — aplikacje nie są osobnymi repozytoriami.
+- Root `package.json` ma `dev:*`, `db:generate` / `db:migrate*` — skrypty `db:*` Compose i `dev:stack:*` domykają Krok 1.2.
 
 #### Podkrok 1.1.1 — Miejsca procesów `api`, `worker`, `web`
 
@@ -51,63 +53,73 @@ Minimalne kształty typów pod późniejsze API/job oraz lokalizacja schematu / 
 
 ### Krok 1.2 — Lokalne środowisko danych i kolejki
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Lokalne podniesienie magazynu stanu (PostgreSQL) tak, by ta sama instalacja mogła obsługiwać dane domenowe i kolejkę jobów — zgodnie z `docs/architektura.md` / `docs/deployment.md` (bez osobnego brokera w v1).
+**Opis:** Lokalne podniesienie magazynu stanu (PostgreSQL) oraz (ścieżka B) pełnego stacku procesów — zgodnie z `docs/deployment.md` / `SPEC-ARCHITEKTURA` **A-7** i **A-8** (bez osobnego brokera w v1). Ścieżka A: `docker-compose.yml` + `db:*` + appki na hoście. Ścieżka B (**obowiązkowa**): `docker-compose.dev.yml` + `docker/dev/Dockerfile` + `dev:stack:*` (Postgres + api/worker/web, bind mount, wolumeny zależności).
 
 **DoD (krok):**
 
-- Baza lokalna wstaje w sposób powtarzalny opisany w README.
-- Kolejka jobów korzysta z tej samej bazy (założenie docs), bez wprowadzania równoległego magazynu „na start”.
+- Ścieżka A: `pnpm db:up` / `db:down` / `db:logs` działa; baza pod testy/CI dostępna.
+- Ścieżka B: `pnpm dev:stack:up` podnosi postgres + api + worker + web; `dev:stack:down` / `logs` istnieją.
+- Kolejka jobów korzysta z tej samej bazy (założenie docs), bez równoległego magazynu „na start”.
+- README / docs ostrzegają przed równoczesnym A+B na tych samych portach.
+
+#### Podkrok 1.2.1 — Compose DB + skrypty root `db:*` (ścieżka A)
+
+Rootowy `docker-compose.yml` (Postgres + DB testowa) oraz skrypty `db:up` / `db:down` / `db:logs` — wejście lokalne i pod testy integracyjne (`SPEC-TESTY` T-3).
+
+#### Podkrok 1.2.2 — Compose dev stack + skrypty `dev:stack:*` (ścieżka B, obowiązkowa)
+
+`docker-compose.dev.yml` + `docker/dev/Dockerfile` + skrypty `dev:stack:up` / `down` / `logs`. Kontenery app z bind mountem monorepo i wolumenami `node_modules`; `DATABASE_URL` → host `postgres`. Nie mylić z Compose produkcyjnym VPS.
 
 ### Krok 1.3 — Szkielety procesów Nest oraz stub frontu
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Uruchamialny szkielet `api` (HTTP) i `worker` (osobny entry, bez publicznego HTTP dla przeglądarki) oraz minimalny stub `apps/web` (App Router / trasy-placeholdery pod późniejszy major frontu). Pełne UI **nie** wchodzi w ten krok.
+**Opis:** Uruchamialny szkielet `api` (HTTP) i `worker` (osobny entry, bez publicznego HTTP dla przeglądarki) oraz minimalny stub `apps/web`. Start możliwy na hoście (`dev:*`) **oraz** w kontenerach ścieżki B. Pełne UI **nie** wchodzi w ten krok.
 
 **DoD (krok):**
 
-- `api` i `worker` startują lokalnie jako **dwa** procesy.
-- Stub `web` startuje (nawet z pustym / minimalnym UI).
+- `api` i `worker` startują lokalnie jako **dwa** procesy (host i/lub compose.dev).
+- Stub `web` startuje (host i/lub compose.dev).
 - Granice odpowiedzialności procesów są zachowane opisowo jak w `docs/architektura.md` (worker bez publicznego API przeglądarki).
 
 ### Krok 1.4 — Model danych startowy
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Startowy model pod etap 0: użytkownicy, spotkania, uczestnicy, transcript, summary, zadania, membership / uprawnienia, refresh tokeny, `audit_log` — zgodnie z `SPEC-DANE` i opisem w docs. Gotowość pod pipeline (Faza 2) oraz auth/ACL (Faza 3).
+**Opis:** Startowy model pod etap 0: użytkownicy, spotkania (**organizator**, `clientLinkStatus`, `confidential`, czas trwania), uczestnicy wewnętrzni + metadane zewnętrznych, transcript, summary, zadania, `Client.emailDomain`, refresh tokeny, `audit_log` — zgodnie z `SPEC-DANE`. `Project` / `ProjectMembership` mogą istnieć w schemacie **bez** roli ACL v1. Align po KROK 4: feature plan plik `_1` **KROK 8** (gdy startowy schemat powstał wcześniej). Gotowość pod pipeline (Faza 2) oraz auth/ACL v1 (Faza 3).
 
 **DoD (krok):**
 
-- Model pokrywa byty wymagane przez etap 0 w docs/SPEC-DANE.
-- Nie ma oczywistej luki wymuszającej przebudowę schematu przed Fazą 2 lub 3 (np. brak miejsca na status przetwarzania, sesję refresh lub audyt).
+- Model pokrywa byty wymagane przez etap 0 w docs/SPEC-DANE (w tym organizer + status linku klienta).
+- Nie ma oczywistej luki wymuszającej przebudowę schematu przed Fazą 2 lub 3 (np. brak miejsca na status przetwarzania, sesję refresh, organizatora lub audyt).
 
 ### Krok 1.5 — Smoke jakości i README po scaffoldzie
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
-**Opis:** Minimalna bramka jakości w `api` (smoke) oraz root README z komendami uruchomienia po scaffoldzie — nawet jeśli część ścieżek domenowych jeszcze nie działa w 100%.
+**Opis:** Minimalna bramka jakości w `api` (smoke) oraz root README z komendami uruchomienia po scaffoldzie. Sekcja uruchomienia opisuje **ścieżkę A** (`db:up` + `dev:*`) i **ścieżkę B** (`dev:stack:up`), spójnie z Krokiem 1.2 / A-7 / A-8.
 
 **DoD (krok):**
 
 - Smoke w `api` przechodzi.
-- README pozwala obcej osobie podnieść scaffold (baza + procesy) bez domysłów spoza repo.
+- README pozwala podnieść scaffold ścieżką A i ścieżką B bez domysłów spoza repo.
 
 ---
 
 ## MILESTONE — Fundament monorepo gotowy
 
-**Opis:** Bramka po Fazie 1. Duży skok: repo ma docelowy układ procesów, lokalną bazę, startujące szkielety oraz model pod dalsze fazy. Wolno wchodzić w pipeline bez przebudowy monorepo.
+**Status:** `OSIĄGNIĘTY`
+
+**Opis:** Bramka po Fazie 1. Duży skok: repo ma docelowy układ procesów, lokalną bazę (A), obowiązkowy stack compose.dev (B), startujące szkielety oraz model pod dalsze fazy. Wolno wchodzić w pipeline bez przebudowy monorepo.
 
 **DoD (milestone):**
 
 - Faza 1 ma status `WYKONANY` (lub wszystkie jej obowiązkowe DoD kroków są spełnione).
-- Trzy lokalizacje procesów istnieją; `api` i `worker` działają lokalnie; stub `web` istnieje.
+- Trzy lokalizacje procesów istnieją; działa `pnpm db:up` oraz `pnpm dev:stack:up`.
 - Model danych startowy i kontrakty typów wystarczają na start Fazy 2.
 - Prowadzący prace akceptuje przejście do Fazy 2.
-
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 
@@ -224,11 +236,12 @@ Fail-closed: niepoprawny kształt → retry wg normy, potem `failed` / quarantin
 
 **Status:** `NIE_ROZPOCZĘTY`
 
-**Opis:** Moduł / serwis `access`: uczestnik **lub** membership projektu/klienta **lub** admin. `GET /meetings` (paginacja limit ∈ {10,25,50,100} + page) oraz `GET /meetings/:id`. Deny → **404**.
+**Opis:** Moduł / serwis `access`: **organizator** ∨ **uczestnik** ∨ **admin** (`SPEC-AUTH_I_ACL` ACL v1; bez membership). `GET /meetings` (paginacja limit ∈ {10,25,50,100} + page) oraz `GET /meetings/:id`. Deny → **404**.
 
 **DoD (krok):**
 
 - Nie da się pobrać cudzego spotkania zgadnięciem ID przy ważnej sesji obcego użytkownika (404).
+- Membership projektu nie daje allow w testach ACL v1.
 - Lista zwraca wyłącznie spotkania dozwolone regułami ACL.
 
 ### Krok 3.3 — Demo enqueue i SSE statusów
@@ -394,14 +407,14 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu — jeśli 
 ## Poza zakresem tego major planu
 
 - Pełna implementacja `apps/web` (BFF, sidebar, tabela+Test+SSE w UI, mock wyszukiwarki) — **osobny major frontu**.
-- Prawdziwy Google Workspace / Fireflies / LLM; UC2 / RAG; Playwright jako must-have; HTTP odczytu `audit_log`; konta klientów zewnętrznych — poza etapem 0 (`docs/dokumentacja_koncepcyjna.md`, `docs/plan_wdrozenia_etapy.md`).
+- Prawdziwy Google Workspace / Fireflies / LLM; UC2 / RAG; Playwright jako must-have; HTTP odczytu `audit_log`; konta klientów zewnętrznych; HubSpot; erase admin UI/API; ACL przez membership zespołu klienta — poza etapem 0 (`docs/dokumentacja_koncepcyjna.md`, `docs/plan_wdrozenia_etapy.md`).
 - Etapy wdrożenia firmowego 1–3 — poza tym planem prac kodu oddania.
 
 ## Mapowanie obszarów SPEC → fazy (ślad)
 
 | Obszar SPEC | Fazy (ten major) |
 |-------------|------------------|
-| `SPEC-ARCHITEKTURA`, `SPEC-DANE` | 1 |
+| `SPEC-ARCHITEKTURA` (A-7 ścieżka A, A-8 ścieżka B `dev:stack`), `SPEC-DANE` | 1 |
 | `SPEC-PIPELINE`, `SPEC-LLM`, częściowo `SPEC-KOMUNIKACJA` (job / źródło) | 2 |
 | `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA` (HTTP/SSE/demo), `SPEC-TESTY`, opcjonalnie `SPEC-OBSERVABILITY` | 3 |
 | `SPEC-TESTY` / `docs/deployment.md` (CI), docs pod Część A | 4 |

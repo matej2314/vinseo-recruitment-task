@@ -1,7 +1,7 @@
 ---
-wersja: 6
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Architektura - Firmowy asystent spotkań
@@ -77,6 +77,8 @@ Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątkó
 | **worker** | Joby pg-boss, kroki pipeline, wywołania portów (mock źródła / mock summary) | Publicznego API dla przeglądarki; decyzji „czy user X może to zobaczyć” przy serwowaniu UI |
 | **web** | Cookie HttpOnly, BFF, sidebar (tabela+Test / mock wyszukiwarka) | Reguł uprawnień do treści spotkań |
 
+Lokalnie te same trzy procesy mogą biec **na hoście** (`pnpm db:up` + `dev:*`) albo w **kontenerach developerskich** (`docker-compose.dev.yml` / `pnpm dev:stack:up` — bind mount kodu). Granice odpowiedzialności procesów się nie zmieniają. Szczegóły: `deployment.md`.
+
 ## Współdzielenie: `packages/`
 
 Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScript, kształty DTO / komunikatów uzgodnione między stronami) używane przez **`api`**, **`worker`** i **`web`**.
@@ -88,7 +90,7 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 
 ## Dane i kolejka
 
-- **PostgreSQL** - jedyny magazyn stanu aplikacji (użytkownicy, spotkania, transcript, summary, zadania, membership projektów, joby pg-boss, **`audit_log`**).
+- **PostgreSQL** - jedyny magazyn stanu aplikacji (użytkownicy, spotkania, transcript, summary, zadania, opcjonalnie Project/Membership pod kolejną fazę, joby pg-boss, **`audit_log`**).
 - **Prisma** - ORM i migracje.
 - **pg-boss** - kolejka w Postgresie (świadomie bez Redis), żeby ograniczyć liczbę kontenerów i ruchomych części.
 - **`audit_log`** - audyt kluczowej logiki (retencja 90 dni); szczegóły katalogu zdarzeń i zakazów treści: `observability.md`. Odczyt w v1 bez API HTTP.
@@ -110,13 +112,16 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 
 ### Autoryzacja (ACL)
 
-Odczyt spotkania i artefaktów (transkrypt, streszczenie, zadania) tylko gdy zachodzi co najmniej jedno:
+Odczyt spotkania i artefaktów (transkrypt, streszczenie, zadania) tylko gdy zachodzi co najmniej jedno (**ACL v1**):
 
-1. użytkownik jest **uczestnikiem** spotkania, albo  
-2. użytkownik należy do **zespołu projektu / klienta** powiązanego ze spotkaniem (`clientId` / `projectId` lub równoważne + membership), albo  
-3. rola **administracyjna** (operacje serwisowe).
+1. użytkownik jest **organizatorem** spotkania, albo  
+2. użytkownik jest **uczestnikiem** wewnętrznym spotkania (`MeetingParticipant` → `User`), albo  
+3. rola **administracyjna** (operacje serwisowe; także spotkania `confidential`).
 
-ACL egzekwuje **`api`**. BFF i UI nie są źródłem prawdy uprawnień.
+`clientId` / status linku klienta służą do metadanych, filtrów i erase — **nie** przyznają ACL w v1.  
+`Project` / `ProjectMembership` mogą istnieć w schemacie pod **kolejną fazę** (zespół klienta); **nie** egzekwują dostępu w v1. Grupy Google Workspace (działy / „wszyscy”) nie mapują się na ACL.
+
+ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF i UI nie są źródłem prawdy uprawnień.
 
 ## Pipeline spotkania
 

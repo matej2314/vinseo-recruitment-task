@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Frontend (`apps/web`)
@@ -14,7 +14,7 @@ Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiw
 - BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI).
 - Zakaz przenoszenia ACL i sekretów do przeglądarki.
 
-**Poza tą wersją:** pełny panel produktowy, branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG.
+**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG.
 
 ## Powiązanie ze stylem z docs
 

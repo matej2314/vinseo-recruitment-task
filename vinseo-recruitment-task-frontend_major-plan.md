@@ -49,7 +49,7 @@
 **DoD (krok):**
 
 - Mapa widoków i granic jest zgodna z `docs/frontend.md` / `SPEC-FRONTEND` / `SPEC-KOMUNIKACJA`.
-- Świadomie poza v1 UI (pełny panel, Q&A, Playwright must-have itd.) jest nazwane.
+- Świadomie poza v1 UI (pełny panel, admin erase / ręczne przypisanie klienta, Q&A, Playwright must-have itd.) jest nazwane.
 
 ### Krok 1.3 — Gotowość warstwy web do rozbudowy
 
@@ -334,7 +334,7 @@
 ## Poza zakresem tego major planu
 
 - Fundament monorepo, Prisma, `api`, `worker`, pipeline, ACL po stronie `api`, Część A, główne CI backendu — [`vinseo-recruitment-task-backend_major-plan.md`](./vinseo-recruitment-task-backend_major-plan.md).
-- Pełny panel produktowy, branding, Q&A UI, Playwright must-have, prawdziwa wyszukiwarka/RAG, detail page jako główna ścieżka — poza v1 (`docs/frontend.md`).
+- Pełny panel produktowy (w tym erase treści), branding, Q&A UI, Playwright must-have, prawdziwa wyszukiwarka/RAG, detail page jako główna ścieżka — poza v1 (`docs/frontend.md`).
 
 ## Mapowanie SPEC → fazy (ślad)
 

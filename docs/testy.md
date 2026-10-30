@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Strategia testów
@@ -42,11 +42,12 @@ Frontend (`web`): bez Playwright w v1; co najwyżej lekkie testy jednostkowe czy
 | Runner | **Jest** (wszystkie apps; migracja ze Vitest w scaffoldzie Nest) |
 | HTTP API | **supertest** + `@nestjs/testing` |
 | Asercje kontraktu summary | Zod (parse w teście / oczekiwany sukces lub fail) |
-| Baza | Osobna baza **testowa** w Docker Compose (nie produkcyjna, nie współdzielona z dev bez izolacji) |
+| Baza | Osobna baza **testowa** w Docker Compose (nie produkcyjna, nie współdzielona z dev bez izolacji); lokalnie typowo `pnpm db:up` (ścieżka A). Pełny `compose.dev` **nie** jest bramką CI/DoD testów |
 
 ## Baza testowa
 
-- W `docker-compose` (lub override): usługa Postgres z osobną bazą / osobnym kontenerem pod testy (np. DB name `meeting_memory_test`).
+- W `docker-compose` (lub override): usługa Postgres z osobną bazą / osobnym kontenerem pod testy (np. DB name `meeting_memory_test` / `vinseo_test`).
+- Przed suite integracyjnym lokalnie: `pnpm db:up`, potem migracje Prisma na `DATABASE_URL_TEST`.
 - Migracje Prisma odpalane na bazę testową przed suite integracyjnym.
 - **Bez** prawdziwych nagrań i danych klientów - wyłącznie fixture / mock.
 - Testy jednostkowe ACL i redakcji **nie wymagają** bazy.
@@ -59,10 +60,11 @@ Przykładowa tabela (rozszerzać w kodzie):
 
 | Użytkownik | Spotkanie | Oczekiwane |
 |------------|-----------|------------|
+| Organizator | to spotkanie | allow |
 | Uczestnik wewnętrzny | to spotkanie | allow |
-| Członek zespołu projektu, nieobecny na callu | spotkanie projektu | allow |
-| Obcy pracownik | cudze / inny projekt | deny → API 404 |
-| Admin | dowolne (wg reguły admin) | allow |
+| Pracownik z membership projektu, nie organizator/uczestnik | spotkanie z `clientId`/`projectId` | **deny → 404** (membership poza ACL v1) |
+| Obcy pracownik | cudze spotkanie | deny → API 404 |
+| Admin | dowolne (w tym `confidential`) | allow |
 
 ### Unit - redakcja
 
@@ -112,7 +114,7 @@ Przykładowa tabela (rozszerzać w kodzie):
 ## Organizacja w monorepo
 
 - Testy współlokalizowane lub w `test/` danej aplikacji (`apps/api`, `apps/worker`).
-- Skrypt root: np. `pnpm test` odpala Jest we workspaces.
+- Skrypt root: np. `pnpm test` odpala Jest we workspaces; baza pod integrację: `pnpm db:up` (patrz `deployment.md`).
 - Nazewnictwo opisuje zachowanie (`access.allows-project-member.spec.ts`), nie implementację.
 
 ## CI i reguła zespołu

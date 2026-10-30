@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # SPEC — Observability
@@ -15,7 +15,7 @@ Norma logów technicznych, audytu biznesowego, korelacji i health. Kontekst: `do
 - Katalog obowiązkowych `eventType` v1.
 - Health na `api` i `workerze`.
 
-**Poza tą wersją:** OpenTelemetry, Sentry, Prometheus/Grafana, ELK/Loki, alerty paging, RUM, HTTP/UI odczytu `audit_log`, eventy `ask.*`, pinowany mechanizm cron retencji.
+**Poza tą wersją:** OpenTelemetry, Sentry, Prometheus/Grafana, ELK/Loki, alerty paging, RUM, HTTP/UI odczytu `audit_log`, eventy `ask.*`, pinowany mechanizm cron retencji, implementacja erase + anonimizacji audytu (norma: `docs/bezpieczenstwo_i_rodo.md` / `docs/observability.md`).
 
 ## Powiązanie ze stylem z docs
 

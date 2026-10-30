@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-29
+data_modyfikacji: 2026-10-30
 ---
 
 # Observability
@@ -78,6 +78,11 @@ Trwały zapis zdarzeń związanych z **kluczową funkcjonalnością** (auth, ACL
 
 - **90 dni** - rekordy starsze usuwane jobem okresowym lub polityką czyszczenia (szczegół implementacji w deploy / worker cron).
 - Backup VPS obejmuje także `audit_log` (patrz `deployment.md` gdy powstanie).
+
+### Anonimizacja przy erase treści klienta
+
+- Przy usunięciu treści spotkania na żądanie klienta (`bezpieczenstwo_i_rodo.md`): powiązane wpisy `audit_log` **anonimizujemy** (bez PII / bez residualnej treści; fakt zdarzenia może zostać).
+- Implementacja erase + anonimizacji audytu — **kolejna faza** względem etapu 0; norma już obowiązuje.
 
 ### Kształt rekordu (logiczny)
 
