@@ -7,6 +7,14 @@ export interface FetchMeetingSourceInput {
   readonly fixtureKey?: string;
 }
 
+/**
+ * Port źródła **treści** (K-12) — mock \| fireflies \| gemini-notes.
+ * v0 happy-path: MockMeetingSourceAdapter za MEETING_SOURCE_PORT.
+ * v0 powierzchnia: GeminiNotesMeetingSourceAdapter (zaślepka; nie domyślny token).
+ * Etap 1+: wybór adaptera wg zgody — fireflies (ze zgodą) \| gemini-notes (bez);
+ * UC1 gdy tekst; metadata-only gdy brak materiału (P-4a). Oddzielony od
+ * MEETING_METADATA_PORT (Calendar) i od recording K-5b (tylko gałąź ze zgodą).
+ */
 export interface MeetingSourcePort {
   fetch(input: FetchMeetingSourceInput): Promise<MeetingSourcePayload>;
 }

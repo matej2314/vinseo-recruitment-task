@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -12,7 +12,9 @@ Zmiana względem wcześniejszej normy K-5 / K-10 (utożsamianie idempotencji dem
 
 Zmiana względem wcześniejszej projekcji `GET /meetings` (element listy bez wyniku UC1): lista **musi** zawierać `summary` oraz `failureReason` (K-2a) — UI v1 podgląda wynik w tabeli bez trasy detail (`SPEC-FRONTEND`).
 
-Zmiana względem wcześniejszego ujęcia „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu ani do portu **pipeline** transcriptu. Osobny use case / port **on-demand nagrania** (K-5b) zwraca świeży URL. Fireflies = źródło transcriptu **i** nagrań (media u vendora); u nas kanon tekstu + on-demand link (`docs/dokumentacja_komunikacji.md`).
+Zmiana względem wcześniejszego ujęcia „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu ani do portu **pipeline** transcriptu. Osobny use case / port **on-demand nagrania** (K-5b) zwraca świeży URL. Przy **zgodzie** Fireflies = źródło transcriptu **i** nagrań (media u vendora); u nas kanon tekstu + on-demand link (`docs/dokumentacja_komunikacji.md`).
+
+**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar) oddzielony od portu **treści** (`mock` \| `fireflies` \| `gemini-notes`). On-demand FF (K-5b) **tylko** gałąź ze zgodą. Obecna wersja: mock + zaślepka (Faza 3.7); działające adaptery = etap 1+.
 
 ## Cel / zakres
 
@@ -24,8 +26,9 @@ Powierzchnie w zakresie:
 | BFF | przeglądarka ↔ `apps/web` (`app/api/*`) ↔ `api` |
 | SSE (status spotkania) | przeglądarka ↔ BFF ↔ `api` (`@Sse` / `text/event-stream`) |
 | Kolejka pg-boss | `api` (enqueue) ↔ `worker` (consume) |
-| Port źródła spotkań | mock (v1) / przyszły adapter → kontrakt wejścia pipeline |
-| Port / use case on-demand nagrania | `api` → mock (v0) / docelowo adapter Fireflies media |
+| Port metadanych (Calendar) | zaślepka (v0) / Calendar API (etap 1+) → `worker` |
+| Port źródła treści | mock (v0) / `fireflies` \| `gemini-notes` (etap 1+) → pipeline |
+| Port / use case on-demand nagrania | `api` → mock (v0) / Fireflies media (**tylko** przy zgodzie) |
 
 **Poza tym SPEC:** reguły ACL case-by-case i bcrypt (`SPEC-AUTH_I_ACL`), kroki redact/summarize (`SPEC-PIPELINE`, `SPEC-LLM`), UI przycisku Test (`SPEC-FRONTEND`), pola Prisma (`SPEC-DANE`), audyt/pino (`SPEC-OBSERVABILITY`).
 
@@ -97,11 +100,12 @@ K-5b. On-demand nagranie - `GET /meetings/:id/recording`:
 
 - wymaga sesji; brak ACL / brak zasobu → **404** (jak detail);
 - odpowiedź **200** JSON: `{ "url": string }` — **zakaz** redirectu HTTP 302 jako kontraktu odpowiedzi;
-- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła = `externalMeetingId` (mock zwraca atrapę niezależnie od realnego media);
-- **po integracji Fireflies:** ten sam kontrakt HTTP; adapter prod odświeża ephemeral media URL z API FF (TTL vendora); szkielet → pełna funkcja bez zmiany kształtu odpowiedzi;
+- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła = `externalMeetingId` (mock zwraca atrapę niezależnie od realnego media); button demo zawsze widoczny (`SPEC-FRONTEND` F-7a);
+- **po integracji Fireflies (etap 1+, przy zgodzie na nagrywanie):** ten sam kontrakt HTTP; adapter prod odświeża ephemeral media URL z API FF (TTL vendora); szkielet → pełna funkcja bez zmiany kształtu odpowiedzi;
+- **przy braku zgody (prod):** mechanizm / udostępnianie nagrania FF **nie** obowiązuje (brak buttonu) — treść z Notes by Gemini, nie audio FF (`SPEC-PIPELINE` P-2a);
 - **zakaz** zapisu `audio_url` / `video_url` (lub równoważnego) do trwałego modelu `Meeting` — wyłącznie odpowiedź on-demand (`SPEC-DANE`);
 - BFF: cienkie proxy (np. `GET /api/meetings/:id/recording`) z przekazywaniem cookie.
-Zmiana względem: wcześniejsze ujęcie pól media FF „poza portem v1” bez osobnego use case — obowiązuje rozróżnienie portu **pipeline** transcript vs port/use case **on-demand** media.
+Zmiana względem: wcześniejsze ujęcie pól media FF „poza portem v1” bez osobnego use case — obowiązuje rozróżnienie portu **pipeline** transcript vs port/use case **on-demand** media; oraz zawężenie FF media do gałęzi ze zgodą.
 
 ### BFF (`apps/web`, `app/api/*`)
 
@@ -168,15 +172,17 @@ Przy enqueue z `api` (w tym demo) **`requestId`** z requestu HTTP trafia do payl
 
 K-11. Statusy widoczne dla API: `pending` → `processing` → `completed` | `failed`. Ponowne enqueue z tym samym `externalMeetingId`: bez duplikatu spotkania. Kolejne wywołania UI Test **nie** współdzielą jednego `externalMeetingId`.
 
-### Port źródła spotkań
+### Port źródła treści + port metadanych
 
-K-12. Minimalny kontrakt obiektu źródłowego (jak w docs): `externalId`, `title`, `startedAt`, `participants[]` (`email`, `displayName`, `internal`), `segments[]` (`speaker`, `text`, `startMs`).
+K-12. Minimalny kontrakt obiektu **treści** (jak w docs): `externalId`, `title`, `startedAt`, `participants[]` (`email`, `displayName`, `internal`), `segments[]` (`speaker`, `text`, `startMs`). Port **metadanych** (Calendar) jest osobny — fakt callu / uczestnicy indywidualni; nie zastępuje kontraktu transcriptu.
+
+K-12a. Wybór adaptera treści (norma prod / etap 1+): wg zgody — `fireflies` \| `gemini-notes` (`SPEC-PIPELINE` P-2a). Obecna wersja: happy-path **mock**; zaślepka `gemini-notes` / Calendar (Faza 3.7) **bez** wymogu prawdziwego Google w CI.
 
 K-13. Typy kształtu wolno trzymać w `packages/contracts`. **Walidacja runtime (Zod) kontraktu źródła: w `apps/api` oraz `apps/worker`.** Zakaz Zod w `packages/` (`SPEC-ARCHITEKTURA`).
 
 K-14. Po stronie pipeline wynik streszczenia ma osobny kontrakt (Zod w aplikacji); **nie** pochodzi z `summary.*` Fireflies - szczegóły zapisu/fail-closed → `SPEC-PIPELINE` / `SPEC-LLM`. Tu obowiązuje: **nie zapisywać ani nie używać** `summary.*` vendora jako kanonu ani wejścia do DB.
 
-K-15. Mapowanie Fireflies → port pipeline (tabela w `docs/dokumentacja_komunikacji.md`) obowiązuje przy przyszłej podmianie adaptera transcriptu. W v1: **mock** za portem. Webhook FF / OAuth Google: **poza implementacją v1** (brak normatywnego endpointu webhooka w kodzie MVP). Ephemeral `audio_url` / `video_url` FF: poza mapowaniem do portu pipeline i poza DB; wyłącznie K-5b (on-demand).
+K-15. Mapowanie Fireflies → port pipeline (tabela w `docs/dokumentacja_komunikacji.md`) obowiązuje przy podmianie adaptera transcriptu **w gałęzi ze zgodą**. W v0: **mock** + zaślepki. Webhook FF / OAuth Google / działający Calendar: **poza implementacją obecnej wersji** (brak normatywnego endpointu webhooka w kodzie MVP; obowiązkowe przy adapterach prod etap 1+). Ephemeral `audio_url` / `video_url` FF: poza mapowaniem do portu pipeline i poza DB; wyłącznie K-5b (on-demand, przy zgodzie).
 
 ## Norma: wzorce
 
@@ -187,7 +193,7 @@ K-15. Mapowanie Fireflies → port pipeline (tabela w `docs/dokumentacja_komunik
 - Nazwany job `meeting.process` + klucz idempotencji.
 - SSE statusu spotkania (`@Sse` / `text/event-stream`) z ACL jak przy odczycie.
 - On-demand nagranie (K-5b): JSON `{ url }`, ACL jak detail, v0 = mock.
-- Anti-corruption: mock/adapter mapuje na **port źródła**, nie na surowy schemat vendora w use case’ach; media URL poza portem pipeline.
+- Anti-corruption: mock/adapter mapuje na **port treści** (i osobno metadane Calendar), nie na surowy schemat vendora w use case’ach; media URL poza portem pipeline; zakaz fat-adaptera.
 - Wspólny envelope błędów (K-8).
 - Kształty w `packages/contracts` (typy); Zod źródła w **api i worker**.
 
@@ -233,7 +239,7 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 
 ## Poza zakresem
 
-- Implementacja webhooka Fireflies i produkcyjnych credentiali (w tym prawdziwy resolve media FF — w v0 tylko mock K-5b).
+- Implementacja webhooka Fireflies, OAuth Google, działającego Calendar / `gemini-notes` (w v0: mock K-5b + zaślepka Faza 3.7; prod = etap 1+).
 - UC2 / RAG / `POST /ask`.
 - Szczegóły redakcji PII i wywołania LlmClient.
 - Widoki React i copy przycisku Test / buttonu nagrania (`SPEC-FRONTEND`).

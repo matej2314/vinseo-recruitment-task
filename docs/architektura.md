@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Architektura - Firmowy asystent spotkań
@@ -20,8 +20,9 @@ v1: **bez** bogatej warstwy klas domenowych (encje DDD, domain events „wszędz
 
 - Jedna organizacja, jedna instalacja, **jedna baza PostgreSQL** (stan domenowy, pg-boss oraz tabela audytu **`audit_log`** - trwały ślad kluczowych zdarzeń biznesowych; to nie jest event sourcing ani zamiennik logów procesu).
 - Trzy procesy runtime: **`api`**, **`worker`**, **`web`** - wspólny kod kontraktów w monorepo, bez rozbijania na mikroserwisy per capability.
-- Integracje zewnętrzne (źródło spotkań / Fireflies, **jeden** provider LLM) przez **porty i adaptery** (hexagonal na granicach I/O), żeby mock w developmentcie był podmienialny na prawdziwą implementację.
-- Fireflies dostarcza **transcript**; kanoniczne streszczenie i zadania powstają u nas (UC1 LLM). Obiekt `summary.*` z Fireflies **ignorujemy**. Szczegóły: `llm_i_asystent.md`.
+- Integracje zewnętrzne przez **porty i adaptery** (hexagonal na granicach I/O): **port metadanych** (Calendar) **oddzielony** od **portu treści** (adaptery `mock` \| `fireflies` \| `gemini-notes`); **jeden** provider LLM. **Zakaz fat-adaptera** „wszystko Google+FF w jednym”.
+- Fireflies (przy zgodzie) dostarcza **transcript** (+ media on-demand); Gemini Notes (przy braku zgody) — materiał tekstowy. Kanoniczne streszczenie i zadania powstają u nas (UC1 LLM). Obiekt `summary.*` z Fireflies **ignorujemy**. Calendar **nie** jest magazynem nagrania. Szczegóły: `llm_i_asystent.md`, `bezpieczenstwo_i_rodo.md`.
+- **Obecna wersja:** mock treści na happy-path; **zaślepka** portów Calendar / `gemini-notes` (major Faza 3.7). **Etap 1+:** działająca logika na tych samych portach.
 
 Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątków „bogatszego DDD tylko w jednym module”.
 
@@ -107,8 +108,8 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 
 ### Integracje zewnętrzne
 
-- Wywołania do zewnętrznych API (np. Fireflies) w v1: **atrapa / mock** za portem - bez prawdziwych credentiali w ścieżce happy-path developmentu.
-- Docelowa podmiana adaptera nie powinna wymagać przepisywania use case'ów pipeline'u.
+- Wywołania do zewnętrznych API w obecnej wersji: **mock** treści + **zaślepka** Calendar / `gemini-notes` — bez prawdziwych credentiali / OAuth Google w happy-path.
+- Docelowa podmiana adapterów (Calendar metadane; `fireflies` \| `gemini-notes` treści) nie powinna wymagać przepisywania use case'ów pipeline'u ani łączenia obu portów w fat-adapter.
 
 ### Autoryzacja (ACL)
 
@@ -125,9 +126,9 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 
 ## Pipeline spotkania
 
-1. Pojawia się materiał źródłowy (w v1: mock zgodny z kontraktem przyszłego Fireflies / Meet).
+1. Pojawia się materiał źródłowy (obecna wersja: mock; etap 1+: metadane z Calendar + treść z `fireflies` lub `gemini-notes` wg zgody).
 2. Enqueue job (klucz idempotencji: zewnętrzne ID spotkania / transcriptu).
-3. Worker: pobranie → normalizacja → **redakcja (E+T+P+K)** → **UC1 summarizeMeeting** (LlmClient mock/prod) → walidacja Zod → zapis. Bez użycia `summary` z Fireflies.
+3. Worker: pobranie treści → normalizacja → **redakcja (E+T+P+K)** → **UC1 summarizeMeeting** (LlmClient mock/prod) → walidacja Zod → zapis. Bez użycia `summary` z Fireflies. Brak materiału treści → metadata-only (bez UC1).
 4. Ponowne uruchomienie tego samego klucza: **update in place**, bez drugiego rekordu spotkania.
 5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** wywołaniem LlmClient; po udanym Zod - persist. Niepoprawne summary **nie** trafia do bazy jako sukces (quarantine / failed; max 1 retry JSON).
 

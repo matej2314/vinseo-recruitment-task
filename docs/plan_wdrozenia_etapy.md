@@ -1,5 +1,5 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -33,6 +33,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 - Frontend wg `frontend.md`: `/` login/register → dashboard (tabela + sidebar, mock wyszukiwarki) + przycisk Test + SSE + **button nagrania (demo, zawsze widoczny)**.
 - Przycisk **Test** / demo: sesja pracownika → enqueue (bez flagi `DEMO_ENABLED`).
 - **Szkielet on-demand nagrania:** endpoint `GET /meetings/:id/recording` + mock URL (`https://example.com/...`) + BFF proxy; **bez** trwałego `audio_url` w DB (`dokumentacja_komunikacji.md`).
+- **Zaślepka portów gałęzi zgody (major Faza 3.7):** port metadanych (Calendar) + adapter treści `gemini-notes` jako szkielet / NotImplemented w `apps/worker` — **bez** OAuth i prawdziwych wywołań Google; happy-path nadal mock. Norma produktowa gałęzi (Calendar + FF vs Gemini Notes) jest w docs; działająca logika = etap 1+.
 - CI: testy na PR; ochrona `main`.
 - Dokumentacja w `docs/`.
 - **Root `README.md`** zgodny z wymaganiami oddania zadania (osobno od `docs/`):
@@ -45,8 +46,8 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 - Pełny panel UI / design system produktu; panel erase admin.
 - Powiadomienia (mail, Slack).
-- Prawdziwa integracja Google Workspace / Fireflies / HubSpot (w tym prawdziwy resolve URL nagrania z FF — w etapie 0 tylko mock).
-- Model / pole zgody na nagrywanie w Prisma; egzekucja widoczności buttonu wg zgody (norma produktowa w docs; w etapie 0 wyjątek demo).
+- **Działająca** integracja Google Calendar / Notes by Gemini / Fireflies / HubSpot (w tym prawdziwy resolve URL nagrania z FF — w etapie 0 tylko mock + zaślepka portów).
+- Model / pole zgody / `contentSource` w Prisma; egzekucja widoczności buttonu wg zgody (norma produktowa w docs; w etapie 0 wyjątek demo).
 - Prawdziwy LLM (tylko mock LlmClient / UC1).
 - Q&A / RAG ze wskazaniem źródła (**UC2** - etap 2+).
 - Membership ACL „zespołu klienta”; ekspansja grup Workspace.
@@ -67,13 +68,16 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 ### Zakres
 
+**Pierwsze wejście działającej logiki** na portach zalegalizowanych w etapie 0 (zaślepka → prod):
+
 - Wybór 1–2 zespołów (nie ograniczać wyłącznie do calli klienckich).
-- Adapter źródła produkcyjny (Fireflies **lub** Meet / Notes by Gemini - decyzja koszt/RODO: `koszty_i_warianty.md`, `bezpieczenstwo_i_rodo.md`).
-- Prawdziwy **LlmClient** / UC1 summarize; redakcja włączona; gdy FF: transcript + **pełny adapter on-demand nagrania** (ten sam kontrakt HTTP co szkielet etapu 0).
-- Egzekucja zgody wobec widoczności buttonu nagrania (proces + produkt; norma: `bezpieczenstwo_i_rodo.md`).
+- **Calendar** (metadane faktu + uczestnicy indywidualni) + adaptery treści produkcyjne z **egzekucją gałęzi zgody**: `fireflies` (ze zgodą) \| `gemini-notes` (bez zgody); UC1 gdy tekst; metadata-only gdy brak treści (`koszty_i_warianty.md`, `bezpieczenstwo_i_rodo.md`).
+- Prawdziwy **LlmClient** / UC1 summarize; redakcja włączona; gdy FF: transcript + **pełny adapter on-demand nagrania** (ten sam kontrakt HTTP co szkielet etapu 0); bez zgody — **brak** mechanizmu nagrania FF.
+- Egzekucja zgody wobec widoczności buttonu nagrania + wybór źródła treści (proces + produkt; norma: `bezpieczenstwo_i_rodo.md`).
 - Nginx + TLS na VPS; demo tylko dla zaufanych kont.
 - Proces zgód na Meet / w umowie z klientem.
 - Matching domen e-mail → `Client`; obsługa `unmatched` (ręcznie przez admina).
+- Pola stanu zgody / `contentSource` w schemacie przy wdrożeniu adapterów prod (nie w zaślepce v0).
 
 ### Kryteria sukcesu etapu 1
 
@@ -145,7 +149,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 | Ryzyko | Mitygacja |
 |--------|-----------|
-| Brak zgód klientów | Metadata-only; etap 1 blokuje się na procesie, nie na kodzie |
+| Brak zgód na nagrywanie | Bez FF/audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; etap 1 wymaga procesu zgód i adapterów prod |
 | FF + RODO | DPA / wariant B; confidential w prod |
 | Za szeroki ACL przez grupy Google | Brak ekspansji „wszyscy”; membership dopiero w etapie 3 i tylko w naszej DB |
 | Oczekiwanie pełnego ChatGPT na spotkaniach w etapie 1 | Scope: lista + detail + summary; Q&A dopiero 2+ |

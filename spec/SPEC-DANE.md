@@ -1,5 +1,5 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -14,6 +14,7 @@ Norma modelu danych i persystencji. Kontekst: `docs/architektura.md`, `docs/arch
 - Minimalny zestaw encji v1, UUID, JSON dla segmentów i summary/action items.
 - Pola pod ACL v1 (organizator), matching klienta po domenie, erase treści ze zachowaniem faktu callu.
 - Zakazy treści wrażliwej w `audit_log`.
+- Model logiczny zgody / `contentSource` (norma pod etap 1+; bez must-have migracji w zaślepce v0).
 
 **Poza zakresem / poza tą wersją:** seed obowiązkowy, soft-delete jako wymóg, osobne tabele segmentów/action items, read-model/CQRS, sharding, drugi ORM, HubSpot, egzekucja ACL przez `ProjectMembership`.
 
@@ -93,7 +94,13 @@ Uczestnicy zewnętrzni (bez konta): JSON / metadane na spotkaniu - **bez** osobn
 
 Zmiana względem D-7 v1: `ProjectMembership` nie jest „podstawą ACL zespołu”; ACL = organizator + `MeetingParticipant` + admin (`SPEC-AUTH_I_ACL`).
 
-D-7b. **Zakaz** przechowywania `audio_url` / `video_url` (lub równoważnego pola ephemeral media) jako **trwałego** pola / kolumny na `Meeting` (ani 1:1 powiązanego rekordu „na stałe”). Link do nagrania powstaje wyłącznie w odpowiedzi on-demand (`SPEC-KOMUNIKACJA` K-5b); tożsamość względem źródła nadal `externalMeetingId` (D-5). Erase treści: **bez** „czyszczenia URL nagrania” jako pola DB (nie istnieje); nagranie u vendora — jak `docs/bezpieczenstwo_i_rodo.md`. W tej wersji **nie** wprowadza się `hasMedia` ani pola zgody na nagrywanie w Prisma (poza v0 / poza tą legalizacją).
+D-7b. **Zakaz** przechowywania `audio_url` / `video_url` (lub równoważnego pola ephemeral media) jako **trwałego** pola / kolumny na `Meeting` (ani 1:1 powiązanego rekordu „na stałe”). Link do nagrania powstaje wyłącznie w odpowiedzi on-demand (`SPEC-KOMUNIKACJA` K-5b); tożsamość względem źródła nadal `externalMeetingId` (D-5). Erase treści: **bez** „czyszczenia URL nagrania” jako pola DB (nie istnieje); nagranie u vendora — jak `docs/bezpieczenstwo_i_rodo.md`.
+
+D-7c. **Model logiczny zgody / źródła treści** (rozszerzenie względem D-7 / D-7b):
+- Stan zgody na nagrywanie i/lub `contentSource`: `fireflies` \| `gemini_notes` \| `none` (metadata-only) — nazewnictwo w contracts / docs.
+- **Do kodu (schemat Prisma):** przy wdrożeniu adapterów prod (**etap 1+**), **nie** jako must-have migracji zaślepki v0 / Fazy 3.7.
+- W obecnej wersji **nie** wymaga się kolumn zgody / `contentSource` / `hasMedia` w Prisma.
+Zmiana względem: D-7b v4 („nie wprowadza się pola zgody … poza tą legalizacją”) — teraz norma logiczna jest nazwana; migracja odroczona do etapu 1+.
 
 ### JSON: segmenty i summary
 
@@ -165,4 +172,4 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 - Pełny katalog `eventType` - `SPEC-OBSERVABILITY`.
 - Indeksy pod przyszły RAG / full-text.
 - Membership jako ACL.
-- Pole zgody na nagrywanie / `hasMedia` w Prisma (norma produktowa w docs; nie model v0).
+- Migracja kolumn zgody / `contentSource` / `hasMedia` w Prisma (norma logiczna D-7c; do kodu przy adapterach prod etap 1+, nie w zaślepce v0).

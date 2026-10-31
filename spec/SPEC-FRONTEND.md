@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -14,7 +14,7 @@ Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiw
 - BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI); on-demand nagranie przez BFF.
 - Zakaz przenoszenia ACL i sekretów do przeglądarki.
 
-**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG, egzekucja widoczności buttonu nagrania wg zgody (must-have dopiero po FF + procesie zgód; norma produktowa w docs).
+**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG, UI zbierania zgody / egzekucja gałęzi Gemini Notes w obecnym UI, egzekucja widoczności buttonu nagrania wg zgody (must-have etap 1+ / po FF + procesie zgód; norma produktowa w docs).
 
 ## Powiązanie ze stylem z docs
 
@@ -56,8 +56,9 @@ F-6. Paginacja: select limitu **10 / 25 / 50 / 100** oraz parametr **`page`** (1
 
 F-7. Przycisk **Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk). Wywołuje BFF → `POST /demo/run-meeting`. **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10; `SPEC-KOMUNIKACJA` K-5).
 
-F-7a. **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy v1) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`docs/bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”. Adnotacja: po integracji FF + zgodzie — widoczność wg normy RODO w docs; poza must-have implementacji modelu zgody w v0.
-Zmiana względem: brak normy UI dla nagrania — obowiązuje szkielet on-demand przez BFF/API (`SPEC-KOMUNIKACJA` K-5b).
+F-7a. **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy v1) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`docs/bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”.
+**Norma docelowa (etap 1+ / prod):** brak mechanizmu nagrania FF **bez** zgody na nagrywanie (brak buttonu); wyjątek demo v0 powyżej **nie** otwiera nagrania FF bez zgody w prod i **nie** jest sprzeczny z regułą prod. UI obecnej wersji **nie** musi egzekwować gałęzi Gemini Notes ani modelu zgody.
+Zmiana względem: brak normy UI dla nagrania — obowiązuje szkielet on-demand przez BFF/API (`SPEC-KOMUNIKACJA` K-5b) + jawny rozdział demo v0 vs prod.
 
 F-8. Po sukcesie enqueue:
 1. UI używa `meetingId` z odpowiedzi (własny run sesji) i otwiera **SSE** (przez BFF) dla tego id (`SPEC-KOMUNIKACJA`).
@@ -150,6 +151,7 @@ Wersje pakietów: zgodne z repo / aktualnym LTS - bez pinowania w tym SPEC.
 
 - Pełny panel, multi-modułowa nawigacja, branding Vinseo.
 - Osobny widok detail jako strona produktowa.
+- UI zbierania zgody / ukrywanie buttonu nagrania wg zgody / egzekucja Gemini Notes w UI (norma prod w docs; etap 1+).
 - Chat Q&A / prawdziwa wyszukiwarka.
 - Dark mode / PWA / mobile-first polish jako wymóg.
 - E2E Playwright.

@@ -1,5 +1,5 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -91,7 +91,7 @@ Rootowe skrypty: ścieżka A - `pnpm db:up` / `db:down` / `db:logs` + `dev:api` 
 ## Odzwierciedlenie stylu architektury
 
 - **Modularny monolit, trzy procesy** → `apps/api`, `apps/worker`, `apps/web`.
-- **Porty / adaptery na I/O** → `apps/worker/src/adapters/` (źródło spotkań + **llm**); UC2 ask później w `apps/api` na tym samym kontrakcie LlmClient; typy w `packages/contracts`.
+- **Porty / adaptery na I/O** → `apps/worker/src/adapters/` (port **metadanych** Calendar + port **treści** `mock` / `fireflies` / `gemini-notes` + **llm**); w obecnej wersji zaślepki Calendar/`gemini-notes` (Faza 3.7); UC2 ask później w `apps/api` na tym samym kontrakcie LlmClient; typy w `packages/contracts`. **Zakaz** fat-adaptera łączącego Calendar+FF+Notes w jednym pliku „wszystko Google”.
 - **ACL jako osobna odpowiedzialność** → `apps/api/src/access/`, nie schowane wyłącznie w controllerze meetings.
 - **Pipeline jako orkiestracja** → `apps/worker/src/pipeline/` + `jobs/`.
 - **Jedna baza** → rootowe `prisma/` + Postgres w Compose (`pnpm db:up` albo usługa w `compose.dev`); worker i api korzystają z tego samego schematu.
@@ -100,7 +100,7 @@ Rootowe skrypty: ścieżka A - `pnpm db:up` / `db:down` / `db:logs` + `dev:api` 
 ## Konwencje nazewnictwa (katalogi)
 
 - Moduły Nest: nazwy domenowe (`meetings`, `access`, `auth`), nie `utils` / `common` / `helpers` jako dumping ground.
-- Adaptery: nazwa portu + implementacja (np. źródło spotkań mock vs docelowy vendor) w `adapters/`.
+- Adaptery: nazwa portu + implementacja (metadane Calendar vs treść mock / fireflies / gemini-notes) w `adapters/`.
 - Testy współlokalizowane lub w `test/` danej aplikacji - zgodnie z konwencją Nest/Jest w danym app.
 
 ## Mapowanie na inne dokumenty

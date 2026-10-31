@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -44,9 +44,9 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 ### ACL przez grupę Google / dział / „wszyscy pracownicy”
 
-- **Unikać:** traktowania zaproszenia grupy Workspace (zwłaszcza all-company) lub membership działu jako ACL do treści spotkań.
+- **Unikać:** traktowania zaproszenia grupy Workspace (zwłaszcza all-company) lub membership działu jako ACL do treści spotkań; ekspansji grup Calendar do `MeetingParticipant` „dla wygody”.
 - **Boli:** wyciek ustaleń do osób bez realnej obecności na callu; Workspace ≠ grupy klienckie.
-- **Zamiast:** ACL v1 = organizator ∨ uczestnik ∨ admin; membership klienta dopiero w kolejnej fazie i tylko w naszej DB.
+- **Zamiast:** ACL v1 = organizator ∨ uczestnik ∨ admin; Calendar → wyłącznie uczestnicy **indywidualni**; membership klienta dopiero w kolejnej fazie i tylko w naszej DB.
 
 ### ACL przez `ProjectMembership` w v1
 
@@ -161,7 +161,19 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 - **Unikać:** kolumna na `Meeting` (lub równoważna) z URL nagrania z Fireflies „żeby mieć link”.
 - **Boli:** URL wygasa (~24 h u vendora); martwe linki w UI; fałszywe poczucie magazynu media; zbędne PII/powierzchnia wycieku.
-- **Zamiast:** on-demand po ACL → świeży URL (mock w etapie 0; adapter FF później); odpowiedź JSON `{ url }` bez zapisu do DB (`dokumentacja_komunikacji.md`).
+- **Zamiast:** on-demand po ACL → świeży URL (mock w etapie 0; adapter FF później, **tylko** przy zgodzie); odpowiedź JSON `{ url }` bez zapisu do DB (`dokumentacja_komunikacji.md`).
+
+### Notes by Gemini traktowane jako nagranie FF
+
+- **Unikać:** serwowania Gemini Notes jako `recording` / podpinania on-demand FF przy braku zgody; mylenia tekstu Notes z audio.
+- **Boli:** naruszenie normy RODO (nagrywanie bez zgody); fałszywy UX „odsłuchu”.
+- **Zamiast:** bez zgody — treść z `gemini-notes` (+ UC1 gdy tekst); bez buttonu / mechanizmu nagrania FF (`bezpieczenstwo_i_rodo.md`).
+
+### Calendar jako magazyn audio / fat-adapter „wszystko Google+FF”
+
+- **Unikać:** traktowania Calendar / Meet linku jako źródła nagrania; jednego adaptera łączącego metadane Calendar + FF + Gemini Notes + media.
+- **Boli:** niemożliwa podmiana per zgoda; regresja ACL/grup; nieczytelne granice portów.
+- **Zamiast:** port metadanych (Calendar) oddzielony od portu treści (`fireflies` \| `gemini-notes`); Calendar ≠ audio.
 
 ### Drugi vendor LLM „tylko do asystenta”
 
@@ -193,7 +205,7 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 - **Unikać:** `if (demo) return hardcoded` rozrzucone po serwisach.
 - **Boli:** prawdziwa integracja wymaga przepisywania use case'ów.
-- **Zamiast:** port + implementacja mock / fireflies.
+- **Zamiast:** port + implementacje mock / fireflies / gemini-notes (+ osobny port Calendar); zaślepka v0 na tych samych powierzchniach.
 
 ### God `utils.ts` / `helpers.ts`
 

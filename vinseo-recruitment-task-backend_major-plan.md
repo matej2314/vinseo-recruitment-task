@@ -437,6 +437,69 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu - jeśli cz
 
 ---
 
+## Faza 3.7 - Zaślepka portów gałęzi braku zgody (Calendar + Gemini Notes)
+
+**Status:** `WYKONANY`
+
+**Opis:** Szkielet portów/adapterów pod gałąź braku zgody RODO: port **metadanych** (Google Calendar) oddzielony od portu **treści**; adapter treści `gemini-notes` obok istniejącego mock / przyszłego `fireflies`. W **obecnej wersji** implementacja = **zaślepka** (np. `NotImplemented` / opis w komentarzu / brak wywołań Google); happy-path pipeline nadal przez istniejący mock źródła; **bez** OAuth, **bez** prawdziwego Calendar/Docs/Drive API. W **kolejnej wersji** (etap 1+ / poza DoD tej fazy jako „done prod”): ta sama powierzchnia portów zyskuje działającą logikę (wybór `fireflies` \| `gemini-notes` wg zgody; UC1 gdy tekst; metadata-only gdy brak treści).
+
+**Rozszerzenie względem:** Faza 2 / port źródła (`WYKONANY`) oraz Faza 3 / 3.5 (`WYKONANY`) — **bez edycji** ich treści. Spójność z Fazą 3.6 (on-demand FF; `WYKONANY`) — **bez** nadpisywania 3.6; gałąź bez zgody **nie** używa mechanizmu nagrania FF. Norma po legalizacji: `docs/bezpieczenstwo_i_rodo.md`, `docs/architektura.md`, `docs/architektura_katalogi_pliki.md`, `SPEC-PIPELINE` (P-2a/P-2b), `SPEC-KOMUNIKACJA` (port metadane vs treść), `SPEC-DANE` D-7c, `SPEC-TESTY` T-11b.
+
+**DoD (faza):**
+
+- W `apps/worker/src/adapters/` istnieją powierzchnie portu metadanych (Calendar) oraz adaptera treści `gemini-notes` jako **zaślepka** (nie fat-adapter z FF/Calendar).
+- Happy-path `meeting.process` nadal działa na istniejącym mocku treści; zaślepka **nie** jest wymagana na ścieżce demo v0.
+- Brak OAuth Google / prawdziwych wywołań Calendar / Gemini Notes w tej fazie.
+- Adnotacja w kodzie / kontrakcie: podmiana na działającą logikę w etapie 1+ na tych samych portach (wybór źródła wg zgody).
+- Lekkie testy rejestracji portu / stub (opcjonalnie: stub rzuca lub nie jest wołany na happy-path) — **bez** sieci do Google (`SPEC-TESTY` T-11b v0).
+- Faza 3.6 i wcześniejsze `WYKONANY` / milestone’y `OSIĄGNIĘTY` nietknięte.
+
+### Krok 3.7.1 - Port metadanych (Calendar) — zaślepka
+
+**Status:** `WYKONANY`
+
+**Opis:** Port / adapter metadanych faktu callu (tytuł, czas, uczestnicy indywidualni) — powierzchnia pod przyszły Google Calendar API. W tej fazie: zaślepka (`NotImplemented` / brak wywołań sieciowych). **Zakaz** ekspansji grup Workspace; **zakaz** traktowania Calendar jako magazynu audio. Kod w `apps/worker/src/adapters/` — **nie** wołać z BFF/`api` (K-7).
+
+**DoD (krok):**
+
+- Powierzchnia portu metadanych istnieje jako zaślepka; oddzielona od portu treści i od K-5b (recording).
+
+### Krok 3.7.2 - Adapter treści `gemini-notes` — zaślepka
+
+**Status:** `WYKONANY`
+
+**Opis:** Adapter treści `gemini-notes` na kontrakcie portu źródła treści (obok mock / przyszłego `fireflies`). Zaślepka bez prawdziwego Meet/Notes API. **Zakaz** fat-adaptera łączącego Calendar+FF+Notes. Happy-path pozostaje na mocku, dopóki egzekucja zgody nie podpięta.
+
+**DoD (krok):**
+
+- Adapter `gemini-notes` zarejestrowany / opisany jako stub; nie łamie happy-path mock; nie serwuje audio FF.
+
+### Krok 3.7.3 - Adnotacja etap 1+ i testy stub (T-11b v0)
+
+**Status:** `WYKONANY`
+
+**Opis:** Komentarz / README adaptera: etap 1+ = wybór `fireflies` \| `gemini-notes` wg zgody; UC1 gdy tekst; metadata-only gdy brak treści; pola zgody/`contentSource` w schemacie przy prod (D-7c). Opcjonalne lekkie testy: stub nie jest wołany na happy-path albo rzuca oczekiwanie — **bez** Google w CI.
+
+**DoD (krok):**
+
+- Adnotacja etap 0 vs 1+ w kodzie/adapters; CI v0 bez prawdziwego Google.
+
+---
+
+## MILESTONE - Zaślepka portów gałęzi braku zgody
+
+**Status:** `OSIĄGNIĘTY`
+
+**Opis:** Bramka po Fazie 3.7. Duży skok: worker ma powierzchnię portów Calendar + `gemini-notes` jako zaślepka pod etap 1+; happy-path mock i Faza 3.6 (on-demand) bez regresji.
+
+**DoD (milestone):**
+
+- Faza 3.7 ma status `WYKONANY`.
+- Porty/zaślepki w `apps/worker/src/adapters/` spełniają DoD fazy (bez OAuth / sieci Google).
+- Prowadzący prace akceptuje przejście do Fazy 4.
+
+---
+
 ## Faza 4 - Część A + CI
 
 **Status:** `NIE_ROZPOCZĘTY`

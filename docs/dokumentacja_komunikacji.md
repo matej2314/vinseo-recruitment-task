@@ -1,5 +1,5 @@
 ---
-wersja: 13
+wersja: 14
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -12,7 +12,9 @@ Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-mee
 
 Zmiana względem wcześniejszej projekcji listy (tylko metadane + `processingStatus`): element `GET /meetings` **niesie też** `summary` oraz `failureReason`, bo UI v1 nie ma strony detail — podgląd wyniku w tabeli musi przetrwać odświeżenie widoku (nie tylko kanał SSE). Detail nadal rozszerza o pola niedostępne w wierszu listy (np. uczestnicy zewnętrzni).
 
-Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu spotkania ani do portu pipeline transcript. Osobny use case / port **on-demand nagrania** zwraca świeży URL (v0: mock; prod: Fireflies). Fireflies jest **jednym źródłem** transkrypcji **i** nagrań (media u vendora; u nas kanon tekstu + on-demand link, nie magazyn plików).
+Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu spotkania ani do portu pipeline transcript. Osobny use case / port **on-demand nagrania** zwraca świeży URL (v0: mock; prod: Fireflies **przy zgodzie**). Przy zgodzie Fireflies jest źródłem transkrypcji **i** nagrań (media u vendora; u nas kanon tekstu + on-demand link, nie magazyn plików).
+
+**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar) oddzielony od portu **treści** (`fireflies` \| `gemini-notes` \| mock). Przy braku zgody na nagrywanie — treść z Notes by Gemini (+ UC1 gdy tekst); on-demand FF **nie** stosuje się. **Obecna wersja:** bez OAuth Google / webhooka Calendar w runtime; mock treści na happy-path; zaślepki portów wg major Fazy 3.7. **Kolejna wersja / etap 1+:** działające adaptery na tych samych portach.
 
 ## Powierzchnie w zakresie v1
 
@@ -22,14 +24,15 @@ Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem
 | BFF | synchroniczne request/response | przeglądarka ↔ `web` (`app/api/*`) ↔ `api` |
 | SSE | strumień `text/event-stream` | przeglądarka ↔ BFF ↔ `api` |
 | Kolejka pg-boss | asynchroniczne joby | `api` (enqueue) ↔ `worker` (consume) |
-| Port źródła spotkań | wejście do pipeline | mock (v1) / docelowo adapter vendora → `worker` |
-| Port / use case on-demand nagrania | synchroniczne resolve URL | `api` → mock (v0) / docelowo adapter Fireflies media |
+| Port metadanych (Calendar) | fakt callu / uczestnicy | zaślepka (v0) / Calendar API (etap 1+) → `worker` |
+| Port źródła treści | wejście transcriptu do pipeline | mock (v0) / `fireflies` \| `gemini-notes` (etap 1+) → `worker` |
+| Port / use case on-demand nagrania | synchroniczne resolve URL | `api` → mock (v0) / Fireflies media (**tylko** gałąź ze zgodą) |
 
 ## Świadomie poza zakresem v1
 
 - Publiczne API dla klientów zewnętrznych lub partnerów.
 - Powiadomienia (e-mail, Slack itd.).
-- Normatywny kontrakt produkcyjnego webhooka Fireflies / OAuth Google (w v1: mock za portem).
+- Normatywny kontrakt produkcyjnego webhooka Fireflies / OAuth Google / prawdziwego Calendar w **obecnej** wersji (mock + zaślepka za portem; prod w etapie 1+).
 - Powierzchnia Q&A / RAG.
 - gRPC, Kafka ani inny broker poza pg-boss.
 - **HTTP / BFF do odczytu `audit_log`** - audyt zapisują api i worker; odczyt v1 tylko ops/DB (patrz `observability.md`).
@@ -96,8 +99,9 @@ Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku ist
 ```
 
 - Sesja wymagana; ACL **jak** `GET /meetings/:id` (brak ACL / brak spotkania → **404**).
-- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła nadal `externalMeetingId` (mock i tak zwraca atrapę).
-- **Po integracji Fireflies:** ten sam kontrakt HTTP; adapter prod odświeża ephemeral `audio_url` / `video_url` z API FF (TTL vendora ~24 h). Szkielet → pełna funkcja bez zmiany kształtu odpowiedzi.
+- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła nadal `externalMeetingId` (mock i tak zwraca atrapę); button demo zawsze widoczny.
+- **Po integracji Fireflies (etap 1+, przy zgodzie):** ten sam kontrakt HTTP; adapter prod odświeża ephemeral `audio_url` / `video_url` z API FF (TTL vendora ~24 h). Szkielet → pełna funkcja bez zmiany kształtu odpowiedzi.
+- **Przy braku zgody na nagrywanie (prod):** endpoint / mechanizm nagrania FF **nie** jest udostępniany (brak buttonu) — treść idzie z Notes by Gemini, nie z audio FF.
 - **`audio_url` / `video_url` nie** wchodzą do trwałego modelu `Meeting` w Postgres; służą wyłącznie odpowiedzi on-demand.
 - Odpowiedź to JSON `{ url }` — **nie** HTTP 302.
 
@@ -273,11 +277,13 @@ Ponowne enqueue z tym samym `externalMeetingId`: brak duplikatu spotkania; konty
 
 ---
 
-## 4. Port źródła spotkań
+## 4. Port źródła spotkań (treść)
 
-Wejście do pipeline (w v1 dostarcza **mock** / fixture; ten sam kształt pod przyszły adapter vendora).
+Wejście **treści** do pipeline (w obecnej wersji dostarcza **mock** / fixture; ten sam kształt pod adaptery `fireflies` \| `gemini-notes`). Port **metadanych** (Calendar: fakt callu, uczestnicy indywidualni) jest **osobny** — nie mylić z tym kontraktem transcriptu; w v0 zaślepka (Faza 3.7), w etapie 1+ Calendar API.
 
-**Minimalny kontrakt obiektu źródłowego:**
+**Wybór adaptera treści (docelowo / etap 1+):** wg zgody na nagrywanie — `fireflies` (ze zgodą) albo `gemini-notes` (bez zgody). Puste / brak materiału z Notes → metadata-only bez UC1. Obecna wersja: happy-path mock; zaślepka `gemini-notes` nie jest podpięta do egzekucji zgody.
+
+**Minimalny kontrakt obiektu źródłowego (treść):**
 
 ```json
 {

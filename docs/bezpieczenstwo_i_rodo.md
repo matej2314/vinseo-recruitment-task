@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -14,7 +14,7 @@ Szerszy kontekst produktu: `dokumentacja_koncepcyjna.md`. ACL i redakcja w kodzi
 
 - Dane klientów i treść spotkań **nie trafiają** tam, gdzie nie powinny (vendorzy, logi, osoby bez ACL).
 - Pracownicy widzą tylko spotkania zgodne z modelem dostępu (ACL v1).
-- Zgody uczestników zewnętrznych są **jawne**; odmowa ma skutek operacyjny (brak capture / metadata-only), nie „ciche” nagrywanie.
+- Zgody uczestników zewnętrznych są **jawne**; odmowa nagrywania ma skutek operacyjny (**bez** FF / audio; treść z Notes by Gemini gdy dostępna), nie „ciche” nagrywanie.
 - Retencja jest skończona i egzekwowalna (w tym `audit_log`); erase treści na żądanie klienta nie kasuje faktu callu.
 
 ## Role danych (skrót)
@@ -33,17 +33,21 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 
 ### Zasada v1 (robocza)
 
+**Jawna zmiana normy** względem wcześniejszego zapisu „brak zgody → brak capture / czyste metadata-only bez transcriptu / AI”: odmowa dotyczy **nagrywania** (Fireflies / audio), nie automatycznie każdej treści tekstowej.
+
 1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży).
-2. Brak zgody uczestnika / klienta na nagrywanie lub notetakera → **brak capture** treści; w systemie może zostać rekord **metadanych** spotkania (fakt callu) bez transcriptu / AI.
-3. **Docelowo (produkcja / po procesie zgód):** brak zgody → brak udostępniania mechanizmu nagrania w UI (brak buttonu / on-demand linku) — spójnie z metadata-only. Widoczność dostępu do nagrania jest powiązana ze **zgodą na nagrywanie**.
-4. **Etap 0 / demo (świadomy wyjątek):** przycisk nagrania w UI jest **zawsze widoczny** w celach demonstracyjnych szkieletu on-demand — to **nie** jest docelowa norma produkcyjna.
-5. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
-6. W **etapie 0 (kod)**: wyłącznie mocki źródeł i LLM (w tym mock URL nagrania). Realne Google Workspace / Fireflies / LLM - kolejna wersja, na tych samych portach HTTP / use case’ach.
+2. **Metadane faktu callu** (tytuł, czas, uczestnicy indywidualni): **zawsze** z **Google Calendar** (ew. Meet w zakresie linku / czasu) — niezależnie od zgody na nagrywanie.
+3. **Zgoda** zewnętrznego (klient / kandydat) na nagrywanie → treść + nagranie: **Fireflies** (transcript do pipeline; nagranie wyłącznie on-demand — `dokumentacja_komunikacji.md`).
+4. **Brak zgody** na nagrywanie → **zakaz FF / audio** (brak buttonu / on-demand linku FF w produkcji); źródło informacji = **Notes by Gemini** (Google Meet / Workspace). Gdy Notes dostarcza materiał tekstowy → redakcja E+T+P+K + **UC1** + Zod. **Metadata-only** (bez transcriptu / AI) **tylko** gdy Gemini Notes **nie** dostarcza treści.
+5. **Docelowo (produkcja / po procesie zgód):** widoczność mechanizmu nagrania w UI jest powiązana ze **zgodą na nagrywanie** (bez zgody — brak buttonu / on-demand FF).
+6. **Etap 0 / demo (świadomy wyjątek):** przycisk nagrania w UI jest **zawsze widoczny** w celach demonstracyjnych szkieletu on-demand — to **nie** jest docelowa norma produkcyjna.
+7. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
+8. **Obecna wersja (kod):** happy-path = mock źródła + mock LLM (w tym mock URL nagrania); **zaślepka** portów metadanych (Calendar) i treści `gemini-notes` — major backend **Faza 3.7**; **bez** prawdziwego OAuth / Calendar / Gemini Notes. **Działająca** logika Calendar + wybór `fireflies` \| `gemini-notes` wg zgody = **etap 1 (pilot) / kolejna wersja** (`plan_wdrozenia_etapy.md`), na tych samych portach.
 
 ### Nagranie a nasza baza
 
-- Plik audio/video **pozostaje u vendora** (docelowo Fireflies); system **nie** magazynuje plików ani **nie** trzyma trwałego `audio_url` / `video_url` w rekordzie spotkania.
-- Dostęp do odsłuchu: mechanizm **on-demand** (świeży URL po ACL) — szczegóły: `dokumentacja_komunikacji.md`, `data_flow.md`.
+- Plik audio/video **pozostaje u vendora** (docelowo Fireflies, **tylko** przy zgodzie na nagrywanie); system **nie** magazynuje plików ani **nie** trzyma trwałego `audio_url` / `video_url` w rekordzie spotkania.
+- Dostęp do odsłuchu: mechanizm **on-demand** (świeży URL po ACL) — tylko gałąź ze zgodą; szczegóły: `dokumentacja_komunikacji.md`, `data_flow.md`.
 - Erase treści obejmuje nagranie u vendora zgodnie z DPA/API (bez „czyszczenia kolumny URL” u nas — takiej kolumny nie ma).
 
 ### Uczestnicy zewnętrzni
@@ -101,15 +105,16 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 
 | Temat | Norma robocza |
 |-------|----------------|
-| Etap 0 | Mocki za portami; łatwa podmiana adapterów. |
-| Fireflies (prod, wariant kosztowy) | Dane mogą wyjść poza infrastrukturę firmy; **DPA**; FF = **jedno źródło** transkrypcji **i** nagrań (media u vendora); z FF do kanonu tekstu bierzemy transcript; **`summary.*` ignorujemy**; link do nagrania wyłącznie on-demand (nie persist URL). |
-| Workspace / Notes by Gemini (prod, wariant lean) | Ograniczone źródło notatek / niepełnej transkrypcji; brak treści → metadata-only w naszym systemie. |
+| Obecna wersja (etap 0) | Mock happy-path za portami; **zaślepka** portów Calendar (metadane) + `gemini-notes` (treść) — Faza 3.7 major backend; bez prawdziwych wywołań Google. |
+| Google Calendar (prod / etap 1+) | **Zawsze** źródło **metadanych** faktu callu i uczestników **indywidualnych** (pod `MeetingParticipant`); **nie** magazyn nagrania; **zakaz** ekspansji grup Workspace do ACL. |
+| Fireflies (prod, **przy zgodzie** na nagrywanie) | Dane mogą wyjść poza infrastrukturę firmy; **DPA**; FF = źródło **transkrypcji i nagrań** (media u vendora); z FF do kanonu tekstu — transcript; **`summary.*` ignorujemy**; link do nagrania wyłącznie on-demand (nie persist URL). |
+| Notes by Gemini (prod, **przy braku zgody** na nagrywanie) | Fallback **treści** (notatki / tekst z Meet); **bez** audio FF; jest materiał → UC1; brak / pusty materiał → metadata-only. |
 | LLM (jeden provider) | Tylko treść **po redakcji**; UC1 + później UC2; w MVP kodu - mock bez requestów. |
 | HubSpot | **Brak integracji**; najwyżej wzmianka w docs decyzyjnych. |
-| Minimalne uprawnienia Google | Calendar / Meet / Drive tylko w zakresie wybranego adaptera. |
-| API Key / OAuth | Tylko api/worker; nigdy `NEXT_PUBLIC_*`. |
+| Minimalne uprawnienia Google | Calendar / Meet / Docs / Drive **tylko** w zakresie wybranego adaptera — **bez osłabienia** scope’ów „na skróty”. OAuth Google **≠** login pracowników v1. |
+| API Key / OAuth | Tylko `api`/`worker`; nigdy `NEXT_PUBLIC_*`. |
 
-Mapowanie techniczne FF: `dokumentacja_komunikacji.md`.
+Mapowanie techniczne FF: `dokumentacja_komunikacji.md`. Porty metadane vs treść: `architektura.md`.
 
 ## Offboarding pracownika
 
@@ -123,7 +128,7 @@ Mapowanie techniczne FF: `dokumentacja_komunikacji.md`.
 
 | Sytuacja | Zachowanie |
 |----------|------------|
-| Odmowa zgody na nagrywanie | Brak treści / metadata-only; docelowo brak buttonu / on-demand nagrania w UI (w etapie 0: wyjątek demo — button zawsze widoczny) |
+| Odmowa zgody na nagrywanie | Bez FF / audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; Calendar nadal dostarcza metadane; docelowo brak buttonu / on-demand FF w UI (w etapie 0: wyjątek demo — button zawsze widoczny; działająca gałąź = etap 1+) |
 | Spotkanie `confidential` | Flaga; pipeline v1 jak zwykle; ACL v1 + admin |
 | Brak matcha domeny klienta | `unmatched`, treść OK, `clientId` null do ręcznego przypisania |
 | Zaproszenie grupy „wszyscy” | Bez ekspansji ACL na całą firmę |
@@ -135,7 +140,7 @@ Mapowanie techniczne FF: `dokumentacja_komunikacji.md`.
 ## Otwarte wobec firmy (nie blokują v1 docs)
 
 - Klauzule umowne o nagrywaniu Meet.
-- Docelowy wybór capture (Fireflies vs Workspace-lean) i DPA / lokalizacja danych.
+- DPA / lokalizacja danych u vendorów (FF oraz Workspace); proces zbierania zgody zewnętrznych.
 - Potwierdzenie domeny e-mail firmy do klasyfikacji wewnętrzny/zewnętrzny.
 
 ## Mapowanie na inne dokumenty

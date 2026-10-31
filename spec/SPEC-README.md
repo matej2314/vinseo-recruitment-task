@@ -1,5 +1,5 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -28,20 +28,22 @@ SPEC **uszczegóławia** docs; nie zastępuje dokumentacji koncepcyjnej i nie po
 | Plik | Obszar |
 |------|--------|
 | [SPEC-ARCHITEKTURA.md](./SPEC-ARCHITEKTURA.md) | Monolit, procesy `api`/`worker`/`web`, warstwy, `packages/`, config |
-| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss, port źródła; on-demand nagranie (K-5b); **DEMO/Test:** UUID runu vs katalog fixture (K-5); lista z `summary`/`failureReason` (K-2a) |
-| [SPEC-AUTH_I_ACL.md](./SPEC-AUTH_I_ACL.md) | Auth (JWT+refresh), ACL v1 (organizator/uczestnik/admin), paginacja; ACL też na recording; summary na liście po ACL |
-| [SPEC-PIPELINE.md](./SPEC-PIPELINE.md) | Job `meeting.process`, redakcja E+T+P+K, metadata-only, client-link; idempotencja po `externalMeetingId` (P-6; DEMO ≠ fixture) |
+| [SPEC-KOMUNIKACJA.md](./SPEC-KOMUNIKACJA.md) | HTTP API, BFF, SSE, pg-boss; port metadanych + treści; on-demand nagranie (K-5b, przy zgodzie); **DEMO/Test:** UUID runu vs katalog fixture (K-5); lista z `summary`/`failureReason` (K-2a) |
+| [SPEC-AUTH_I_ACL.md](./SPEC-AUTH_I_ACL.md) | Auth (JWT+refresh), ACL v1 (organizator/uczestnik/admin), paginacja; ACL też na recording; OAuth Google ≠ login; zakaz grup Calendar |
+| [SPEC-PIPELINE.md](./SPEC-PIPELINE.md) | Job `meeting.process`, redakcja E+T+P+K; gałęzie `fireflies` \| `gemini-notes` (P-2a); metadata-only tylko bez treści; zaślepka v0 |
 | [SPEC-LLM.md](./SPEC-LLM.md) | Port LlmClient, UC1 mock, Zod; UC2 poza wersją |
-| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE+button nagrania demo (F-7a), podgląd wyniku z listy po reloadzie |
-| [SPEC-DANE.md](./SPEC-DANE.md) | Prisma, organizer, client domain/link, JSON, `audit_log`; D-5: unikalność `externalMeetingId`; **D-7b:** zakaz ephemeral media URL na Meeting |
+| [SPEC-FRONTEND.md](./SPEC-FRONTEND.md) | Next.js, sidebar, tabela+Test+SSE+button nagrania demo (F-7a); prod: brak buttonu bez zgody |
+| [SPEC-DANE.md](./SPEC-DANE.md) | Prisma, organizer, client domain/link, JSON, `audit_log`; **D-7b** zakaz media URL; **D-7c** model zgody/`contentSource` (migracja etap 1+) |
 | [SPEC-OBSERVABILITY.md](./SPEC-OBSERVABILITY.md) | pino, health, katalog `eventType`, correlation |
-| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (SSE, recording mock T-11a, multi-user DEMO, katalog 10, projekcja listy), CI / ochrona `main` |
+| [SPEC-TESTY.md](./SPEC-TESTY.md) | Piramida Jest, DoD (SSE, recording mock T-11a); T-11b gałąź zgody etap 1+; CI v0 bez Google |
 
 **Ślad (2026-10-30):** kontrakt DEMO/Test - tożsamość runu (UUID) vs materiał fixture (katalog 10, losowanie API), multi-tester; zaktualizowane: KOMUNIKACJA, PIPELINE, TESTY, FRONTEND, **DANE (D-5)**. DX i produkcja poza tą zmianą normy dema.
 
 **Ślad (2026-10-30, lista):** projekcja `summary` / `failureReason` na `GET /meetings` (K-2a) + UI po reloadzie; zaktualizowane: KOMUNIKACJA, FRONTEND, AUTH_I_ACL, TESTY (+ docs komunikacji / frontend / data_flow / testy).
 
 **Ślad (2026-10-31, on-demand nagranie):** FF jako źródło transcript + media; endpoint `{ url }`, mock v0, zakaz persist URL (D-7b), button demo, ACL jak detail; zaktualizowane: KOMUNIKACJA (K-5b), DANE, FRONTEND (F-7a), AUTH_I_ACL, TESTY (T-11a).
+
+**Ślad (2026-10-31, gałąź braku zgody / Gemini Notes):** Calendar = metadane; brak zgody → `gemini-notes` (+ UC1 gdy tekst); zgoda → FF; metadata-only tylko bez treści; zaślepka v0 vs etap 1+; zaktualizowane: PIPELINE (P-2a/P-4a), KOMUNIKACJA, DANE (D-7c), AUTH_I_ACL, FRONTEND (F-7a), TESTY (T-11b).
 
 Ten plik (`SPEC-README.md`) jest spisem technicznym - nie normą obszarową.
 

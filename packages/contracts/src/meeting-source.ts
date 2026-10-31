@@ -1,3 +1,8 @@
+/**
+ * v0: wyłącznie `mock` w payloadzie joba.
+ * Etap 1+: rozszerzenie o `fireflies` | `gemini-notes` przy egzekucji zgody
+ * (bez zmiany nazwy joba `meeting.process` — K-12a / P-2).
+ */
 export type MeetingSourceKind = "mock";
 
 export interface SourceParticipant {

@@ -1,5 +1,5 @@
 ---
-wersja: 11
+wersja: 12
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -7,6 +7,8 @@ data_modyfikacji: 2026-10-31
 # Przepływy danych
 
 Przepływy Firmowego asystenta spotkań (v1). Poziom szczegółów: kroki, systemy i statusy - bez pełnych payloadów JSON (te są w `dokumentacja_komunikacji.md`).
+
+**Obecna wersja:** happy-path poniżej = mock treści; bez OAuth Google / webhooka Calendar w runtime; zaślepki portów Calendar + `gemini-notes` (major Faza 3.7). **Kolejna wersja / etap 1+:** Calendar → fakt + uczestnicy; wybór adaptera treści wg zgody (`fireflies` \| `gemini-notes`); UC1 gdy treść; metadata-only gdy brak materiału.
 
 ## 1. Pipeline spotkania (happy path, mock)
 
@@ -109,7 +111,7 @@ Przy deny API zapisuje `meeting.access.denied` do **`audit_log`** (metadane, bez
 
 ## 3a. On-demand link nagrania
 
-Kliknięcie buttonu nagrania w UI **nie** zapisuje URL do DB. Przepływ: ACL → resolve URL (v0: mock; etap 1+: Fireflies) → JSON `{ url }`.
+Kliknięcie buttonu nagrania w UI **nie** zapisuje URL do DB. Przepływ: ACL → resolve URL (v0: mock; etap 1+ **przy zgodzie**: Fireflies) → JSON `{ url }`. Przy **braku zgody** (prod) mechanizm nagrania FF nie jest udostępniany — treść z Notes by Gemini (`bezpieczenstwo_i_rodo.md`).
 
 ```mermaid
 sequenceDiagram
@@ -190,32 +192,36 @@ stateDiagram-v2
 | Ponowne enqueue **tego samego** `externalMeetingId` (retry / DX / prod) | Co najwyżej jedno kanoniczne spotkanie; brak duplikatu biznesowego po kluczu tożsamości |
 | Niepoprawny JSON z mocka summarizera | max 1 retry „popraw JSON”; potem `failed`; brak kanonicznego summary „na siłę” |
 
-## 6. Docelowe wejście Fireflies (poza mockiem v1)
+## 6. Docelowe wejście (etap 1+; poza mockiem / zaślepką v0)
 
-Ten sam pipeline od kroku normalize; zmienia się tylko sposób pojawienia się joba i fetch źródła.
+Ten sam pipeline od kroku normalize; zmienia się sposób pojawienia się joba, źródło **metadanych** i wybór adaptera **treści**.
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant FF as Fireflies
-  participant WH as Odbiorca webhooka
+  participant Cal as Google Calendar
+  participant Src as Adapter treści<br/>fireflies / gemini-notes
   participant Q as pg-boss
   participant W as worker
-  participant GQL as Fireflies GraphQL
   participant DB as PostgreSQL
 
-  FF->>WH: meeting.transcribed { meeting_id }
-  WH->>WH: weryfikacja podpisu (prod)
-  WH->>Q: enqueue meeting.process
-  Q->>W: job
-  W->>GQL: transcript(id)
-  GQL-->>W: raw FF
-  W->>W: mapowanie na port źródła
-  Note over W,DB: dalej jak happy path:<br/>normalize → redact → summarize → Zod → persist
+  Note over Cal,W: metadane faktu zawsze z Calendar
+  Cal-->>W: title, czas, uczestnicy indywidualni
+  alt zgoda na nagrywanie
+    Src->>Src: fireflies (transcript + media u FF)
+  else brak zgody
+    Src->>Src: gemini-notes (tekst; bez audio FF)
+  end
+  Q->>W: meeting.process
+  W->>Src: fetch treści
+  alt jest materiał tekstowy
+    Note over W,DB: normalize → redact → UC1 → Zod → persist
+  else brak / pusty materiał
+    W->>DB: metadata-only (bez AI)
+  end
 ```
 
-Szczegóły pól mapowania: `dokumentacja_komunikacji.md` (sekcja Mapowanie Fireflies).  
-`summary.*` FF nie wchodzi do pipeline (decyzja A).
+Gałąź ze zgodą (FF webhook + GraphQL): szczegóły pól — `dokumentacja_komunikacji.md` (Mapowanie Fireflies); `summary.*` FF nie wchodzi do pipeline. On-demand nagranie FF — tylko przy zgodzie (sekcja 3a).
 
 ## 7. Asystent Q&A (koncepcja, etap 2+)
 

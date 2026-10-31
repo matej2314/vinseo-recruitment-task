@@ -1,20 +1,21 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
 
 # SPEC - Testy
 
-Norma strategii testów v1 i DoD przed merge. Kontekst: `docs/testy.md` (SSE, redakcja E+T+P+K, demo bez `DEMO_ENABLED`; multi-tester DEMO/Test, katalog 10). Reguły chronione testami: `SPEC-AUTH_I_ACL`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (SSE + K-5 + K-5b recording), `SPEC-OBSERVABILITY`, `SPEC-DANE` (D-7b). UI smoke: `SPEC-FRONTEND`. CI/env: `docs/deployment.md`.
+Norma strategii testów v1 i DoD przed merge. Kontekst: `docs/testy.md` (SSE, redakcja E+T+P+K, demo bez `DEMO_ENABLED`; multi-tester DEMO/Test, katalog 10). Reguły chronione testami: `SPEC-AUTH_I_ACL`, `SPEC-PIPELINE`, `SPEC-LLM`, `SPEC-KOMUNIKACJA` (SSE + K-5 + K-5b recording), `SPEC-OBSERVABILITY`, `SPEC-DANE` (D-7b / D-7c). UI smoke: `SPEC-FRONTEND`. CI/env: `docs/deployment.md`.
 
 ## Cel / zakres
 
 - Piramida: unit → integracja (Postgres testowy) → bez Playwright jako must-have.
 - Obowiązkowe przypadki (ACL, redakcja, Zod, pipeline, API, SSE, recording on-demand, audyt).
-- CI: PR + ochrona `main`.
+- CI: PR + ochrona `main`; **bez** prawdziwego Google w CI v0.
+- Testy gałęzi zgody / Gemini Notes — norma etap 1+ (nie bloker CI v0).
 
-**Poza tą wersją:** E2E Playwright, prawdziwy Fireflies/LLM (w tym prawdziwy media URL z FF), load 300 h/mies., testy UC2 jako bloker DoD.
+**Poza tą wersją:** E2E Playwright, prawdziwy Fireflies/LLM/Google Calendar/Gemini Notes (w tym prawdziwy media URL z FF), load 300 h/mies., testy UC2 jako bloker DoD, pełne testy egzekucji zgody jako must-have v0.
 
 ## Powiązanie ze stylem z docs
 
@@ -77,6 +78,8 @@ T-11. **SSE:** przy uprawnionym użytkowniku strumień / zdarzenia statusu dla `
 T-11a. **Recording (on-demand):** `GET /meetings/:id/recording` — bez ACL → **404**; z ACL → **200** JSON `{ url }` z mocka (atrapa `https://example.com/...` lub równoważna zgodna z K-5b). **Zakaz** asercji na prawdziwe API Fireflies / sieć do FF. **Zakaz** oczekiwania kolumny / pola ephemeral media URL w DB (`SPEC-DANE` D-7b).
 Zmiana względem: brak DoD dla szkieletu nagrania — obowiązuje mock + ACL jak detail.
 
+T-11b. **Gałąź zgody / Gemini Notes (etap 1+ / gdy adaptery prod):** testy docelowe — „brak zgody → `gemini-notes` → UC1 gdy tekst”; „brak treści z Notes → metadata-only”. **CI v0 / zaślepka (Faza 3.7):** **nie** wymagane jako bloker; dopuszczalne lekkie testy rejestracji portu / że stub rzuca `NotImplemented` lub nie jest wołany na happy-path mock (szczegóły przy realizacji Fazy 3.7). **Zakaz** blokowania merge testami prawdziwego Google.
+
 T-12. **Audyt:** po deny ACL → `meeting.access.denied` bez treści spotkania; po fail Zod/job → odpowiedni `eventType`; writer nie utrwala raw transcriptu.
 
 ### Frontend
@@ -103,7 +106,7 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 ### Nie wolno
 
 - Opierać DoD wyłącznie na ręcznym kliknięciu Test w UI.
-- Must-have Playwright / prawdziwy FF (w tym media) / prawdziwy LLM w v1.
+- Must-have Playwright / prawdziwy FF (w tym media) / prawdziwy LLM / prawdziwy Google Calendar lub Gemini Notes w v0.
 - Współdzielonej bazy dev+test bez izolacji.
 - Coverage % bez asercji ACL/redakcji/Zod/idempotencji.
 - Blokować merge testami UC2 (poza tą wersją).
@@ -130,6 +133,7 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 
 ## Poza tą wersją
 
-- Playwright E2E, load testy, kontrakty prawdziwego Fireflies/LLM.
+- Playwright E2E, load testy, kontrakty prawdziwego Fireflies/LLM/Google.
+- Testy gałęzi zgody / Gemini Notes jako must-have DoD CI v0 (norma T-11b: etap 1+).
 - Testy UC2 jako must-have DoD.
 - Pełne pokrycie każdego `eventType` opcjonalnego (`meeting.access.granted`).

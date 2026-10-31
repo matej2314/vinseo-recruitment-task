@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Koszty i warianty
@@ -80,9 +80,11 @@ C_{FF} = 25 \times 19 = 475\ \mathrm{USD} \approx 1\,900\ \mathrm{PLN}
 
 ## Wariant 1 - start / koszt: Gemini 3.5 Flash-Lite
 
-Domyślny model pod UC1 (i później UC2). Capture: Fireflies **albo** Workspace-lean.
+Domyślny model pod UC1 (i później UC2). **Metadane:** Google Calendar (zawsze; przyrostowo w ramach Workspace). **Treść:** hybryda per zgoda — Fireflies przy zgodzie na nagrywanie; **Notes by Gemini** jako fallback przy odmowie (nie wyłącznie „FF XOR Workspace-lean” jako globalny wybór XOR).
 
-### 1A - Fireflies (pełny coverage) + Gemini + VPS
+### 1A - Fireflies (pełny coverage seatów) + Gemini + VPS
+
+Model kosztowy gdy większość calli ma zgodę / FF jest głównym capture. Calendar nadal pod metadane.
 
 | Składnik | Obliczenie | PLN / mies. |
 |----------|------------|-------------|
@@ -91,9 +93,9 @@ Domyślny model pod UC1 (i później UC2). Capture: Fireflies **albo** Workspace
 | VPS | widełki | **80–150** |
 | **Suma 1A** | | **≈ 1 988 – 2 058** |
 
-### 1B - Workspace-lean (bez Fireflies) + Gemini + VPS
+### 1B - Workspace-lean (Calendar + Notes by Gemini; bez FF) + Gemini + VPS
 
-Capture: natywne Meet / Notes by Gemini / transcript w Workspace (koszt **przyrostowy 0** w tym modelu - Workspace już opłacony; faktyczna cena Gemini w planie Workspace - do weryfikacji u firmy).
+Capture treści: Notes by Gemini / Meet w Workspace (koszt **przyrostowy 0** w tym modelu - Workspace już opłacony; faktyczna cena Gemini w planie Workspace - do weryfikacji u firmy). Metadane: Calendar. Typowy scenariusz: brak zgód na nagrywanie / świadomy lean.
 
 | Składnik | PLN / mies. |
 |----------|-------------|
@@ -101,6 +103,8 @@ Capture: natywne Meet / Notes by Gemini / transcript w Workspace (koszt **przyro
 | LLM Gemini (400) | **≈ 8** |
 | VPS | **80–150** |
 | **Suma 1B** | **≈ 88 – 158** |
+
+**Hybryda per zgoda (operacyjnie):** część spotkań na FF (1A-like opex seatów), część na Gemini Notes (przyrostowo jak 1B) — ten sam stack portów; rachunek FF zależy od liczby seatów, nie od „XOR architektury”.
 
 **Wniosek W1:** dominuje **Fireflies (seaty)** albo jego brak. LLM Gemini przy tym cenniku jest rzędem wielkości tańszy niż capture i VPS.
 
@@ -174,9 +178,10 @@ Oszczędność LLM przy A’ jest marginalna; główny zysk to **mniej danych u 
 
 ## Rekomendacja decyzyjna (skrót)
 
-- **Start:** wariant **1** (Gemini 3.5 Flash-Lite) + capture **1B** albo **1A / A’ z mniejszą liczbą seatów**, zależnie od UX diarization vs opex.
-- **Po pierwszych testach jakości UC1:** ewentualnie przełączyć na **Haiku 5.5** (wariant 2) bez zmiany architektury - ten sam adapter.
+- **Start:** wariant **1** (Gemini 3.5 Flash-Lite) + capture **1B**, **1A / A’ z mniejszą liczbą seatów**, albo **hybryda per zgoda** (FF gdy zgoda; Gemini Notes gdy odmowa) — zależnie od UX diarization vs opex i procesu zgód.
+- **Po pierwszych testach jakości UC1:** ewentualnie przełączyć na **Haiku 5.5** (wariant 2) bez zmiany architektury - ten sam adapter LLM.
 - LLM przy obu cennikach **nie jest** głównym kosztem przy 300 h/mies. w tym modelu tokenów; rachunek przesuwa **Fireflies (seaty)** lub jego brak.
+- **Obecna wersja kodu:** normy w docs; opex vendor ≈ 0 (mock + zaślepka portów, major 3.7). **Etap 1+:** pierwsze wejście działającej logiki Calendar + FF / Gemini Notes.
 
 **Uwaga Q&A (UC2):** koszt asystenta = f(N pytań/mies. × tokeny kontekstu; u Haiku także próg 100k). **Nie jest wliczony** w sumy powyżej - doliczyć osobno przy włączeniu etapu 2. Ten sam provider / klucz API co UC1 (bez drugiej integracji).
 

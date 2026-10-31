@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { LlmModule } from '../adapters/llm/llm.module.js';
+import { MeetingMetadataModule } from '../adapters/meeting-metadata/meeting-metadata.module.js';
 import { MeetingSourceModule } from '../adapters/meeting-source/meeting-source.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { MeetingProcessOrchestrator } from './meeting-process.orchestrator.js';
@@ -8,7 +9,12 @@ import { MeetingRepository } from './meeting-repository.js';
 import { SummarizeMeetingUseCase } from './summarize-meeting.use-case.js';
 
 @Module({
-  imports: [PrismaModule, MeetingSourceModule, LlmModule],
+  imports: [
+    PrismaModule,
+    MeetingSourceModule,
+    MeetingMetadataModule,
+    LlmModule,
+  ],
   providers: [
     MeetingRepository,
     SummarizeMeetingUseCase,

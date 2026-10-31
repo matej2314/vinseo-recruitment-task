@@ -1,5 +1,5 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -15,7 +15,7 @@ Norma implementacji uwierzytelniania pracowników oraz kontroli dostępu do spot
 - Reguły ACL odczytu spotkań i artefaktów; egzekucja wyłącznie w `apps/api`.
 - Paginacja listy spotkań po stronie backendu.
 
-**Poza tą wersją:** reset hasła, 2FA, SSO / OAuth Google, konta klientów zewnętrznych, ACL przez `ProjectMembership` (zespół klienta), auth webhooka Fireflies, HTTP erase admin.
+**Poza tą wersją:** reset hasła, 2FA, SSO / OAuth Google jako **login pracowników** (OAuth Google do Calendar ≠ login v1), konta klientów zewnętrznych, ACL przez `ProjectMembership` (zespół klienta), auth webhooka Fireflies, HTTP erase admin.
 
 ## Powiązanie ze stylem z docs
 
@@ -101,14 +101,15 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 
 ### Nie wolno
 
-- OAuth / SSO Google w tej wersji.
+- OAuth / SSO Google jako login pracowników w tej wersji (patrz też punkt o Calendar poniżej).
 - Kont klientów zewnętrznych.
 - Egzekwowania ACL w BFF lub React.
 - Przechowywania access / refresh w `localStorage` lub `sessionStorage`.
 - Domyślnego polegania na `Authorization: Bearer` z kodu UI (cookie + BFF).
 - Zwracania plaintext hasła lub refresh tokena w logach / `audit_log` / pino.
 - Filtrowania ACL wyłącznie po stronie klienta.
-- Przyznawania ACL na podstawie `ProjectMembership`, grup Google Workspace lub samego `clientId` w tej wersji.
+- Przyznawania ACL na podstawie `ProjectMembership`, grup Google Workspace / ekspansji grup Calendar lub samego `clientId` w tej wersji.
+- Używania OAuth Google jako mechanizmu logowania pracowników v1 (integracja Calendar w etapie 1+ zasila wyłącznie uczestników **indywidualnych** pod `MeetingParticipant` — **bez** zmiany AC-1).
 
 ## Zatwierdzony stack (obszar)
 
@@ -136,9 +137,9 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 ## Poza tą wersją
 
 - Reset / forgot password, weryfikacja e-mail, 2FA.
-- SSO, OAuth Google Workspace.
+- SSO / OAuth Google jako login pracowników (Calendar OAuth ≠ sesja v1).
 - Role poza pracownikiem + admin (np. zewnętrzny guest).
-- ACL przez membership zespołu klienta / ekspansję grup Calendar.
+- ACL przez membership zespołu klienta / ekspansję grup Calendar (**zakaz** także w prod — Calendar → indywidualni uczestnicy).
 - Implementacja retrieval UC2 (reguła ACL ta sama, gdy powstanie).
 - Produkcyjny auth webhooków vendora.
 - Endpoint / UI erase treści (norma produktowa w docs).

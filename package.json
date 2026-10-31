@@ -14,6 +14,7 @@
     "dev:stack:up": "docker compose -f docker-compose.dev.yml up -d --build",
     "dev:stack:down": "docker compose -f docker-compose.dev.yml down",
     "dev:stack:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "dev:stack:reset-db": "docker volume rm vinseo-dev_vinseo_dev_pg_data",
     "build": "pnpm -r run build",
     "test": "node --test scripts/*.test.mjs && pnpm --filter @vinseo/api test && pnpm --filter @vinseo/worker test",
     "test:scripts": "node --test scripts/*.test.mjs",

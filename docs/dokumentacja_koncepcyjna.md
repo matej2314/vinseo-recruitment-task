@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -18,8 +18,9 @@ Najważniejsza wartość:
 - Pracownik widzi **tylko te spotkania i treści, do których ma prawo**.
 - Dane klientów nie są wynoszone - architektura zakłada kontrolowane granice (własne źródło prawdy w systemie; wejście z ekosystemu Workspace / notetakera jako adapter, nie jako Notebook firmowy).
 - W kolejnych etapach: pytanie w stylu „co ustaliliśmy z klientem X o budżecie?” z **wskazaniem źródła** (poza zakresem pierwszej wersji kodu) - ten sam provider LLM co przy kanonicznym streszczeniu spotkania (`llm_i_asystent.md`), nie osobna integracja.
-- Kanon streszczenia i zadań: **nasz** wynik LLM/mock po Zod; źródło zewnętrzne (docelowo Fireflies / Notes by Gemini) dostarcza materiał wejściowy, nie gotowe `summary` vendora jako kanon.
-- Capture u notetakera (docelowo **Fireflies**) obejmuje **transcript i nagranie**; nasz system kanonizuje tekst oraz udostępnia odnośnik do nagrania przez mechanizm **on-demand** (świeży URL po ACL) — **nie** magazyn plików audio/video ani trwałego URL w DB. W etapie 0: mock atrapy URL + button demonstracyjny (`frontend.md`, `dokumentacja_komunikacji.md`).
+- Kanon streszczenia i zadań: **nasz** wynik LLM/mock po Zod; źródło zewnętrzne dostarcza materiał wejściowy, nie gotowe `summary` vendora jako kanon.
+- **Wejście docelowe (per zgoda):** metadane faktu **zawsze** z Google Calendar; przy **zgodzie** na nagrywanie — treść + nagranie z **Fireflies** (on-demand URL); przy **braku zgody** — treść z **Notes by Gemini** (bez FF / audio); **metadata-only** tylko gdy Gemini też nie dostarcza materiału. Szczegóły: `bezpieczenstwo_i_rodo.md`.
+- Capture u notetakera (**Fireflies**, tylko ze zgodą) obejmuje **transcript i nagranie**; nasz system kanonizuje tekst oraz udostępnia odnośnik do nagrania przez mechanizm **on-demand** (świeży URL po ACL) — **nie** magazyn plików audio/video ani trwałego URL w DB. W **obecnej wersji**: mock happy-path + button demonstracyjny + **zaślepka** portów Calendar / `gemini-notes` (major Faza 3.7); działająca gałąź Google/FF = **kolejna wersja / etap 1+** (`frontend.md`, `dokumentacja_komunikacji.md`, `plan_wdrozenia_etapy.md`).
 
 System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów zewnętrznych.
 
@@ -68,8 +69,8 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 
 - **Równy priorytet** typów spotkań (wewnętrzne i z klientami). Spotkania wrażliwe (1:1, rekrutacje, zarząd): flaga `confidential` (ręczne / z procesu); w v1 ten sam pipeline mock; ACL jak wyżej (+ admin czyta).
 - Trwałe przechowanie: spotkanie, uczestnicy (wewnętrzni + metadane zewnętrznych), transkrypcja, streszczenie, zadania, reguły uprawnień.
-- Przetwarzanie asynchroniczne od pojawienia się materiału źródłowego do zapisanego, **zwalidowanego** streszczenia i listy zadań. Brak treści źródła → rekord metadanych (**metadata-only**), bez AI.
-- Możliwość pracy i testów na **przygotowanym mocku** źródła (bez prawdziwych nagrań firmowych — fixture zamiast realnych plików media) oraz **walidacja formatu** transkrypcji / wyniku streszczenia; szkielet on-demand linku (mock URL) pod późniejszą podmianę adaptera FF.
+- Przetwarzanie asynchroniczne od pojawienia się materiału źródłowego do zapisanego, **zwalidowanego** streszczenia i listy zadań. Brak treści ze źródła treści (mock / FF / Gemini Notes) → rekord metadanych (**metadata-only**), bez AI — przy braku zgody najpierw próba Notes by Gemini.
+- Możliwość pracy i testów na **przygotowanym mocku** źródła (bez prawdziwych nagrań firmowych — fixture zamiast realnych plików media) oraz **walidacja formatu** transkrypcji / wyniku streszczenia; szkielet on-demand linku (mock URL) + zaślepka portów gałęzi zgody pod późniejszą podmianę na adaptery prod.
 - Minimalny front: warstwa BFF + layout z **sidebarem** - widok domyślny (tabela spotkań + Test + SSE + button nagrania demo) oraz **mock wyszukiwarki**; bez pełnego panelu produktowego i bez osobnej strony detail.
 
 ### Technicznie (to, co ma udowodnić szkielet)
@@ -84,7 +85,7 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 
 - Pełny interfejs użytkownika / design system panelu (w tym panel erase - norma w `bezpieczenstwo_i_rodo.md`, implementacja później).
 - Powiadomienia (mail, Slack itp.).
-- Produkcyjna integracja z Google Workspace i Fireflies (w kodzie: mocki o stabilnym kontrakcie pod łatwą migrację).
+- Produkcyjna / działająca integracja Google Calendar, Fireflies i Notes by Gemini (w obecnej wersji: mock happy-path + zaślepka portów — Faza 3.7; pełna logika w etapie 1+).
 - Wywołania prawdziwego LLM w MVP (mock summarizera z realnym kształtem kontraktu).
 - Wyszukiwanie semantyczne / asystent Q&A z cytowaniem źródeł (RAG) - przewidziane koncepcyjnie na później; ACL tej samej reguły.
 - Membership „zespołu klienta”, ekspansja zaproszeń grup Google (zwłaszcza grupy wszystkich pracowników).
@@ -95,7 +96,7 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 ## Główne założenia
 
 1. **Własne źródło prawdy** - system trzyma kanoniczne rekordy spotkań, streszczeń i uprawnień; zewnętrzny notetaker / Notes by Gemini jest adapterem wejścia, nie Notebookiem firmowym.
-2. **Wejście docelowe:** Google Workspace + opcjonalnie Fireflies + API LLM; w developmentcie - symulowane źródło na tych samych kontraktach.
+2. **Wejście docelowe:** Calendar (metadane) + treść wg zgody (`fireflies` \| `gemini-notes`) + API LLM; w obecnej wersji — mock + zaślepka tych samych portów.
 3. **Narzędzie wewnętrzne** - zero kont dla osób spoza organizacji.
 4. **ACL przed treścią** - listowanie, podgląd i przyszłe wyszukiwanie / asystent nie mogą ujawnić spotkania poza zbiorem dozwolonym (organizator / uczestnik / admin).
 5. **Fail-closed na wyniku modelu** - wynik streszczenia ma ustalony kontrakt; niepoprawny payload nie staje się źródłem prawdy w bazie.
