@@ -7,6 +7,7 @@ import type {
   DemoRunMeetingResponseDto,
   MeetingListItemDto,
   MeetingListResponseDto,
+  MeetingRecordingDto,
   MeetingStatusEventDto,
   MeetingListLimit,
 } from "@vinseo/contracts";
@@ -66,6 +67,8 @@ export function MeetingsDashboard() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [testBusy, setTestBusy] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
+  const [recordingBusyId, setRecordingBusyId] = useState<string | null>(null);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -279,6 +282,40 @@ export function MeetingsDashboard() {
     }
   }
 
+  async function onOpenRecording(meetingId: string) {
+    setRecordingBusyId(meetingId);
+    setRecordingError(null);
+    try {
+      const res = await fetch(
+        `/api/meetings/${encodeURIComponent(meetingId)}/recording`,
+        { credentials: "same-origin" },
+      );
+      if (!res.ok) {
+        setRecordingError(
+          res.status === 404
+            ? "Nie udało się otworzyć nagrania (brak dostępu lub zasób)."
+            : "Nie udało się pobrać linku do nagrania.",
+        );
+        return;
+      }
+      const data = (await res.json()) as MeetingRecordingDto;
+      if (typeof data.url !== "string" || data.url.length === 0) {
+        setRecordingError("Odpowiedź nagrania bez poprawnego url.");
+        return;
+      }
+      const opened = window.open(data.url, "_blank", "noopener,noreferrer");
+      if (opened == null) {
+        setRecordingError(
+          "Przeglądarka zablokowała nowe okno. Odblokuj popupy dla tej strony.",
+        );
+      }
+    } catch {
+      setRecordingError("Błąd sieci przy pobieraniu nagrania.");
+    } finally {
+      setRecordingBusyId(null);
+    }
+  }
+
   const totalPages =
     state.status === "ready"
       ? Math.max(1, Math.ceil(state.total / state.limit))
@@ -298,6 +335,18 @@ export function MeetingsDashboard() {
           {testError}
         </p>
       ) : null}
+
+      {recordingError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {recordingError}
+        </p>
+      ) : null}
+
+      <p className="text-xs text-muted-foreground">
+        Przycisk „Nagranie” jest zawsze widoczny w v0 (demo szkieletu
+        on-demand). Docelowo widoczność będzie powiązana ze zgodą na
+        nagrywanie.
+      </p>
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">
@@ -359,12 +408,13 @@ export function MeetingsDashboard() {
               <TableHead>Tytuł</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Podsumowanie / błąd</TableHead>
+              <TableHead className="w-[1%] whitespace-nowrap">Akcje</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {state.rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground">
+                <TableCell colSpan={4} className="text-muted-foreground">
                   Brak spotkań. Użyj Test, aby uruchomić demo.
                 </TableCell>
               </TableRow>
@@ -377,6 +427,19 @@ export function MeetingsDashboard() {
                     {row.processingStatus === "failed"
                       ? (row.failureMessage ?? "failed")
                       : (row.summaryPreview ?? "—")}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={recordingBusyId === row.id}
+                      onClick={() => {
+                        void onOpenRecording(row.id);
+                      }}
+                    >
+                      {recordingBusyId === row.id ? "…" : "Nagranie"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

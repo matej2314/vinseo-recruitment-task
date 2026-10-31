@@ -309,7 +309,7 @@
 
 ## Faza 3.6 - Button nagrania (demo) + BFF on-demand
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** BFF proxy do endpointu nagrania + przycisk nagrania **zawsze widoczny** w v0 (demonstracja); po kliknięciu otwarcie `url` z JSON odpowiedzi. **Zależność:** Faza **3.6** majoru backendu (szkielet on-demand) — [`vinseo-recruitment-task-backend_major-plan.md`](./vinseo-recruitment-task-backend_major-plan.md). Adnotacja: po FF + zgodzie — widoczność buttonu wg normy RODO w docs (poza must-have modelu zgody w v0).
 
@@ -324,7 +324,7 @@
 
 ### Krok 3.6.1 - BFF proxy recording
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** Route Handler BFF proxy do `GET /meetings/:id/recording` (cookie HttpOnly); bez egzekucji ACL w Next.
 
@@ -334,7 +334,7 @@
 
 ### Krok 3.6.2 - Button nagrania demo + otwarcie URL
 
-**Status:** `NIE_ROZPOCZĘTY`
+**Status:** `WYKONANY`
 
 **Opis:** UI: przycisk zawsze widoczny w v0; po sukcesie odpowiedzi otwarcie `url` z `{ url }` (np. nowe okno/karta). Adnotacja produktowa: docelowo widoczność wg zgody.
 
@@ -346,6 +346,8 @@
 
 ## MILESTONE - Button nagrania demo + BFF on-demand
 
+**Status:** `OSIĄGNIĘTY`
+
 **Opis:** Bramka po Fazie 3.6 frontu. UI demonstracyjnie udostępnia on-demand link przez BFF; zależność od API Fazy 3.6 backendu domknięta.
 
 **DoD (milestone):**
@@ -355,7 +357,6 @@
 - Kryteria F-7a (`SPEC-FRONTEND`) dla buttonu demo są spełnione.
 - Prowadzący prace akceptuje przejście do Fazy 4.
 
-<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
 
 ---
 

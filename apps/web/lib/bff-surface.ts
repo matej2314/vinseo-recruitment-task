@@ -26,6 +26,12 @@ export const bffSurface: readonly BffSurfaceRoute[] = [
   },
   {
     method: "GET",
+    bffPath: "/api/meetings/[id]/recording",
+    apiPath: "/meetings/:id/recording",
+    notes: "On-demand JSON { url } (K-5b); ACL tylko w api",
+  },
+  {
+    method: "GET",
     bffPath: "/api/meetings/[id]/events",
     apiPath: "/meetings/:id/events",
     notes: "SSE text/event-stream - żywy proxy w Fazie 3",
