@@ -1,5 +1,5 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -136,6 +136,12 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 - **Unikać:** klucz Fireflies / LLM w froncie.
 - **Boli:** wyciek w bundle.
 - **Zamiast:** tylko `api` / `worker`; w v1 i tak atrapy.
+
+### Surowy JSON `summary` w komórce tabeli
+
+- **Unikać:** `JSON.stringify(summary)` (ew. `truncate`) jako jedyna treść kolumny wyniku na `/meetings`.
+- **Boli:** nieczytelny UI; użytkownik nie widzi `shortSummary` / zadań; wrażenie „dumpu technicznego” zamiast skrótu spotkania.
+- **Zamiast:** parser kanonicznego kształtu + kolumna **Wynik** (`shortSummary`, liczniki, opcjonalne Szczegóły; przy `failed` komunikat) — `frontend.md`.
 
 ## Integracje i kontrakty
 

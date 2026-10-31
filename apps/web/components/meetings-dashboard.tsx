@@ -13,6 +13,7 @@ import type {
 } from "@vinseo/contracts";
 import { MEETING_LIST_LIMITS } from "@vinseo/contracts";
 
+import { MeetingResultCell } from "@/components/meeting-result-cell";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,54 +26,64 @@ import {
 import { uiRoutes } from "@/lib/routes";
 
 type RowView = MeetingListItemDto & {
-  readonly summaryPreview: string | null;
   readonly failureMessage: string | null;
+};
+
+type ListQueryState = {
+  readonly page: number;
+  readonly limit: MeetingListLimit;
+};
+
+type TestActionState = {
+  readonly busy: boolean;
+  readonly error: string | null;
+};
+
+type RecordingActionState = {
+  readonly busyId: string | null;
+  readonly error: string | null;
 };
 
 type LoadState =
   | { readonly status: "loading" }
   | { readonly status: "error"; readonly message: string }
   | {
-      readonly status: "ready";
-      readonly page: number;
-      readonly limit: MeetingListLimit;
-      readonly total: number;
-      readonly rows: readonly RowView[];
-    };
+    readonly status: "ready";
+    readonly page: number;
+    readonly limit: MeetingListLimit;
+    readonly total: number;
+    readonly rows: readonly RowView[];
+  };
 
 type RowPatch = Partial<RowView> & { readonly id: string };
-
-function summaryToPreview(summary: unknown): string | null {
-  if (summary == null) return null;
-  if (typeof summary === "string") return summary.slice(0, 160);
-  try {
-    return JSON.stringify(summary).slice(0, 160);
-  } catch {
-    return null;
-  }
-}
 
 function toRowView(item: MeetingListItemDto): RowView {
   return {
     ...item,
-    summaryPreview: summaryToPreview(item.summary),
     failureMessage: item.failureReason,
   };
 }
 
 export function MeetingsDashboard() {
   const router = useRouter();
-  const [limit, setLimit] = useState<MeetingListLimit>(10);
-  const [page, setPage] = useState(1);
+  const [listQuery, setListQuery] = useState<ListQueryState>({
+    page: 1,
+    limit: 10,
+  });
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [testBusy, setTestBusy] = useState(false);
-  const [testError, setTestError] = useState<string | null>(null);
-  const [recordingBusyId, setRecordingBusyId] = useState<string | null>(null);
-  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [testAction, setTestAction] = useState<TestActionState>({
+    busy: false,
+    error: null,
+  });
+  const [recordingAction, setRecordingAction] = useState<RecordingActionState>({
+    busyId: null,
+    error: null,
+  });
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const { page, limit } = listQuery;
 
     async function ensureSessionThenLoad() {
       const me = await fetch("/api/auth/me", { credentials: "same-origin" });
@@ -117,12 +128,15 @@ export function MeetingsDashboard() {
       });
     }
 
-    setState({ status: "loading" });
-    void ensureSessionThenLoad();
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setState({ status: "loading" });
+      void ensureSessionThenLoad();
+    });
     return () => {
       cancelled = true;
     };
-  }, [page, limit, router]);
+  }, [listQuery, router]);
 
   useEffect(() => {
     return () => {
@@ -154,7 +168,6 @@ export function MeetingsDashboard() {
           rows: [
             {
               ...row,
-              summaryPreview: patch.summaryPreview ?? row.summaryPreview,
               failureMessage: patch.failureMessage ?? row.failureMessage,
             },
             ...prev.rows,
@@ -168,12 +181,6 @@ export function MeetingsDashboard() {
       const merged: RowView = {
         ...current,
         ...patch,
-        summaryPreview:
-          patch.summaryPreview !== undefined
-            ? patch.summaryPreview
-            : patch.summary !== undefined
-              ? summaryToPreview(patch.summary)
-              : current.summaryPreview,
         failureMessage:
           patch.failureMessage !== undefined
             ? patch.failureMessage
@@ -201,7 +208,6 @@ export function MeetingsDashboard() {
         return;
       }
 
-      // Tylko pola obecne w evencie — bez nadpisywania metadanych listy nullami.
       const failedWithoutReason =
         payload.processingStatus === "failed" &&
         payload.failureReason === undefined;
@@ -210,18 +216,13 @@ export function MeetingsDashboard() {
         id: payload.meetingId,
         processingStatus: payload.processingStatus,
         ...(payload.title !== undefined ? { title: payload.title } : {}),
-        ...(payload.summary !== undefined
-          ? {
-              summary: payload.summary,
-              summaryPreview: summaryToPreview(payload.summary),
-            }
-          : {}),
+        ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
         ...(payload.failureReason !== undefined
           ? {
-              failureReason: payload.failureReason,
-              failureMessage:
-                payload.failureReason ?? "Przetwarzanie nie powiodło się.",
-            }
+            failureReason: payload.failureReason,
+            failureMessage:
+              payload.failureReason ?? "Przetwarzanie nie powiodło się.",
+          }
           : {}),
         ...(failedWithoutReason
           ? { failureMessage: "Przetwarzanie nie powiodło się." }
@@ -244,8 +245,7 @@ export function MeetingsDashboard() {
   }
 
   async function onTest() {
-    setTestBusy(true);
-    setTestError(null);
+    setTestAction({ busy: true, error: null });
     try {
       const res = await fetch("/api/demo/run-meeting", {
         method: "POST",
@@ -254,7 +254,7 @@ export function MeetingsDashboard() {
         body: JSON.stringify({}),
       });
       if (!res.ok) {
-        setTestError("Nie udało się uruchomić demo.");
+        setTestAction({ busy: false, error: "Nie udało się uruchomić demo." });
         return;
       }
       const data = (await res.json()) as DemoRunMeetingResponseDto;
@@ -271,49 +271,58 @@ export function MeetingsDashboard() {
         processingStatus: data.status,
         summary: null,
         failureReason: null,
-        summaryPreview: null,
         failureMessage: null,
       });
       openSse(data.meetingId);
     } catch {
-      setTestError("Błąd sieci przy Test.");
-    } finally {
-      setTestBusy(false);
+      setTestAction({ busy: false, error: "Błąd sieci przy Test." });
+      return;
     }
+    setTestAction({ busy: false, error: null });
   }
 
   async function onOpenRecording(meetingId: string) {
-    setRecordingBusyId(meetingId);
-    setRecordingError(null);
+    setRecordingAction({ busyId: meetingId, error: null });
     try {
       const res = await fetch(
         `/api/meetings/${encodeURIComponent(meetingId)}/recording`,
         { credentials: "same-origin" },
       );
       if (!res.ok) {
-        setRecordingError(
-          res.status === 404
-            ? "Nie udało się otworzyć nagrania (brak dostępu lub zasób)."
-            : "Nie udało się pobrać linku do nagrania.",
-        );
+        setRecordingAction({
+          busyId: null,
+          error:
+            res.status === 404
+              ? "Nie udało się otworzyć nagrania (brak dostępu lub zasób)."
+              : "Nie udało się pobrać linku do nagrania.",
+        });
         return;
       }
       const data = (await res.json()) as MeetingRecordingDto;
       if (typeof data.url !== "string" || data.url.length === 0) {
-        setRecordingError("Odpowiedź nagrania bez poprawnego url.");
+        setRecordingAction({
+          busyId: null,
+          error: "Odpowiedź nagrania bez poprawnego url.",
+        });
         return;
       }
       const opened = window.open(data.url, "_blank", "noopener,noreferrer");
       if (opened == null) {
-        setRecordingError(
-          "Przeglądarka zablokowała nowe okno. Odblokuj popupy dla tej strony.",
-        );
+        setRecordingAction({
+          busyId: null,
+          error:
+            "Przeglądarka zablokowała nowe okno. Odblokuj popupy dla tej strony.",
+        });
+        return;
       }
     } catch {
-      setRecordingError("Błąd sieci przy pobieraniu nagrania.");
-    } finally {
-      setRecordingBusyId(null);
+      setRecordingAction({
+        busyId: null,
+        error: "Błąd sieci przy pobieraniu nagrania.",
+      });
+      return;
     }
+    setRecordingAction({ busyId: null, error: null });
   }
 
   const totalPages =
@@ -325,26 +334,25 @@ export function MeetingsDashboard() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold tracking-tight">Spotkania</h1>
-        <Button type="button" onClick={onTest} disabled={testBusy}>
+        <Button type="button" onClick={onTest} disabled={testAction.busy}>
           Test
         </Button>
       </div>
 
-      {testError ? (
+      {testAction.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {testError}
+          {testAction.error}
         </p>
       ) : null}
 
-      {recordingError ? (
+      {recordingAction.error ? (
         <p className="text-sm text-destructive" role="alert">
-          {recordingError}
+          {recordingAction.error}
         </p>
       ) : null}
 
       <p className="text-xs text-muted-foreground">
-        Przycisk „Nagranie” jest zawsze widoczny w v0 (demo szkieletu
-        on-demand). Docelowo widoczność będzie powiązana ze zgodą na
+        Przycisk „Nagranie” jest zawsze widoczny w v0 (demo). Docelowo widoczność będzie powiązana ze zgodą na
         nagrywanie.
       </p>
 
@@ -353,11 +361,13 @@ export function MeetingsDashboard() {
           <span>Limit</span>
           <select
             className="rounded-md border bg-background px-2 py-1"
-            value={limit}
+            value={listQuery.limit}
             aria-label="Limit listy"
             onChange={(e) => {
-              setPage(1);
-              setLimit(Number(e.target.value) as MeetingListLimit);
+              setListQuery({
+                page: 1,
+                limit: Number(e.target.value) as MeetingListLimit,
+              });
             }}
           >
             {MEETING_LIST_LIMITS.map((n) => (
@@ -372,20 +382,30 @@ export function MeetingsDashboard() {
             type="button"
             variant="outline"
             size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={listQuery.page <= 1}
+            onClick={() =>
+              setListQuery((prev) => ({
+                ...prev,
+                page: Math.max(1, prev.page - 1),
+              }))
+            }
           >
             Poprzednia
           </Button>
           <span>
-            Strona {page} / {totalPages}
+            Strona {listQuery.page} / {totalPages}
           </span>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={listQuery.page >= totalPages}
+            onClick={() =>
+              setListQuery((prev) => ({
+                ...prev,
+                page: prev.page + 1,
+              }))
+            }
           >
             Następna
           </Button>
@@ -407,7 +427,7 @@ export function MeetingsDashboard() {
             <TableRow>
               <TableHead>Tytuł</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Podsumowanie / błąd</TableHead>
+              <TableHead>Wynik</TableHead>
               <TableHead className="w-[1%] whitespace-nowrap">Akcje</TableHead>
             </TableRow>
           </TableHeader>
@@ -423,22 +443,24 @@ export function MeetingsDashboard() {
                 <TableRow key={row.id}>
                   <TableCell>{row.title ?? "—"}</TableCell>
                   <TableCell>{row.processingStatus}</TableCell>
-                  <TableCell className="max-w-md truncate text-sm text-muted-foreground">
-                    {row.processingStatus === "failed"
-                      ? (row.failureMessage ?? "failed")
-                      : (row.summaryPreview ?? "—")}
+                  <TableCell className="align-top">
+                    <MeetingResultCell
+                      processingStatus={row.processingStatus}
+                      summary={row.summary}
+                      failureMessage={row.failureMessage}
+                    />
                   </TableCell>
                   <TableCell>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={recordingBusyId === row.id}
+                      disabled={recordingAction.busyId === row.id}
                       onClick={() => {
                         void onOpenRecording(row.id);
                       }}
                     >
-                      {recordingBusyId === row.id ? "…" : "Nagranie"}
+                      {recordingAction.busyId === row.id ? "…" : "Nagranie"}
                     </Button>
                   </TableCell>
                 </TableRow>

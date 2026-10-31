@@ -1,5 +1,5 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -103,7 +103,7 @@ sequenceDiagram
   end
 ```
 
-Lista `GET /meetings` filtruje zbiór **przed** zwróceniem pozycji (tylko spotkania w ACL). Każdy element listy zawiera projekcję wyniku pod tabelę UI: `summary` oraz `failureReason` (obok metadanych i `processingStatus`) — spójnie z `dokumentacja_komunikacji.md` / `frontend.md`. Dzięki temu odświeżenie widoku domyślnego nie gubi kolumny podsumowania / błędu. Detail (`GET /meetings/:id`) pozostaje bogatszy (np. uczestnicy zewnętrzni); UI v1 nie nawiguje na detail jako głównej ścieżki.
+Lista `GET /meetings` filtruje zbiór **przed** zwróceniem pozycji (tylko spotkania w ACL). Każdy element listy zawiera projekcję wyniku pod tabelę UI: `summary` oraz `failureReason` (obok metadanych i `processingStatus`) — spójnie z `dokumentacja_komunikacji.md` / `frontend.md`. Dzięki temu odświeżenie widoku `/meetings` nie gubi kolumny **Wynik** (czytelny `shortSummary` / błąd; bez dumpa JSON). Detail (`GET /meetings/:id`) pozostaje bogatszy (np. uczestnicy zewnętrzni); UI v1 nie nawiguje na detail jako głównej ścieżki.
 
 Przy deny API zapisuje `meeting.access.denied` do **`audit_log`** (metadane, bez treści spotkania).
 

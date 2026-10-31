@@ -1,7 +1,7 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Architektura katalogów i plików
@@ -42,9 +42,11 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 │   └── web/                          # Next.js - App Router
 │       ├── app/
 │       │   ├── api/                  # BFF (Route Handlers)
-│       │   ├── (dashboard)/...       # sidebar: tabela+Test / mock wyszukiwarka
+│       │   ├── (dashboard)/...       # /meetings (tabela+Test), /search (mock)
 │       │   ├── page.tsx              # auth (login/register)
 │       │   └── layout.tsx / ...
+│       ├── components/               # meetings-dashboard, meeting-result-cell, auth, shadcn
+│       ├── lib/                      # routes, meeting-summary, BFF helpers
 │       ├── package.json
 │       └── tsconfig.json
 ├── packages/

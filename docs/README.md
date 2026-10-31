@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -28,7 +28,7 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | [architektura.md](./architektura.md) | Styl, procesy api/worker/web, ACL, pipeline, Prisma, audit |
 | [architektura_katalogi_pliki.md](./architektura_katalogi_pliki.md) | Drzewo monorepo |
 | [dokumentacja_komunikacji.md](./dokumentacja_komunikacji.md) | HTTP, BFF, pg-boss, port źródła, on-demand nagranie, mapowanie Fireflies, demo |
-| [frontend.md](./frontend.md) | Next.js, Tailwind, shadcn, auth UI, sidebar, tabela+Test+SSE+nagranie demo, mock wyszukiwarki |
+| [frontend.md](./frontend.md) | Next.js, Tailwind, shadcn, auth UI, `/meetings` (kolumna Wynik)+Test+SSE+nagranie demo, mock `/search` |
 | [llm_i_asystent.md](./llm_i_asystent.md) | LlmClient, UC1 summarize, UC2 ask; FF summary ignorowane |
 | [dictionary.md](./dictionary.md) | Słownik pojęć |
 | [data_flow.md](./data_flow.md) | Diagramy przepływów |
@@ -48,7 +48,7 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | Nest, worker, pg-boss, porty | `architektura.md` |
 | Gdzie leży kod w repo | `architektura_katalogi_pliki.md` |
 | Endpointy, job, mock FF, on-demand nagranie | `dokumentacja_komunikacji.md` |
-| Login, sidebar, tabela+Test+nagranie, shadcn | `frontend.md` |
+| Login, sidebar, `/meetings` (Wynik)+Test+nagranie, shadcn | `frontend.md` |
 | LLM / asystent Q&A | `llm_i_asystent.md` |
 | Znaczenie pojęć | `dictionary.md` |
 | Sequence / flowchart | `data_flow.md` |

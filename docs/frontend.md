@@ -1,5 +1,5 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -45,19 +45,26 @@ Opis warstwy `apps/web` Firmowego asystenta spotkań: zakres UI w etapie 0 / v1 
 
 Prosty sidebar przełącza:
 
-| Widok | Opis |
-|-------|------|
-| **Domyślny** | Tabela spotkań + przycisk Test |
-| **Wyszukiwarka** | Osobna podstrona - **statyczny mock** (bez LLM / search API) |
+| Widok | Trasa | Opis |
+|-------|-------|------|
+| **Domyślny** | `/meetings` | Tabela spotkań + przycisk Test |
+| **Wyszukiwarka** | `/search` | Osobna podstrona - **statyczny mock** (bez LLM / search API) |
+
+Kanoniczne ścieżki UI: `apps/web/lib/routes.ts` (`uiRoutes`).
 
 ### 3. Widok domyślny - tabela + Test
 
 - Lista spotkań z API (już po ACL v1: organizator / uczestnik / admin); paginacja backendowa: select limitu **10 / 25 / 50 / 100** + parametr **`page`** (1-based).
 - **Brak** osobnej strony detail (`/meetings/:id`) w UI v1 - wynik pipeline widać w **wierszu tabeli**.
-- Element listy z API niesie m.in. `processingStatus`, **`summary`** oraz **`failureReason`** (`dokumentacja_komunikacji.md`). Kolumna podglądu (skrót summary / komunikat błędu) budowana z tych pól — **także po odświeżeniu strony** (nie tylko ze stanu SSE). Zmiana względem wcześniejszego założenia „summary tylko w detail / ephemeralnie z SSE”.
+- Element listy z API niesie m.in. `processingStatus`, **`summary`** oraz **`failureReason`** (`dokumentacja_komunikacji.md`). Kolumna **Wynik** budowana z tych pól — **także po odświeżeniu strony** (nie tylko ze stanu SSE). Zmiana względem wcześniejszego założenia „summary tylko w detail / ephemeralnie z SSE”.
+- **Kolumna Wynik** (komponent `MeetingResultCell`, parser `lib/meeting-summary.ts`):
+  - **`completed`:** czytelny tekst z `shortSummary` (bez dumpa JSON); meta liczników (np. „1 decyzja · 1 zadanie”); opcjonalnie **Szczegóły** / **Zwiń** — rozwinięcie listy `decisions` oraz do 3 pierwszych `actionItems` (opis · assignee · termin).
+  - **`failed`:** komunikat z `failureReason` (styl destructive).
+  - **`pending` / `processing`:** „W toku”.
+  - Nieznany / nieparsowalny kształt `summary` → komunikat „Brak czytelnego podsumowania” (**zakaz** pokazywania surowego `JSON.stringify` w komórce).
 - Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) - **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
 - **Przycisk Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
-- Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail. SSE nie jest jedynym źródłem treści kolumny wyniku — po reloadzie wystarczy `GET` listy.
+- Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` treść kolumny Wynik ze `summary`; po `failed` status + komunikat). Bez redirectu na detail. SSE nie jest jedynym źródłem treści kolumny wyniku — po reloadzie wystarczy `GET` listy.
 - **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”.
 - **Etap 1+ (adnotacja):** resolve URL przez Fireflies (ten sam kontrakt); widoczność buttonu wg zgody na nagrywanie.
 - **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10).
@@ -95,9 +102,10 @@ Zgodnie z `architektura_katalogi_pliki.md`:
 apps/web/
   app/
     page.tsx                 # auth (login/register)
-    (dashboard)/...          # layout + sidebar; widok domyślny / wyszukiwarka
+    (dashboard)/...          # layout + sidebar; /meetings, /search
     api/                     # BFF Route Handlers (w tym proxy SSE)
-  components/                # auth form, tabela, shadcn
+  components/                # auth, meetings-dashboard, meeting-result-cell, sidebar, shadcn
+  lib/                       # routes, meeting-summary (parser podglądu), BFF helpers, search-mock
 ```
 
 ## Testy frontu (v1)

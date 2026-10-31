@@ -1,5 +1,5 @@
 ---
-wersja: 12
+wersja: 13
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -119,7 +119,7 @@ Element listy (kształt logiczny; typy współdzielone w `packages/contracts` �
 }
 ```
 
-- Lista **zawiera** kanoniczne `summary` (wynik UC1 / `null`) oraz `failureReason` (`null` albo komunikat przy `failed`) — projekcja pod tabelę UI v1; UI buduje skrót podglądu z tych pól (także po pełnym reloadzie `GET /meetings`).
+- Lista **zawiera** kanoniczne `summary` (wynik UC1 / `null`) oraz `failureReason` (`null` albo komunikat przy `failed`) — projekcja pod tabelę UI v1. UI w kolumnie **Wynik** renderuje czytelny podgląd z `shortSummary` / decyzji / zadań (oraz komunikat błędu przy `failed`) — **bez** dumpa surowego JSON; szczegóły prezentacji: `frontend.md`. Podgląd działa także po pełnym reloadzie `GET /meetings`.
 - **Bez** pełnego transcriptu w elemencie listy.
 - Detail (`GET /meetings/:id`) rozszerza listę o pola dodatkowe (np. `externalParticipants` / skrót uczestników) — zawsze po przejściu ACL. Po erase treści: metadane faktu + `summary` / `failureReason` jak po erase (bez transcriptu/summary treściowego).
 - SSE (`GET /meetings/:id/events`): przy `completed` wolno dołączyć `title` + `summary`; przy `failed` wolno dołączyć `failureReason` — ten sam kanon co lista, do live update wiersza.
@@ -334,7 +334,7 @@ Widok domyślny (tabela) → "Test"
   → enqueue meeting.process         (UUID runu + fixture → mock source)
   → UI: EventSource → BFF GET /api/meetings/:id/events → API SSE (ACL własnego meetingId)
   → worker: fetch mock → normalize → redact → summarize(mock) → Zod → persist
-  → SSE: statusy → UI aktualizuje wiersz tabeli (bez zmiany trasy / bez strony detail)
+  → SSE: statusy → UI aktualizuje wiersz tabeli / kolumnę Wynik (bez zmiany trasy / bez strony detail)
 ```
 
 To jest kanoniczny PoC mechanizmu na froncie - bez omijania granic procesów. Multi-tester: każdy użytkownik widzi własne runy dema (ACL).

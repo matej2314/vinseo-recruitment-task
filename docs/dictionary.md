@@ -1,5 +1,5 @@
 ---
-wersja: 11
+wersja: 12
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -70,7 +70,8 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 |-------|------|
 | **API** (`apps/api`) | NestJS: auth użytkowników, egzekucja ACL, HTTP dla BFF. |
 | **Worker** (`apps/worker`) | Osobny proces Nest: konsumpcja jobów, pipeline, adaptery. |
-| **Web** (`apps/web`) | Next.js (App Router): BFF w `app/api/*`, dashboard (tabela + sidebar), mock wyszukiwarki. |
+| **Web** (`apps/web`) | Next.js (App Router): BFF w `app/api/*`, sidebar (`/meetings`, `/search`), mock wyszukiwarki. |
+| **Kolumna Wynik** | Komórka tabeli na `/meetings`: czytelny podgląd wyniku pipeline (`shortSummary` / decyzje / zadania albo komunikat `failed`); **bez** dumpa JSON. |
 | **BFF** (Backend for Frontend) | Cienka warstwa w `web` między UI a API; bez reguł ACL do treści. |
 | **packages/contracts** | Wspólne typy / kształty kontraktów między api, worker i web; **bez Zod**. |
 | **Prisma** | ORM i migracje; schemat w rootowym `prisma/`. |
