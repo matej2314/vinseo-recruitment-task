@@ -1,7 +1,7 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Słownik
@@ -40,7 +40,9 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Źródło prawdy** (source of truth) | Kanoniczny stan w naszej bazie (Postgres), nie Notebook zewnętrznego notetakera. |
 | **Adapter źródła** (source adapter) | Implementacja portu pobierająca materiał (mock, docelowo Fireflies / inne) i mapująca na kontrakt portu. |
 | **Port źródła** (meeting source port) | Ustalony kształt wejścia do pipeline (m.in. `externalId`, uczestnicy, segmenty) - niezależny od schemy vendora. |
-| **Notetaker / Fireflies** | Zewnętrzna usługa capture/transkrypcji; w architekturze adapter wejścia, nie firmowy system docelowy. |
+| **Notetaker / Fireflies** | Zewnętrzna usługa capture: **transkrypcja i nagrania** (media u vendora); w architekturze adapter wejścia transcriptu + źródło on-demand linku do nagrania — nie firmowy magazyn plików. |
+| **On-demand link nagrania** (on-demand recording link) | Mechanizm: ACL jak detail → resolve świeżego URL (v0: mock `https://example.com/...`; prod: API FF). Odpowiedź JSON `{ url }`; **zakaz** trwałego `audio_url` / `video_url` w DB. |
+| **Button nagrania (demo v0)** | Przycisk w UI zawsze widoczny po zalogowaniu (demonstracja szkieletu); **docelowo** widoczność powiązana ze zgodą na nagrywanie (`bezpieczenstwo_i_rodo.md`). |
 | **ACL** (access control) | Reguły kto może odczytać spotkanie i artefakty; egzekwowane na API. |
 | **Widoczność spotkania (ACL v1)** | Organizator **lub** uczestnik wewnętrzny **lub** admin. Egzekucja na `api` (także wyszukiwanie / asystent później). |
 
@@ -88,7 +90,7 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | Hasło | Opis |
 |-------|------|
 | **Google Workspace** | Środowisko organizacji (Meet, Calendar, Drive); kontekst pracy firmy. |
-| **GraphQL Fireflies** | Publiczne API Fireflies do pobrania transcriptu po ID. |
+| **GraphQL Fireflies** | Publiczne API Fireflies do pobrania transcriptu (i ephemeral media URL) po ID. |
 | **Webhook V2 Fireflies** | Powiadomienie o zdarzeniu (np. `meeting.transcribed`) bez pełnej treści transcriptu w body. |
 | **Anti-corruption layer** | Świadome mapowanie schemy vendora na własny port - bez uzależnienia domeny od zewnętrznych nazw pól. |
 

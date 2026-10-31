@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Plan wdrożenia - etapy
@@ -30,8 +30,9 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 - Pipeline idempotentny (mock źródła / transcript → redakcja → **UC1 LlmClient mock** + Zod → persist); metadata-only gdy brak treści; bez `summary` z FF jako kanonu.
 - ACL na API: **organizator ∨ uczestnik ∨ admin** + testy; redakcja + testy.
 - Auth e-mail/hasło; access JWT + refresh w Postgres; cookie HttpOnly.
-- Frontend wg `frontend.md`: `/` login/register → dashboard (tabela + sidebar, mock wyszukiwarki) + przycisk Test + SSE.
+- Frontend wg `frontend.md`: `/` login/register → dashboard (tabela + sidebar, mock wyszukiwarki) + przycisk Test + SSE + **button nagrania (demo, zawsze widoczny)**.
 - Przycisk **Test** / demo: sesja pracownika → enqueue (bez flagi `DEMO_ENABLED`).
+- **Szkielet on-demand nagrania:** endpoint `GET /meetings/:id/recording` + mock URL (`https://example.com/...`) + BFF proxy; **bez** trwałego `audio_url` w DB (`dokumentacja_komunikacji.md`).
 - CI: testy na PR; ochrona `main`.
 - Dokumentacja w `docs/`.
 - **Root `README.md`** zgodny z wymaganiami oddania zadania (osobno od `docs/`):
@@ -44,7 +45,8 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 - Pełny panel UI / design system produktu; panel erase admin.
 - Powiadomienia (mail, Slack).
-- Prawdziwa integracja Google Workspace / Fireflies / HubSpot.
+- Prawdziwa integracja Google Workspace / Fireflies / HubSpot (w tym prawdziwy resolve URL nagrania z FF — w etapie 0 tylko mock).
+- Model / pole zgody na nagrywanie w Prisma; egzekucja widoczności buttonu wg zgody (norma produktowa w docs; w etapie 0 wyjątek demo).
 - Prawdziwy LLM (tylko mock LlmClient / UC1).
 - Q&A / RAG ze wskazaniem źródła (**UC2** - etap 2+).
 - Membership ACL „zespołu klienta”; ekspansja grup Workspace.
@@ -67,7 +69,8 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 - Wybór 1–2 zespołów (nie ograniczać wyłącznie do calli klienckich).
 - Adapter źródła produkcyjny (Fireflies **lub** Meet / Notes by Gemini - decyzja koszt/RODO: `koszty_i_warianty.md`, `bezpieczenstwo_i_rodo.md`).
-- Prawdziwy **LlmClient** / UC1 summarize; redakcja włączona; FF = transcript only (gdy wybrany).
+- Prawdziwy **LlmClient** / UC1 summarize; redakcja włączona; gdy FF: transcript + **pełny adapter on-demand nagrania** (ten sam kontrakt HTTP co szkielet etapu 0).
+- Egzekucja zgody wobec widoczności buttonu nagrania (proces + produkt; norma: `bezpieczenstwo_i_rodo.md`).
 - Nginx + TLS na VPS; demo tylko dla zaufanych kont.
 - Proces zgód na Meet / w umowie z klientem.
 - Matching domen e-mail → `Client`; obsługa `unmatched` (ręcznie przez admina).

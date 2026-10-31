@@ -196,4 +196,63 @@ describe('Auth + ACL + demo (e2e)', () => {
 
     await stranger.get(`/meetings/${meeting.id}/events`).expect(404);
   });
+
+  it('GET /meetings/:id/recording without ACL → 404 (T-11a)', async () => {
+    const agent = request.agent(app.getHttpServer());
+    await agent
+      .post('/auth/register')
+      .send({ email: 'rec-owner@example.com', password: 'Password1!abcd' });
+    const owner = await prisma.user.findUniqueOrThrow({
+      where: { email: 'rec-owner@example.com' },
+    });
+    const meeting = await prisma.meeting.create({
+      data: {
+        externalMeetingId: 'rec-ext-1',
+        organizerId: owner.id,
+        processingStatus: 'completed',
+      },
+    });
+
+    const stranger = request.agent(app.getHttpServer());
+    await stranger
+      .post('/auth/register')
+      .send({ email: 'rec-other@example.com', password: 'Password1!abcd' });
+
+    await stranger.get(`/meetings/${meeting.id}/recording`).expect(404);
+  });
+
+  it('GET /meetings/:id/recording with ACL → { url } mock (T-11a)', async () => {
+    const agent = request.agent(app.getHttpServer());
+    await agent
+      .post('/auth/register')
+      .send({ email: 'rec-ok@example.com', password: 'Password1!abcd' });
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { email: 'rec-ok@example.com' },
+    });
+    const meeting = await prisma.meeting.create({
+      data: {
+        externalMeetingId: 'rec-ext-ok',
+        organizerId: user.id,
+        processingStatus: 'completed',
+      },
+    });
+
+    const res = await agent
+      .get(`/meetings/${meeting.id}/recording`)
+      .expect(200);
+
+    expect(res.body).toEqual({
+      url: 'https://example.com/demo-recording',
+    });
+    expect(res.status).not.toBe(302);
+    expect(res.headers.location).toBeUndefined();
+
+    // D-7b / T-11a: nie asertujemy kolumny media URL — odczyt tylko pól kanonu.
+    const row = await prisma.meeting.findUniqueOrThrow({
+      where: { id: meeting.id },
+    });
+    expect(row.externalMeetingId).toBe('rec-ext-ok');
+    expect(row).not.toHaveProperty('audio_url');
+    expect(row).not.toHaveProperty('video_url');
+  });
 });

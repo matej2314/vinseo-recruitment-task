@@ -1,7 +1,7 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Wdrożenie i środowiska
@@ -46,8 +46,12 @@ Konkretne nazwy mogą dostać prefiksy per app; logicznie wymagane:
 
 | Zmienna (logiczna) | Opis | local | prod |
 |--------------------|------|-------|------|
-| `DATABASE_URL` | Połączenie Postgres (Prisma, pg-boss) | tak | tak |
-| `DATABASE_URL` (test) / osobna URL testowa | Baza `*_test` w Compose | przy testach | - |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_DB_TEST` | Atomy Compose (db / e2e / dev) i składanie URL | tak (`.env`) | opcjonalnie / przez URL |
+| `POSTGRES_HOST` / `POSTGRES_PORT` | Host/port ścieżki A (host → kontener) | tak | - |
+| `E2E_POSTGRES_HOST` / `E2E_POSTGRES_PORT` | Host/port efemerycznego e2e | przy `test:e2e` | - |
+| `DATABASE_URL` | Połączenie Postgres (Prisma, pg-boss); **wygrywa** nad atomami | tak | tak |
+| `DATABASE_URL_TEST` | Baza testowa; **wygrywa** nad atomami | przy testach / integracji | - |
+| `E2E_DATABASE_URL` / `E2E_DATABASE_URL_TEST` | Opcjonalny override e2e (wygrywa nad atomami e2e) | opcjonalnie | - |
 | `NODE_ENV` | `development` / `production` | tak | `production` |
 | `LOG_LEVEL` | Poziom pino | `debug`/`info` | `info` |
 | Sekrety JWT / cookie (np. `JWT_SECRET`, sekret refresh) | Podpis access JWT + rotacja refresh (HttpOnly) | tak | silne losowe |

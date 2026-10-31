@@ -12,3 +12,5 @@ coverage/
 *.log
 .DS_Store
 apps/*/pnpm-lock.yaml
+gemini-notes-consent-fallback-plan.md
+google_workspace_flow_gemini_notes_centralization.md

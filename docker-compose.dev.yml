@@ -3,7 +3,8 @@
 # Entry: `pnpm dev:stack:up`
 #
 # F-01: one-shot `deps` (install + generate + migrate) before app services.
-# F-02: `.env` is optional (`required: false`); compose still sets DATABASE_URL for containers.
+# F-02: `.env` is optional (`required: false`); Compose nadpisuje URL hostem `postgres`.
+# Atomy POSTGRES_* z root `.env`.
 
 name: vinseo-dev
 
@@ -25,8 +26,13 @@ x-optional-env-file: &optional-env-file
     required: false
 
 x-db-env: &db-env
-  DATABASE_URL: postgresql://vinseo:vinseo@postgres:5432/vinseo?schema=public
-  DATABASE_URL_TEST: postgresql://vinseo:vinseo@postgres:5432/vinseo_test?schema=public
+  POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+  POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+  POSTGRES_DB_TEST: ${POSTGRES_DB_TEST:?POSTGRES_DB_TEST is required}
+  # W kontenerach host usługi Compose (nie localhost z bind-mounted .env).
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+  DATABASE_URL_TEST: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_TEST}?schema=public
   PNPM_STORE_DIR: /pnpm/store
 
 services:
@@ -35,16 +41,21 @@ services:
     container_name: vinseo-dev-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: vinseo
-      POSTGRES_PASSWORD: vinseo
-      POSTGRES_DB: vinseo
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_DB_TEST: ${POSTGRES_DB_TEST:?POSTGRES_DB_TEST is required}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
     volumes:
       - vinseo_dev_pg_data:/var/lib/postgresql/data
-      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/01-init-test-db.sql:ro
+      - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/01-init-test-db.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vinseo -d vinseo"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -68,9 +79,7 @@ services:
       - -c
       - |
         set -e
-        # Wymuś URL usługi Compose (bind-mounted .env ma localhost - poza kontenerem).
-        export DATABASE_URL="postgresql://vinseo:vinseo@postgres:5432/vinseo?schema=public"
-        export DATABASE_URL_TEST="postgresql://vinseo:vinseo@postgres:5432/vinseo_test?schema=public"
+        # environment (x-db-env) już wymusza host `postgres`; nie czytaj localhost z .env.
         corepack enable
         pnpm config set store-dir /pnpm/store
         pnpm install

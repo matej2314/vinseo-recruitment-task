@@ -1,7 +1,7 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Anty-patterny
@@ -150,6 +150,12 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 - **Unikać:** zapis `short_summary` / `action_items` z FF do DB zamiast UC1; traktowanie stringa FF jako Zod.
 - **Boli:** brak kontroli nad „kto/do kiedy”; rozjazd z briefem; druga „prawda”.
 - **Zamiast:** FF = transcript; kanon = UC1 LlmClient + Zod (`llm_i_asystent.md`).
+
+### Persist ephemeral `audio_url` / `video_url` w Postgres
+
+- **Unikać:** kolumna na `Meeting` (lub równoważna) z URL nagrania z Fireflies „żeby mieć link”.
+- **Boli:** URL wygasa (~24 h u vendora); martwe linki w UI; fałszywe poczucie magazynu media; zbędne PII/powierzchnia wycieku.
+- **Zamiast:** on-demand po ACL → świeży URL (mock w etapie 0; adapter FF później); odpowiedź JSON `{ url }` bez zapisu do DB (`dokumentacja_komunikacji.md`).
 
 ### Drugi vendor LLM „tylko do asystenta”
 

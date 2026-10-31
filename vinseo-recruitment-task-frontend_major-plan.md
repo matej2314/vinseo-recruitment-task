@@ -307,6 +307,58 @@
 
 ---
 
+## Faza 3.6 - Button nagrania (demo) + BFF on-demand
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** BFF proxy do endpointu nagrania + przycisk nagrania **zawsze widoczny** w v0 (demonstracja); po kliknięciu otwarcie `url` z JSON odpowiedzi. **Zależność:** Faza **3.6** majoru backendu (szkielet on-demand) — [`vinseo-recruitment-task-backend_major-plan.md`](./vinseo-recruitment-task-backend_major-plan.md). Adnotacja: po FF + zgodzie — widoczność buttonu wg normy RODO w docs (poza must-have modelu zgody w v0).
+
+**Rozszerzenie względem:** Faza 3 (panel v1; `WYKONANY`) oraz Faza 3.5 (UI Test; `WYKONANY`) — **bez edycji** ich treści ani milestone’ów `OSIĄGNIĘTY`. Norma: `docs/frontend.md`, `SPEC-FRONTEND` F-7a, `SPEC-KOMUNIKACJA` K-5b.
+
+**DoD (faza):**
+
+- BFF `GET /api/meetings/:id/recording` proxy’uje do `api` z cookie.
+- Button nagrania zawsze widoczny po zalogowaniu (wiersze w zakresie UI listy v1); klik → BFF → API → otwarcie `url`.
+- Brak hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”.
+- Zależność od Fazy 3.6 majoru backendu jest jawna i domknięta przy realizacji tej fazy.
+
+### Krok 3.6.1 - BFF proxy recording
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** Route Handler BFF proxy do `GET /meetings/:id/recording` (cookie HttpOnly); bez egzekucji ACL w Next.
+
+**DoD (krok):**
+
+- Proxy działa; statusy/błędy mapowane spójnie z innymi trasami meetings.
+
+### Krok 3.6.2 - Button nagrania demo + otwarcie URL
+
+**Status:** `NIE_ROZPOCZĘTY`
+
+**Opis:** UI: przycisk zawsze widoczny w v0; po sukcesie odpowiedzi otwarcie `url` z `{ url }` (np. nowe okno/karta). Adnotacja produktowa: docelowo widoczność wg zgody.
+
+**DoD (krok):**
+
+- Kryteria F-7a spełnione; brak omijania BFF/API hardcodem URL jako produkcji.
+
+---
+
+## MILESTONE - Button nagrania demo + BFF on-demand
+
+**Opis:** Bramka po Fazie 3.6 frontu. UI demonstracyjnie udostępnia on-demand link przez BFF; zależność od API Fazy 3.6 backendu domknięta.
+
+**DoD (milestone):**
+
+- Faza 3.6 (ten major) ma status `WYKONANY`.
+- Zależność od Fazy 3.6 majoru backendu jest domknięta.
+- Kryteria F-7a (`SPEC-FRONTEND`) dla buttonu demo są spełnione.
+- Prowadzący prace akceptuje przejście do Fazy 4.
+
+<!-- Domyślnie brak statusu. Po spełnieniu DoD: **Status:** `OSIĄGNIĘTY` -->
+
+---
+
 ## Faza 4 - Wkład frontu w bramkę jakości / oddanie
 
 **Status:** `NIE_ROZPOCZĘTY`
@@ -433,6 +485,7 @@
 | Szkielet UI/BFF | 2 |
 | `SPEC-FRONTEND` + spięcie z `SPEC-KOMUNIKACJA` / auth | 3 ← zależy od backend Faza 3 |
 | `SPEC-FRONTEND` F-7/F-8 + DEMO/Test multi-tester (K-5) | 3.5 ← zależy od backend Faza 3.5 |
+| `SPEC-FRONTEND` F-7a + BFF recording (K-5b) | 3.6 ← zależy od backend Faza 3.6 |
 | `SPEC-TESTY` (smoke web) | 4 |
 | Domknięcie UI etapu 0 | 5 |
 
@@ -444,5 +497,6 @@
 | 2 | Pipeline | Szkielet UI/BFF |
 | 3 | Auth, ACL, API, SSE | UI v1 na żywym API |
 | 3.5 | DEMO/Test multi-tester (UUID, katalog 10) | UI Test pod nowy kontrakt dema |
+| 3.6 | Szkielet on-demand nagrania (mock) | Button nagrania demo + BFF recording |
 | 4 | Część A + CI | Smoke web / spójność opisu UI |
 | 5 | Domknięcie backendu / oddanie | Domknięcie UI / oddanie |

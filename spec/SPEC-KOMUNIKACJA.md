@@ -1,7 +1,7 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # SPEC - Komunikacja (powierzchnie I/O)
@@ -11,6 +11,8 @@ Norma implementacji kontraktów komunikacji v1. Opis powierzchni i przykładowe 
 Zmiana względem wcześniejszej normy K-5 / K-10 (utożsamianie idempotencji dema z „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” na `POST /demo/run-meeting`): na ścieżce **DEMO/Test** każde wywołanie dostaje **nowe** `externalMeetingId` (UUID), `organizerId` = user sesji, losowy `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza. DX i produkcja - poza tą zmianą K-5 (decyzja: DX `/dev/meetings/enqueue` bez zmian).
 
 Zmiana względem wcześniejszej projekcji `GET /meetings` (element listy bez wyniku UC1): lista **musi** zawierać `summary` oraz `failureReason` (K-2a) — UI v1 podgląda wynik w tabeli bez trasy detail (`SPEC-FRONTEND`).
+
+Zmiana względem wcześniejszego ujęcia „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu ani do portu **pipeline** transcriptu. Osobny use case / port **on-demand nagrania** (K-5b) zwraca świeży URL. Fireflies = źródło transcriptu **i** nagrań (media u vendora); u nas kanon tekstu + on-demand link (`docs/dokumentacja_komunikacji.md`).
 
 ## Cel / zakres
 
@@ -23,6 +25,7 @@ Powierzchnie w zakresie:
 | SSE (status spotkania) | przeglądarka ↔ BFF ↔ `api` (`@Sse` / `text/event-stream`) |
 | Kolejka pg-boss | `api` (enqueue) ↔ `worker` (consume) |
 | Port źródła spotkań | mock (v1) / przyszły adapter → kontrakt wejścia pipeline |
+| Port / use case on-demand nagrania | `api` → mock (v0) / docelowo adapter Fireflies media |
 
 **Poza tym SPEC:** reguły ACL case-by-case i bcrypt (`SPEC-AUTH_I_ACL`), kroki redact/summarize (`SPEC-PIPELINE`, `SPEC-LLM`), UI przycisku Test (`SPEC-FRONTEND`), pola Prisma (`SPEC-DANE`), audyt/pino (`SPEC-OBSERVABILITY`).
 
@@ -54,6 +57,7 @@ K-2. Trasy v1 (semantyka jak w docs; ścieżki bazowe):
 | `POST` | `/auth/refresh` | refresh cookie | rotacja tokenów (`SPEC-AUTH_I_ACL`) |
 | `GET` | `/meetings` | tak | lista spotkań po ACL; paginacja `limit` + **`page`** (`SPEC-AUTH_I_ACL`); kształt elementu: K-2a |
 | `GET` | `/meetings/:id` | tak | detail po ACL (API; UI v1 nie ma osobnej strony detail); rozszerza K-2a o pola dodatkowe |
+| `GET` | `/meetings/:id/recording` | tak | on-demand nagranie: JSON `{ url: string }`; ACL jak detail (K-5b) |
 | `GET` | `/meetings/:id/events` | tak | **SSE** statusów pipeline dla spotkania (ACL jak detail) |
 | `POST` | `/demo/run-meeting` | tak | enqueue joba `meeting.process` (mock/fixture); **bez** bramki env `DEMO_ENABLED` |
 
@@ -89,9 +93,19 @@ K-5a. SSE - `GET /meetings/:id/events` (Nest `@Sse`, Observable `MessageEvent`):
 - BFF wystawia równoważny endpoint (np. `GET /api/meetings/:id/events`) proxy’ujący strumień z przekazywaniem cookie.
 Zmiana względem: wcześniejsza K-5a bez jawnego `failureReason` w evencie przy `failed`.
 
+K-5b. On-demand nagranie - `GET /meetings/:id/recording`:
+
+- wymaga sesji; brak ACL / brak zasobu → **404** (jak detail);
+- odpowiedź **200** JSON: `{ "url": string }` — **zakaz** redirectu HTTP 302 jako kontraktu odpowiedzi;
+- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła = `externalMeetingId` (mock zwraca atrapę niezależnie od realnego media);
+- **po integracji Fireflies:** ten sam kontrakt HTTP; adapter prod odświeża ephemeral media URL z API FF (TTL vendora); szkielet → pełna funkcja bez zmiany kształtu odpowiedzi;
+- **zakaz** zapisu `audio_url` / `video_url` (lub równoważnego) do trwałego modelu `Meeting` — wyłącznie odpowiedź on-demand (`SPEC-DANE`);
+- BFF: cienkie proxy (np. `GET /api/meetings/:id/recording`) z przekazywaniem cookie.
+Zmiana względem: wcześniejsze ujęcie pól media FF „poza portem v1” bez osobnego use case — obowiązuje rozróżnienie portu **pipeline** transcript vs port/use case **on-demand** media.
+
 ### BFF (`apps/web`, `app/api/*`)
 
-K-6. BFF **wolno:** przyjmować żądania UI (w tym Test i SSE), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu; walidować pola **wyłącznie UI** przy rejestracji (`passwordConfirm` - K-6a) **bez** ACL treści ani reguł domenowych poza tą bramką.
+K-6. BFF **wolno:** przyjmować żądania UI (w tym Test, SSE i recording), przekazywać/ustawiać cookie HttpOnly w przepływie auth, proxy’ować do HTTP API / SSE / recording, mapować statusy/błędy, lekko agregować pod widok **bez** zmiany reguł dostępu; walidować pola **wyłącznie UI** przy rejestracji (`passwordConfirm` - K-6a) **bez** ACL treści ani reguł domenowych poza tą bramką.
 
 K-6a. BFF `POST /api/auth/register` - wyjątek względem domyślnej reguły „semantyka ciał BFF jak HTTP API” (zmiana względem wcześniejszego mapowania 1:1 dla wszystkich auth):
 - ciało BFF **wymaga** `email`, `password`, `passwordConfirm`;
@@ -108,6 +122,7 @@ Mapowanie (prefiks `/api` po stronie BFF dozwolony):
 |-----|-----|
 | `POST /api/demo/run-meeting` | `POST /demo/run-meeting` |
 | `GET /api/meetings`, `GET /api/meetings/:id` | odpowiadające trasy |
+| `GET /api/meetings/:id/recording` | `GET /meetings/:id/recording` (K-5b) |
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
 | `/api/auth/*` | `/auth/*` (w tym `refresh`; register: strip `passwordConfirm` - K-6a) |
 
@@ -161,17 +176,18 @@ K-13. Typy kształtu wolno trzymać w `packages/contracts`. **Walidacja runtime 
 
 K-14. Po stronie pipeline wynik streszczenia ma osobny kontrakt (Zod w aplikacji); **nie** pochodzi z `summary.*` Fireflies - szczegóły zapisu/fail-closed → `SPEC-PIPELINE` / `SPEC-LLM`. Tu obowiązuje: **nie zapisywać ani nie używać** `summary.*` vendora jako kanonu ani wejścia do DB.
 
-K-15. Mapowanie Fireflies → port (tabela w `docs/dokumentacja_komunikacji.md`) obowiązuje przy przyszłej podmianie adaptera. W v1: **mock** za portem. Webhook FF / OAuth Google: **poza implementacją v1** (brak normatywnego endpointu webhooka w kodzie MVP).
+K-15. Mapowanie Fireflies → port pipeline (tabela w `docs/dokumentacja_komunikacji.md`) obowiązuje przy przyszłej podmianie adaptera transcriptu. W v1: **mock** za portem. Webhook FF / OAuth Google: **poza implementacją v1** (brak normatywnego endpointu webhooka w kodzie MVP). Ephemeral `audio_url` / `video_url` FF: poza mapowaniem do portu pipeline i poza DB; wyłącznie K-5b (on-demand).
 
 ## Norma: wzorce
 
 ### Wymagane
 
 - DTO + ValidationPipe / class-validator na wejściach HTTP `api`.
-- BFF jako cienkie proxy (cookie, statusy, SSE) bez reguł domenowych - z wyjątkiem walidacji UI-only `passwordConfirm` na register (K-6a).
+- BFF jako cienkie proxy (cookie, statusy, SSE, recording) bez reguł domenowych - z wyjątkiem walidacji UI-only `passwordConfirm` na register (K-6a).
 - Nazwany job `meeting.process` + klucz idempotencji.
 - SSE statusu spotkania (`@Sse` / `text/event-stream`) z ACL jak przy odczycie.
-- Anti-corruption: mock/adapter mapuje na **port źródła**, nie na surowy schemat vendora w use case’ach.
+- On-demand nagranie (K-5b): JSON `{ url }`, ACL jak detail, v0 = mock.
+- Anti-corruption: mock/adapter mapuje na **port źródła**, nie na surowy schemat vendora w use case’ach; media URL poza portem pipeline.
 - Wspólny envelope błędów (K-8).
 - Kształty w `packages/contracts` (typy); Zod źródła w **api i worker**.
 
@@ -184,6 +200,7 @@ K-15. Mapowanie Fireflies → port (tabela w `docs/dokumentacja_komunikacji.md`)
 - Omijania workera przy demo (synchroniczny pełny pipeline w HTTP).
 - Wołania adapterów źródła / LLM z BFF.
 - Traktowania `DEMO_ENABLED` jako bramki zachowania demo.
+- Persistencji ephemeral URL nagrania w modelu spotkania.
 
 ## Zatwierdzony stack (obszar)
 
@@ -202,9 +219,10 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 ## Kryteria akceptacji
 
 - [ ] Wejścia HTTP `api` odrzucają niepoprawne DTO kodem 400 + envelope.
-- [ ] Trasy auth / meetings / demo / SSE działają zgodnie z tabelą K-2; demo enqueue’uje `meeting.process` bez sprawdzania `DEMO_ENABLED`.
+- [ ] Trasy auth / meetings / demo / recording / SSE działają zgodnie z tabelą K-2; demo enqueue’uje `meeting.process` bez sprawdzania `DEMO_ENABLED`.
 - [ ] Element listy `GET /meetings` zawiera `summary` i `failureReason` (K-2a); detail rozszerza listę, nie jest jedynym źródłem wyniku w v1.
 - [ ] DEMO/Test (K-5): każde wywołanie → nowe `externalMeetingId` (UUID) + `organizerId` sesji + losowy `fixtureKey` z katalogu 10; multi-tester → osobne wiersze; `fixtureKey` ≠ tożsamość wiersza.
+- [ ] Recording (K-5b): z ACL → `{ url }` (v0 mock `https://example.com/...`); bez ACL → 404; BFF proxy; brak persist URL.
 - [ ] BFF register: mismatch `passwordConfirm` → 400 bez wołania API; przy OK proxy tylko `{ email, password }` (K-6a); Nest register bez `passwordConfirm`.
 - [ ] SSE wymaga auth+ACL; emituje statusy aż do `completed`/`failed`; BFF proxy’uje strumień.
 - [ ] BFF nie egzekwuje ACL i nie woła adapterów I/O bezpośrednio.
@@ -215,9 +233,9 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 
 ## Poza zakresem
 
-- Implementacja webhooka Fireflies i produkcyjnych credentiali.
+- Implementacja webhooka Fireflies i produkcyjnych credentiali (w tym prawdziwy resolve media FF — w v0 tylko mock K-5b).
 - UC2 / RAG / `POST /ask`.
 - Szczegóły redakcji PII i wywołania LlmClient.
-- Widoki React i copy przycisku Test.
+- Widoki React i copy przycisku Test / buttonu nagrania (`SPEC-FRONTEND`).
 - Schemat tabel i migracje Prisma.
 - Katalog eventType `audit_log` i format pino.

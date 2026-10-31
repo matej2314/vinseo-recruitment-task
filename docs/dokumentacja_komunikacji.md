@@ -1,7 +1,7 @@
 ---
-wersja: 11
+wersja: 12
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Dokumentacja komunikacji (kontrakty I/O)
@@ -12,6 +12,8 @@ Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-mee
 
 Zmiana względem wcześniejszej projekcji listy (tylko metadane + `processingStatus`): element `GET /meetings` **niesie też** `summary` oraz `failureReason`, bo UI v1 nie ma strony detail — podgląd wyniku w tabeli musi przetrwać odświeżenie widoku (nie tylko kanał SSE). Detail nadal rozszerza o pola niedostępne w wierszu listy (np. uczestnicy zewnętrzni).
 
+Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu spotkania ani do portu pipeline transcript. Osobny use case / port **on-demand nagrania** zwraca świeży URL (v0: mock; prod: Fireflies). Fireflies jest **jednym źródłem** transkrypcji **i** nagrań (media u vendora; u nas kanon tekstu + on-demand link, nie magazyn plików).
+
 ## Powierzchnie w zakresie v1
 
 | Powierzchnia | Kierunek | Uczestnicy |
@@ -21,6 +23,7 @@ Zmiana względem wcześniejszej projekcji listy (tylko metadane + `processingSta
 | SSE | strumień `text/event-stream` | przeglądarka ↔ BFF ↔ `api` |
 | Kolejka pg-boss | asynchroniczne joby | `api` (enqueue) ↔ `worker` (consume) |
 | Port źródła spotkań | wejście do pipeline | mock (v1) / docelowo adapter vendora → `worker` |
+| Port / use case on-demand nagrania | synchroniczne resolve URL | `api` → mock (v0) / docelowo adapter Fireflies media |
 
 ## Świadomie poza zakresem v1
 
@@ -71,11 +74,32 @@ Przykład ciała logowania:
 |--------|---------|------|------|
 | `GET` | `/meetings` | Lista spotkań widocznych wg ACL; paginacja: `limit` ∈ {10,25,50,100}, **`page`** (1-based; nie cursor) | tak |
 | `GET` | `/meetings/:id` | Szczegóły po ACL (API; UI v1 nie ma osobnej strony detail - tabela + SSE) | tak |
+| `GET` | `/meetings/:id/recording` | On-demand link do nagrania: JSON `{ "url": string }`; ACL jak detail | tak |
 | `GET` | `/meetings/:id/events` | **SSE** statusów pipeline (`pending`→…→`completed`\|`failed`); ACL jak detail | tak |
 
 **ACL v1 (przypomnienie kontraktowe):** **organizator** spotkania **lub** uczestnik wewnętrzny **lub** admin.  
 `clientId` / membership projektu **nie** przyznają odczytu w v1.  
-Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku istnienia) - także dla SSE.
+Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku istnienia) - także dla SSE i recording.
+
+### 1.2a On-demand nagranie
+
+| Metoda | Ścieżka | Opis | Auth |
+|--------|---------|------|------|
+| `GET` | `/meetings/:id/recording` | Po ACL: resolve świeżego URL nagrania; **bez** redirectu 302 | tak |
+
+**Response (kształt):**
+
+```json
+{
+  "url": "https://example.com/demo-recording"
+}
+```
+
+- Sesja wymagana; ACL **jak** `GET /meetings/:id` (brak ACL / brak spotkania → **404**).
+- **v0 / etap 0:** źródło URL = **mock** (atrapa `https://example.com/...`); tożsamość względem źródła nadal `externalMeetingId` (mock i tak zwraca atrapę).
+- **Po integracji Fireflies:** ten sam kontrakt HTTP; adapter prod odświeża ephemeral `audio_url` / `video_url` z API FF (TTL vendora ~24 h). Szkielet → pełna funkcja bez zmiany kształtu odpowiedzi.
+- **`audio_url` / `video_url` nie** wchodzą do trwałego modelu `Meeting` w Postgres; służą wyłącznie odpowiedzi on-demand.
+- Odpowiedź to JSON `{ url }` — **nie** HTTP 302.
 
 Element listy (kształt logiczny; typy współdzielone w `packages/contracts` — `MeetingListItemDto`):
 
@@ -187,6 +211,7 @@ Krótka warstwa między przeglądarką a `api`.
 |----------|-----|
 | `POST /api/demo/run-meeting` (BFF) | `POST /demo/run-meeting` |
 | `GET /api/meetings`, `GET /api/meetings/:id` | odpowiadające trasy API |
+| `GET /api/meetings/:id/recording` | `GET /meetings/:id/recording` (on-demand JSON `{ url }`) |
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
 | trasy auth pod `/api/auth/*` | `/auth/*` (w tym `refresh`) |
 
@@ -320,12 +345,15 @@ To jest kanoniczny PoC mechanizmu na froncie - bez omijania granic procesów. Mu
 
 Port źródła w v1 jest **celowo uproszczony** (anti-corruption layer). Nie kopiujemy 1:1 schematu GraphQL Fireflies. Poniższa tabela i przepływ obowiązują przy podmianie mocka na prawdziwy adapter. Źródło prawdy o polach FF: dokumentacja Fireflies (Transcript, Sentence, Summary, Webhooks V2).
 
+**Fireflies = jedno źródło** transkrypcji **i** nagrań: media (audio/video) pozostają u vendora; u nas kanon tekstu (transcript → UC1) oraz mechanizm **on-demand** świeżego linku do nagrania (sekcja 1.2a). Nie magazynujemy plików ani ephemeral URL w DB.
+
 ### Zasada
 
 | Warstwa | Rola |
 |---------|------|
-| Fireflies GraphQL + Webhooks V2 | Zewnętrzny kształt danych i powiadomień |
-| Adapter w `apps/worker` | Pobiera / normalizuje / mapuje na **port źródła** z tej dokumentacji |
+| Fireflies GraphQL + Webhooks V2 | Zewnętrzny kształt danych i powiadomień (transcript + media u vendora) |
+| Adapter w `apps/worker` | Pobiera / normalizuje / mapuje na **port źródła** (pipeline transcript) |
+| Port / use case on-demand nagrania | Osobno od pipeline: ACL → resolve świeżego URL (v0 mock; prod: pola media FF) |
 | Wasz summarizer + Zod w aplikacji | Własne streszczenie i action items - **nie** polegamy na `summary.action_items` z Fireflies jako kontrakcie domenowym |
 
 Auth do Fireflies: API Key (Bearer) do GraphQL. W v1 nadal atrapa; na produkcji sekret tylko po stronie serwera (nigdy w `web`).
@@ -362,7 +390,9 @@ Ta powierzchnia webhooka jest **poza normatywnym zakresem v1** (mock), ale mapow
 | `segments[].text` | `text` (ew. `raw_text` jeśli bez edycji użytkownika) | Ustalić w adapterze jedną preferencję |
 | `segments[].startMs` | `start_time` (+ ewentualnie `end_time`) | FF: string / wartość czasowa - **znormalizować do liczby ms** w porcie |
 
-Pola Fireflies świadomie **poza** portem v1 (do wykorzystania później, jeśli potrzeba): m.in. `organizer_email`, `calendar_id` / `cal_id`, `duration`, `meeting_link`, `privacy`, `audio_url` / `video_url`, `analytics`, `speakers[]`.
+Pola Fireflies świadomie **poza portem pipeline** transcriptu v1 (do wykorzystania później lub w innym use case): m.in. `organizer_email`, `calendar_id` / `cal_id`, `duration`, `meeting_link`, `privacy`, `analytics`, `speakers[]`.
+
+**`audio_url` / `video_url`:** poza **trwałym** modelem spotkania i poza mapowaniem do portu pipeline. Służą wyłącznie **on-demand** (sekcja 1.2a): w prod adapter media odświeża URL z API FF; w v0 — mock atrapy. **Zakaz** zapisu tych pól do Postgres jako kolumn `Meeting`.
 
 ### Summary: Fireflies vs nasz kontrakt
 

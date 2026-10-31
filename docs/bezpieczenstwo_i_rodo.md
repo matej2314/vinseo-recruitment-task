@@ -1,7 +1,7 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Bezpieczeństwo i RODO
@@ -35,8 +35,16 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 
 1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży).
 2. Brak zgody uczestnika / klienta na nagrywanie lub notetakera → **brak capture** treści; w systemie może zostać rekord **metadanych** spotkania (fakt callu) bez transcriptu / AI.
-3. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
-4. W **etapie 0 (kod)**: wyłącznie mocki źródeł i LLM. Realne Google Workspace / Fireflies / LLM - kolejna wersja, na tych samych portach.
+3. **Docelowo (produkcja / po procesie zgód):** brak zgody → brak udostępniania mechanizmu nagrania w UI (brak buttonu / on-demand linku) — spójnie z metadata-only. Widoczność dostępu do nagrania jest powiązana ze **zgodą na nagrywanie**.
+4. **Etap 0 / demo (świadomy wyjątek):** przycisk nagrania w UI jest **zawsze widoczny** w celach demonstracyjnych szkieletu on-demand — to **nie** jest docelowa norma produkcyjna.
+5. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
+6. W **etapie 0 (kod)**: wyłącznie mocki źródeł i LLM (w tym mock URL nagrania). Realne Google Workspace / Fireflies / LLM - kolejna wersja, na tych samych portach HTTP / use case’ach.
+
+### Nagranie a nasza baza
+
+- Plik audio/video **pozostaje u vendora** (docelowo Fireflies); system **nie** magazynuje plików ani **nie** trzyma trwałego `audio_url` / `video_url` w rekordzie spotkania.
+- Dostęp do odsłuchu: mechanizm **on-demand** (świeży URL po ACL) — szczegóły: `dokumentacja_komunikacji.md`, `data_flow.md`.
+- Erase treści obejmuje nagranie u vendora zgodnie z DPA/API (bez „czyszczenia kolumny URL” u nas — takiej kolumny nie ma).
 
 ### Uczestnicy zewnętrzni
 
@@ -94,7 +102,7 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 | Temat | Norma robocza |
 |-------|----------------|
 | Etap 0 | Mocki za portami; łatwa podmiana adapterów. |
-| Fireflies (prod, wariant kosztowy) | Dane mogą wyjść poza infrastrukturę firmy; **DPA**; z FF bierzemy transcript; **`summary.*` ignorujemy**. |
+| Fireflies (prod, wariant kosztowy) | Dane mogą wyjść poza infrastrukturę firmy; **DPA**; FF = **jedno źródło** transkrypcji **i** nagrań (media u vendora); z FF do kanonu tekstu bierzemy transcript; **`summary.*` ignorujemy**; link do nagrania wyłącznie on-demand (nie persist URL). |
 | Workspace / Notes by Gemini (prod, wariant lean) | Ograniczone źródło notatek / niepełnej transkrypcji; brak treści → metadata-only w naszym systemie. |
 | LLM (jeden provider) | Tylko treść **po redakcji**; UC1 + później UC2; w MVP kodu - mock bez requestów. |
 | HubSpot | **Brak integracji**; najwyżej wzmianka w docs decyzyjnych. |
@@ -115,7 +123,7 @@ Mapowanie techniczne FF: `dokumentacja_komunikacji.md`.
 
 | Sytuacja | Zachowanie |
 |----------|------------|
-| Odmowa zgody na nagrywanie | Brak treści / metadata-only |
+| Odmowa zgody na nagrywanie | Brak treści / metadata-only; docelowo brak buttonu / on-demand nagrania w UI (w etapie 0: wyjątek demo — button zawsze widoczny) |
 | Spotkanie `confidential` | Flaga; pipeline v1 jak zwykle; ACL v1 + admin |
 | Brak matcha domeny klienta | `unmatched`, treść OK, `clientId` null do ręcznego przypisania |
 | Zaproszenie grupy „wszyscy” | Bez ekspansji ACL na całą firmę |

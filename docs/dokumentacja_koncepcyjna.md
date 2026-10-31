@@ -1,7 +1,7 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Dokumentacja koncepcyjna - Firmowy asystent spotkań
@@ -19,6 +19,7 @@ Najważniejsza wartość:
 - Dane klientów nie są wynoszone - architektura zakłada kontrolowane granice (własne źródło prawdy w systemie; wejście z ekosystemu Workspace / notetakera jako adapter, nie jako Notebook firmowy).
 - W kolejnych etapach: pytanie w stylu „co ustaliliśmy z klientem X o budżecie?” z **wskazaniem źródła** (poza zakresem pierwszej wersji kodu) - ten sam provider LLM co przy kanonicznym streszczeniu spotkania (`llm_i_asystent.md`), nie osobna integracja.
 - Kanon streszczenia i zadań: **nasz** wynik LLM/mock po Zod; źródło zewnętrzne (docelowo Fireflies / Notes by Gemini) dostarcza materiał wejściowy, nie gotowe `summary` vendora jako kanon.
+- Capture u notetakera (docelowo **Fireflies**) obejmuje **transcript i nagranie**; nasz system kanonizuje tekst oraz udostępnia odnośnik do nagrania przez mechanizm **on-demand** (świeży URL po ACL) — **nie** magazyn plików audio/video ani trwałego URL w DB. W etapie 0: mock atrapy URL + button demonstracyjny (`frontend.md`, `dokumentacja_komunikacji.md`).
 
 System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów zewnętrznych.
 
@@ -68,8 +69,8 @@ System jest świadomie **narzędziem wewnętrznym** - nie portalem dla klientów
 - **Równy priorytet** typów spotkań (wewnętrzne i z klientami). Spotkania wrażliwe (1:1, rekrutacje, zarząd): flaga `confidential` (ręczne / z procesu); w v1 ten sam pipeline mock; ACL jak wyżej (+ admin czyta).
 - Trwałe przechowanie: spotkanie, uczestnicy (wewnętrzni + metadane zewnętrznych), transkrypcja, streszczenie, zadania, reguły uprawnień.
 - Przetwarzanie asynchroniczne od pojawienia się materiału źródłowego do zapisanego, **zwalidowanego** streszczenia i listy zadań. Brak treści źródła → rekord metadanych (**metadata-only**), bez AI.
-- Możliwość pracy i testów na **przygotowanym mocku** źródła (bez prawdziwych nagrań firmowych) oraz **walidacja formatu** transkrypcji / wyniku streszczenia.
-- Minimalny front: warstwa BFF + layout z **sidebarem** - widok domyślny (tabela spotkań + Test + SSE) oraz **mock wyszukiwarki**; bez pełnego panelu produktowego i bez osobnej strony detail.
+- Możliwość pracy i testów na **przygotowanym mocku** źródła (bez prawdziwych nagrań firmowych — fixture zamiast realnych plików media) oraz **walidacja formatu** transkrypcji / wyniku streszczenia; szkielet on-demand linku (mock URL) pod późniejszą podmianę adaptera FF.
+- Minimalny front: warstwa BFF + layout z **sidebarem** - widok domyślny (tabela spotkań + Test + SSE + button nagrania demo) oraz **mock wyszukiwarki**; bez pełnego panelu produktowego i bez osobnej strony detail.
 
 ### Technicznie (to, co ma udowodnić szkielet)
 

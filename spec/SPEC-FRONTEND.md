@@ -1,20 +1,20 @@
 ---
-wersja: 7
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # SPEC - Frontend (`apps/web`)
 
-Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiwarki, BFF, SSE po Test. Kontekst: `docs/frontend.md`, przepływ Test: `docs/data_flow.md`. Kontrakty / SSE: `SPEC-KOMUNIKACJA`, sesja/ACL: `SPEC-AUTH_I_ACL`. Warstwy: `SPEC-ARCHITEKTURA`. Smoke: `SPEC-TESTY`.
+Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiwarki, BFF, SSE po Test, button nagrania (demo). Kontekst: `docs/frontend.md`, przepływ Test / on-demand: `docs/data_flow.md`. Kontrakty / SSE / recording: `SPEC-KOMUNIKACJA`, sesja/ACL: `SPEC-AUTH_I_ACL`. Warstwy: `SPEC-ARCHITEKTURA`. Smoke: `SPEC-TESTY`.
 
 ## Cel / zakres
 
-- Minimalny UI v1: logowanie/rejestracja, widok domyślny (tabela + Test), podstrona wyszukiwarki (mock).
-- BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI).
+- Minimalny UI v1: logowanie/rejestracja, widok domyślny (tabela + Test + button nagrania demo), podstrona wyszukiwarki (mock).
+- BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI); on-demand nagranie przez BFF.
 - Zakaz przenoszenia ACL i sekretów do przeglądarki.
 
-**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG.
+**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG, egzekucja widoczności buttonu nagrania wg zgody (must-have dopiero po FF + procesie zgód; norma produktowa w docs).
 
 ## Powiązanie ze stylem z docs
 
@@ -56,6 +56,9 @@ F-6. Paginacja: select limitu **10 / 25 / 50 / 100** oraz parametr **`page`** (1
 
 F-7. Przycisk **Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk). Wywołuje BFF → `POST /demo/run-meeting`. **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10; `SPEC-KOMUNIKACJA` K-5).
 
+F-7a. **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy v1) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`docs/bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”. Adnotacja: po integracji FF + zgodzie — widoczność wg normy RODO w docs; poza must-have implementacji modelu zgody w v0.
+Zmiana względem: brak normy UI dla nagrania — obowiązuje szkielet on-demand przez BFF/API (`SPEC-KOMUNIKACJA` K-5b).
+
 F-8. Po sukcesie enqueue:
 1. UI używa `meetingId` z odpowiedzi (własny run sesji) i otwiera **SSE** (przez BFF) dla tego id (`SPEC-KOMUNIKACJA`).
 2. Użytkownik **zostaje** na bieżącym widoku.
@@ -78,9 +81,9 @@ F-12. **Zakaz** wołania LLM, endpointu search/RAG oraz UC2 z tej podstrony w v1
 
 ### BFF
 
-F-13. Route Handlers w `app/api/*`: proxy auth, meetings (lista/detail API jeśli potrzebne), demo, **SSE**; ustawianie / przekazywanie cookie HttpOnly.
+F-13. Route Handlers w `app/api/*`: proxy auth, meetings (lista/detail API jeśli potrzebne), demo, **recording** (`/meetings/:id/recording`), **SSE**; ustawianie / przekazywanie cookie HttpOnly.
 
-F-14. BFF nie egzekwuje ACL, nie enqueue’uje pg-boss bezpośrednio, nie woła adapterów źródła/LLM.
+F-14. BFF nie egzekwuje ACL, nie enqueue’uje pg-boss bezpośrednio, nie woła adapterów źródła/LLM / media.
 
 ### Bezpieczeństwo UI
 
@@ -92,7 +95,7 @@ F-17. Na produkcji: nie logować pełnego transcriptu w konsoli przeglądarki.
 
 ### Render
 
-F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, sidebar, Test, EventSource/SSE, select paginacji).
+F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, sidebar, Test, button nagrania, EventSource/SSE, select paginacji).
 
 ## Norma: wzorce
 
@@ -103,6 +106,7 @@ F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, s
 - Auth UI: klasyczny UX login/register wg F-1 (start login, CTA, linki tekstowe, `passwordConfirm` + match przed submit w register).
 - Sidebar: domyślny ↔ wyszukiwarka.
 - Tabela + SSE po Test (aktualizacja in-place).
+- Button nagrania demo (F-7a) → BFF → API → otwarcie `url`.
 - Mock wyszukiwarki bez backendu AI.
 
 ### Nie wolno
@@ -114,6 +118,7 @@ F-18. **RSC** domyślnie; `"use client"` tylko dla interakcji (formularz auth, s
 - Playwright jako must-have v1.
 - Ukrywania Test za `NEXT_PUBLIC_*`.
 - Prawdziwego search/LLM z podstrony wyszukiwarki.
+- Hardcodu URL nagrania w React jako jedynej ścieżki produkcyjnej (F-7a).
 
 ## Zatwierdzony stack (obszar)
 
@@ -135,6 +140,7 @@ Wersje pakietów: zgodne z repo / aktualnym LTS - bez pinowania w tym SPEC.
 - [ ] Niezalogowany użytkownik na dashboardzie trafia na `/`.
 - [ ] Sidebar przełącza widok domyślny i wyszukiwarkę; wyszukiwarka nie woła API LLM/search.
 - [ ] Test enqueue’uje demo; SSE aktualizuje / dokłada wiersz bez zmiany trasy; bez UI wyboru fixture; ponowny Test = kolejny wiersz (F-7/F-8).
+- [ ] Button nagrania zawsze widoczny w v0; klik idzie przez BFF/API i otwiera `url` z JSON (F-7a) — bez hardcodu jako jedynej ścieżki produkcyjnej.
 - [ ] Po completed/failed i odświeżeniu `/meetings` kolumna podsumowania / błędu pozostaje wypełniona z `GET` listy (F-5 / F-8.7).
 - [ ] Limit listy tylko z {10,25,50,100}.
 - [ ] Brak sekretów sesji w Web Storage; BFF nie zawiera reguł ACL.

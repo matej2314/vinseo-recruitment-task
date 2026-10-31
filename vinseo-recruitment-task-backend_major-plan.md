@@ -375,6 +375,68 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu - jeśli cz
 
 ---
 
+## Faza 3.6 - Szkielet on-demand linku nagrania (mock)
+
+**Status:** `WYKONANY`
+
+**Opis:** Port / use case resolve URL nagrania + endpoint HTTP JSON `{ url }` + mock atrapy (`https://example.com/...`); ACL jak detail; **zakaz** persist ephemeral media URL w DB. Szkielet pod późniejszą podmianę adaptera Fireflies (ten sam kontrakt HTTP) — bez prawdziwego klienta GraphQL FF w tej fazie.
+
+**Rozszerzenie względem:** Faza 3 (auth/ACL/SSE; `WYKONANY`) oraz Faza 3.5 (DEMO/Test; `WYKONANY`) — **bez edycji** ich treści ani milestone’ów `OSIĄGNIĘTY`. Norma: `docs/dokumentacja_komunikacji.md` (1.2a), `SPEC-KOMUNIKACJA` K-5b, `SPEC-DANE` D-7b, `SPEC-AUTH_I_ACL` (recording), `SPEC-TESTY` T-11a.
+
+**DoD (faza):**
+
+- `GET /meetings/:id/recording` (sesja + ACL jak detail) zwraca `{ url }` z mocka; brak ACL → **404**.
+- Brak kolumny / trwałego pola `audio_url` / `video_url` na `Meeting`.
+- Testy T-11a (mock, bez sieci do FF) w zakresie DoD.
+- Adnotacja w kodzie / kontrakcie: adapter FF później bez zmiany kształtu odpowiedzi HTTP.
+- Major frontu (Faza 3.6) może spiąć BFF + button z tym endpointem.
+
+### Krok 3.6.1 - Port resolve URL nagrania (mock)
+
+**Status:** `WYKONANY`
+
+**Opis:** Port / adapter on-demand: wejście `externalMeetingId` (tożsamość źródła) → świeży URL; w v0 implementacja mock zwraca atrapę `https://example.com/...`. Poza pipeline transcriptu (`meeting.process`).
+
+**DoD (krok):**
+
+- Mock resolve działa bez sieci zewnętrznej; kontrakt portu gotowy pod podmianę FF.
+
+### Krok 3.6.2 - Endpoint HTTP + ACL + zakaz persist
+
+**Status:** `WYKONANY`
+
+**Opis:** `GET /meetings/:id/recording` w `api`: sesja wymagana; ACL jak detail (brak → 404); odpowiedź JSON `{ url }` (nie 302); **bez** zapisu URL do Postgres.
+
+**DoD (krok):**
+
+- Trasa zgodna z K-5b; D-7b respektowane (brak kolumny media URL).
+
+### Krok 3.6.3 - Testy recording (T-11a)
+
+**Status:** `WYKONANY`
+
+**Opis:** Integracja API: bez ACL → 404; z ACL → `{ url }` mock; brak asercji na prawdziwe FF; brak oczekiwania kolumny URL w DB.
+
+**DoD (krok):**
+
+- Scenariusze T-11a przechodzą w zakresie DoD testów.
+
+---
+
+## MILESTONE - Szkielet on-demand nagrania (API)
+
+**Status:** `OSIĄGNIĘTY`
+
+**Opis:** Bramka po Fazie 3.6. Duży skok: `api` oferuje kontrakt on-demand linku (mock) pod BFF/UI; persist ephemeral URL wykluczony.
+
+**DoD (milestone):**
+
+- Faza 3.6 ma status `WYKONANY`.
+- Endpoint recording + mock + testy ACL/mock spełnione.
+- Prowadzący prace akceptuje przejście do Fazy 4 (oraz Faza 3.6 majoru frontu).
+
+---
+
 ## Faza 4 - Część A + CI
 
 **Status:** `NIE_ROZPOCZĘTY`
@@ -511,6 +573,7 @@ Trwały ślad kluczowych odmów i faili joba bez treści transcriptu - jeśli cz
 | `SPEC-PIPELINE`, `SPEC-LLM`, częściowo `SPEC-KOMUNIKACJA` (job / źródło) | 2 |
 | `SPEC-AUTH_I_ACL`, `SPEC-KOMUNIKACJA` (HTTP/SSE/demo), `SPEC-TESTY`, opcjonalnie `SPEC-OBSERVABILITY` | 3 |
 | `SPEC-KOMUNIKACJA` K-5 / `SPEC-PIPELINE` P-6 / `SPEC-TESTY` (DEMO/Test multi-tester, katalog 10) | 3.5 |
+| `SPEC-KOMUNIKACJA` K-5b / `SPEC-DANE` D-7b / `SPEC-AUTH_I_ACL` / `SPEC-TESTY` T-11a (on-demand nagranie mock) | 3.6 |
 | `SPEC-TESTY` / `docs/deployment.md` (CI), docs pod Część A | 4 |
 | Domknięcie vs `SPEC-TESTY` + kryteria etapu 0 | 5 |
 | `SPEC-FRONTEND` | poza tym plikiem (major frontu); Faza 1 tylko stub struktury |

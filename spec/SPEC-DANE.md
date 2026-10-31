@@ -1,7 +1,7 @@
 ---
-wersja: 3
+wersja: 4
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # SPEC - Dane (Prisma / PostgreSQL)
@@ -93,6 +93,8 @@ Uczestnicy zewnętrzni (bez konta): JSON / metadane na spotkaniu - **bez** osobn
 
 Zmiana względem D-7 v1: `ProjectMembership` nie jest „podstawą ACL zespołu”; ACL = organizator + `MeetingParticipant` + admin (`SPEC-AUTH_I_ACL`).
 
+D-7b. **Zakaz** przechowywania `audio_url` / `video_url` (lub równoważnego pola ephemeral media) jako **trwałego** pola / kolumny na `Meeting` (ani 1:1 powiązanego rekordu „na stałe”). Link do nagrania powstaje wyłącznie w odpowiedzi on-demand (`SPEC-KOMUNIKACJA` K-5b); tożsamość względem źródła nadal `externalMeetingId` (D-5). Erase treści: **bez** „czyszczenia URL nagrania” jako pola DB (nie istnieje); nagranie u vendora — jak `docs/bezpieczenstwo_i_rodo.md`. W tej wersji **nie** wprowadza się `hasMedia` ani pola zgody na nagrywanie w Prisma (poza v0 / poza tą legalizacją).
+
 ### JSON: segmenty i summary
 
 D-8. **Segmenty transcriptu:** kolumna **JSON** na rekordzie spotkania (lub jednym powiązanym rekordzie 1:1 ze spotkaniem) - tablica obiektów zgodnych z portem źródła (`speaker`, `text`, `startMs`, …). **Zakaz** osobnej tabeli segmentów w v1.
@@ -133,6 +135,7 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 - Treści transcriptu / pełnego summary w `audit_log`.
 - Obowiązkowego seeda jako bramki uruchomienia v1 (fixture demo może żyć w plikach aplikacji / mocku, nie w wymaganym `prisma/seed`).
 - Używania `ProjectMembership` w polityce `access` w tej wersji.
+- Kolumny / trwałego pola `audio_url` / `video_url` (lub równoważnego) na `Meeting` (D-7b).
 
 ## Zatwierdzony stack (obszar)
 
@@ -152,6 +155,7 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 - [ ] Wiersze `audit_log` w review/testach nie zawierają pełnego transcriptu.
 - [ ] Controllery nie importują Prisma Client bezpośrednio.
 - [ ] Jest `organizerId`, `clientLinkStatus`, `emailDomain` na Client, flaga `confidential`.
+- [ ] Brak kolumny ephemeral media URL na `Meeting` (D-7b).
 
 ## Poza zakresem / poza tą wersją
 
@@ -161,3 +165,4 @@ D-13. Wywołania Prisma Client wyłącznie z warstwy infrastruktury / repozytori
 - Pełny katalog `eventType` - `SPEC-OBSERVABILITY`.
 - Indeksy pod przyszły RAG / full-text.
 - Membership jako ACL.
+- Pole zgody na nagrywanie / `hasMedia` w Prisma (norma produktowa w docs; nie model v0).

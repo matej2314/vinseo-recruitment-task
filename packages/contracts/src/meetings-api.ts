@@ -52,3 +52,11 @@ export interface DemoRunMeetingResponseDto {
 
 export const MEETING_LIST_LIMITS = [10, 25, 50, 100] as const;
 export type MeetingListLimit = (typeof MEETING_LIST_LIMITS)[number];
+
+/**
+ * Odpowiedź `GET /meetings/:id/recording` (K-5b).
+ * Ephemeral media URL — wyłącznie w odpowiedzi HTTP; nie w modelu Meeting.
+ */
+export interface MeetingRecordingDto {
+  readonly url: string;
+}

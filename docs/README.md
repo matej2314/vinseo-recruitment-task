@@ -1,7 +1,7 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Dokumentacja - Firmowy asystent spotkań
@@ -27,8 +27,8 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | [dokumentacja_koncepcyjna.md](./dokumentacja_koncepcyjna.md) | Cel, odbiorcy, zakres / poza zakresem, sukces v1 |
 | [architektura.md](./architektura.md) | Styl, procesy api/worker/web, ACL, pipeline, Prisma, audit |
 | [architektura_katalogi_pliki.md](./architektura_katalogi_pliki.md) | Drzewo monorepo |
-| [dokumentacja_komunikacji.md](./dokumentacja_komunikacji.md) | HTTP, BFF, pg-boss, port źródła, mapowanie Fireflies, demo |
-| [frontend.md](./frontend.md) | Next.js, Tailwind, shadcn, auth UI, sidebar, tabela+Test+SSE, mock wyszukiwarki |
+| [dokumentacja_komunikacji.md](./dokumentacja_komunikacji.md) | HTTP, BFF, pg-boss, port źródła, on-demand nagranie, mapowanie Fireflies, demo |
+| [frontend.md](./frontend.md) | Next.js, Tailwind, shadcn, auth UI, sidebar, tabela+Test+SSE+nagranie demo, mock wyszukiwarki |
 | [llm_i_asystent.md](./llm_i_asystent.md) | LlmClient, UC1 summarize, UC2 ask; FF summary ignorowane |
 | [dictionary.md](./dictionary.md) | Słownik pojęć |
 | [data_flow.md](./data_flow.md) | Diagramy przepływów |
@@ -47,8 +47,8 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | Co budujemy / poza MVP | `dokumentacja_koncepcyjna.md` |
 | Nest, worker, pg-boss, porty | `architektura.md` |
 | Gdzie leży kod w repo | `architektura_katalogi_pliki.md` |
-| Endpointy, job, mock FF | `dokumentacja_komunikacji.md` |
-| Login, sidebar, tabela+Test, shadcn | `frontend.md` |
+| Endpointy, job, mock FF, on-demand nagranie | `dokumentacja_komunikacji.md` |
+| Login, sidebar, tabela+Test+nagranie, shadcn | `frontend.md` |
 | LLM / asystent Q&A | `llm_i_asystent.md` |
 | Znaczenie pojęć | `dictionary.md` |
 | Sequence / flowchart | `data_flow.md` |

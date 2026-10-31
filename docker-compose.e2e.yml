@@ -1,0 +1,27 @@
+# Efemeryczny Postgres wyłącznie pod `pnpm --filter @vinseo/api test:e2e`
+# (lub root `pnpm test:e2e`). Sekrety / atomy z root `.env`.
+# Osobny od ścieżki A (`docker-compose.db.yml`) — teardown nie gasi db:up.
+name: vinseo-e2e
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vinseo-postgres-e2e
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_DB_TEST: ${POSTGRES_DB_TEST:?POSTGRES_DB_TEST is required}
+    ports:
+      - "${E2E_POSTGRES_PORT:?E2E_POSTGRES_PORT is required}:5432"
+    volumes:
+      - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/01-init-test-db.sh:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB && pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB_TEST",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30

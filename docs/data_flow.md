@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Przepływy danych
@@ -107,6 +107,41 @@ Lista `GET /meetings` filtruje zbiór **przed** zwróceniem pozycji (tylko spotk
 
 Przy deny API zapisuje `meeting.access.denied` do **`audit_log`** (metadane, bez treści spotkania).
 
+## 3a. On-demand link nagrania
+
+Kliknięcie buttonu nagrania w UI **nie** zapisuje URL do DB. Przepływ: ACL → resolve URL (v0: mock; etap 1+: Fireflies) → JSON `{ url }`.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant UI as Przeglądarka
+  participant BFF as web BFF
+  participant API as api
+  participant ACL as access
+  participant Port as Port media (mock / FF)
+  participant DB as PostgreSQL
+
+  UI->>BFF: GET /api/meetings/:id/recording (cookie)
+  BFF->>API: GET /meetings/:id/recording
+  API->>API: sesja użytkownika
+  API->>DB: załaduj spotkanie (metadane + externalMeetingId)
+  API->>ACL: canView(user, meeting)?
+  alt dozwolone
+    ACL-->>API: true
+    API->>Port: resolveRecordingUrl(externalMeetingId)
+    Port-->>API: świeży url (v0: atrapa example.com)
+    API-->>BFF: 200 { url }
+    BFF-->>UI: 200 { url }
+    Note over UI: otwarcie url; bez zapisu URL do DB
+  else brak uprawnień lub brak rekordu
+    ACL-->>API: false / not found
+    API-->>BFF: 404
+    BFF-->>UI: 404
+  end
+```
+
+**Invarianty:** brak kolumny ephemeral media URL na `Meeting`; ten sam kontrakt HTTP przy podmianie mock → FF; docelowo widoczność buttonu wg zgody (`bezpieczenstwo_i_rodo.md`) — w v0 button zawsze widoczny (demo).
+
 ## 4. Auth (login i sesja)
 
 Rejestracja (`POST /auth/register`) to standardowy zapis użytkownika z hasłem po **bcrypt** - bez osobnego diagramu.
@@ -204,6 +239,7 @@ Szczegóły: `llm_i_asystent.md`.
 | Job pipeline | api (demo / prod enqueue) | pg-boss (w Postgres) |
 | Transcript znormalizowany + summary + action items | worker (po UC1 + Zod) | PostgreSQL - **jeden** persist po udanej walidacji (nie z FF summary; nie przed LlmClient) |
 | Decyzja ACL | api (`access`) | odpowiedź HTTP (organizator ∨ uczestnik ∨ admin); deny → `audit_log` |
+| Ephemeral URL nagrania | api (on-demand; mock / później FF) | tylko odpowiedź JSON `{ url }` — **nie** Postgres |
 | Zdarzenia audytu | api + worker | tabela `audit_log` (retencja 90 dni; odczyt ops/DB) |
 
 ## Mapowanie na inne dokumenty

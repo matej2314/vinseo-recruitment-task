@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # SPEC - Auth i ACL
@@ -73,9 +73,9 @@ AC-1. Odczyt spotkania i artefaktów (lista elementów — w tym projekcja `summ
 Zmiana względem wcześniejszej reguły z membership projektu/klienta: **`ProjectMembership` nie przyznaje odczytu w tej wersji** (kolejna faza produktowa - docs). `clientId` / `clientLinkStatus` to metadane, nie ACL.
 Doprecyzowanie względem wcześniejszego brzmienia „summary … w detail”: w v1 `summary` / `failureReason` są też w elemencie listy (`SPEC-KOMUNIKACJA` K-2a) — nadal wyłącznie po ACL listy (AC-4), bez transcriptu na liście.
 
-AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę, detail, SSE oraz - gdy powstaną - wyszukiwanie i asystent (UC2).
+AC-2. Egzekucja ACL: wyłącznie `apps/api` (moduł / serwis `access`). Jedna centralna decyzja „czy user U może odczytać meeting M” używana przez listę, detail, SSE, **recording** (`GET /meetings/:id/recording`) oraz - gdy powstaną - wyszukiwanie i asystent (UC2).
 
-AC-3. `GET /meetings/:id`: spotkanie nie istnieje **lub** brak ACL → odpowiedź **404** (identyczny kształt na zewnątrz - bez wycieku istnienia).
+AC-3. `GET /meetings/:id` oraz `GET /meetings/:id/recording`: spotkanie nie istnieje **lub** brak ACL → odpowiedź **404** (identyczny kształt na zewnątrz - bez wycieku istnienia). Widoczność buttonu w UI (demo v0) **nie** omija tej reguły — endpoint zawsze egzekwuje ACL jak detail (`SPEC-KOMUNIKACJA` K-5b, `SPEC-FRONTEND` F-7a).
 
 AC-4. `GET /meetings`: zwraca **wyłącznie** spotkania dozwolone regułą AC-1 (nigdy pełny zbiór z filtrowaniem tylko na froncie).
 
@@ -128,7 +128,7 @@ Odpowiedź listy zawiera metadane paginacji (np. `page`, `limit`, `total` / `has
 - [ ] Access wygasa po ~15 min; `POST /auth/refresh` wydaje nową parę; reuse zużytego refresh → 401 + revoke rodziny.
 - [ ] Logout czyści cookie i unieważnia refresh.
 - [ ] Admin widzi wszystkie spotkania; zwykły user tylko organizatorstwo / uczestnictwo (nie membership).
-- [ ] Detail bez ACL → 404; lista nigdy nie zawiera niedozwolonych id.
+- [ ] Detail bez ACL → 404; recording bez ACL → 404; lista nigdy nie zawiera niedozwolonych id.
 - [ ] `limit` spoza {10,25,50,100} → 400; lista paginuje po `page` + `limit` po stronie API.
 - [ ] `POST /auth/register` ustawia cookie sesji; UI może przejść na dashboard bez osobnego loginu.
 - [ ] Testy jednostkowe / integracyjne pokrywają tablicę przypadków ACL v1 (wymóg jakości → `SPEC-TESTY`).

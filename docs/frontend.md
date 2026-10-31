@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-10-31
 ---
 
 # Frontend
@@ -58,6 +58,8 @@ Prosty sidebar przełącza:
 - Panel admin (erase treści na żądanie klienta, ręczne przypisanie `clientId`) - **poza UI v1**; norma w `bezpieczenstwo_i_rodo.md`.
 - **Przycisk Test** - zawsze widoczny po zalogowaniu (bez flagi UI ukrywającej przycisk).
 - Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` skrót summary/zadań; po `failed` status + komunikat). Bez redirectu na detail. SSE nie jest jedynym źródłem treści kolumny wyniku — po reloadzie wystarczy `GET` listy.
+- **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”.
+- **Etap 1+ (adnotacja):** resolve URL przez Fireflies (ten sam kontrakt); widoczność buttonu wg zgody na nagrywanie.
 - **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10).
 - **Multi-tester:** wielu użytkowników na jednej instancji - każdy widzi **własne** spotkania dema (ACL); brak jednego globalnego wiersza współdzielonego między kontami.
 - **Ponowny Test** dodaje kolejny wiersz (akceptowalne w v1 dema; lista może rosnąć).
@@ -70,7 +72,7 @@ Prosty sidebar przełącza:
 
 ## BFF (`app/api/*`)
 
-- Proxy do Nest API: auth (w tym refresh), meetings, demo, **SSE** (`/meetings/:id/events`).
+- Proxy do Nest API: auth (w tym refresh), meetings, demo, **recording** (`/meetings/:id/recording`), **SSE** (`/meetings/:id/events`).
 - Przekazywanie / ustawianie cookie HttpOnly.
 - **Nie** egzekwuje ACL; **nie** enqueue’uje jobów poza wywołaniem API.
 
