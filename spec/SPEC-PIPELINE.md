@@ -1,7 +1,7 @@
 ---
-wersja: 5
+wersja: 7
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # SPEC - Pipeline spotkania
@@ -12,7 +12,7 @@ Norma implementacji orkiestracji joba `meeting.process` w `apps/worker`. Przepł
 
 - Sekwencja kroków od pobrania źródła do trwałego zapisu zwalidowanego streszczenia.
 - Idempotencja, statusy, fail-closed, redakcja PII przed LlmClient.
-- Gałęzie źródła treści wg zgody (norma prod / etap 1+); zaślepka portów w obecnej wersji.
+- Gałęzie źródła treści wg `[record-ok]` w opisie Calendar (norma prod / etap 1+); zaślepka portów w obecnej wersji.
 - Granica: worker **nie** egzekwuje ACL użytkownika.
 
 **Poza tą wersją (działająca logika):** prawdziwy Google Calendar / OAuth, działający adapter `gemini-notes` / `fireflies` z egzekucją zgody, produkcyjny webhook Fireflies. W v0 dozwolona **zaślepka** portów (major Faza 3.7); happy-path nadal mock. NER/imiona-nazwiska poza E+T+P+K, równoległe joby per segment, osobne retry sieciowe vendora poza jednym retry Zod JSON, HTTP erase admin — nadal poza.
@@ -47,10 +47,11 @@ fetch (port źródła)
 P-2. Wejście joba: payload jak w `SPEC-KOMUNIKACJA` (`externalMeetingId`, `source`, opcjonalnie `fixtureKey`). W obecnej wersji happy-path: źródło treści = **mock** za portem. Docelowo `source` / wybór adaptera: `mock` \| `fireflies` \| `gemini-notes` (`SPEC-KOMUNIKACJA`).
 
 P-2a. **Gałęzie źródła treści (norma prod / etap 1+):**
-- **Zgoda** zewnętrznego na nagrywanie → adapter treści **`fireflies`** (transcript; nagranie wyłącznie on-demand — K-5b).
-- **Brak zgody** → **zakaz** FF / audio; adapter treści **`gemini-notes`**; gdy Notes dostarcza materiał tekstowy → redakcja + **UC1** + Zod (jak P-1).
-- Port **metadanych** (Calendar): fakt callu / uczestnicy indywidualni — **zawsze** (gdy podpięty); oddzielony od portu treści; **zakaz** fat-adaptera łączącego Calendar+FF+Notes.
-**Jawna zmiana** względem wcześniejszego P-4a / docs „odmowa = zawsze metadata-only bez treści / AI”: odmowa nagrywania **nie** wyłącza automatycznie UC1 — najpierw Gemini Notes.
+- Sygnał zgody na nagrywanie: tag **`[record-ok]`** w `description` wydarzenia Calendar (port metadanych). Detekcja: `calendarDescriptionAllowsRecording` (`@vinseo/contracts`) — case-insensitive, dowolne miejsce w opisie.
+- **Jest `[record-ok]`** → adapter treści **`fireflies`** (transcript; nagranie wyłącznie on-demand — K-5b).
+- **Brak `[record-ok]`** (w tym pusty / brak opisu) → **zakaz** FF / audio; adapter treści **`gemini-notes`**; gdy Notes dostarcza materiał tekstowy → redakcja + **UC1** + Zod (jak P-1).
+- Port **metadanych** (Calendar): fakt callu / `description` / uczestnicy indywidualni — **zawsze** (gdy podpięty); oddzielony od portu treści; **zakaz** fat-adaptera łączącego Calendar+FF+Notes.
+**Jawna zmiana** względem wcześniejszego P-2a („zgoda zewnętrznego” bez wskazania sygnału Calendar) oraz względem P-4a / docs „odmowa = zawsze metadata-only”: brak tagu **nie** wyłącza automatycznie UC1 — najpierw Gemini Notes.
 
 P-2b. **Obecna wersja (zaślepka):** dozwolona zaślepka portów Calendar + `gemini-notes` (Faza 3.7 major); **bez** wymogu prawdziwego Google w CI / happy-path; mock treści pozostaje ścieżką demo. Checklist v0 **nie** wymaga działającej egzekucji zgody.
 
@@ -58,7 +59,7 @@ P-3. **Zakaz** użycia `summary.*` (lub równoważnego) z Fireflies / vendora ja
 
 P-4. Worker **pomija** ACL użytkownika. Kontrola odczytu wyłącznie przy HTTP w `api` (`SPEC-AUTH_I_ACL`).
 
-P-4a. **Metadata-only:** gdy adapter treści **nie** dostarcza materiału (puste / brak Notes; brak segmentów) — wolno zapisać fakt spotkania (metadane, w tym z Calendar gdy dostępne) **bez** wywołania UC1; status terminalny bez kanonicznego summary (np. `completed` z pustą treścią albo osobny kod - spójnie w implementacji i contracts), **bez** udawania streszczenia AI. **Sam brak zgody na nagrywanie nie wystarcza** do metadata-only, jeśli `gemini-notes` zwróci tekst.
+P-4a. **Metadata-only:** gdy adapter treści **nie** dostarcza materiału (puste / brak Notes; brak segmentów) — wolno zapisać fakt spotkania (metadane, w tym z Calendar gdy dostępne) **bez** wywołania UC1; status terminalny bez kanonicznego summary (np. `completed` z pustą treścią albo osobny kod - spójnie w implementacji i contracts), **bez** udawania streszczenia AI. **Sam brak `[record-ok]` nie wystarcza** do metadata-only, jeśli `gemini-notes` zwróci tekst.
 Zmiana względem: wcześniejsze P-4a wiążące „brak zgody / brak notatek” jako równorzędne przesłanki metadata-only.
 
 P-4b. **Client link:** matching domeny e-mail zewnętrznego → `Client`; brak matcha → `clientLinkStatus = unmatched`, `clientId = null`; **nie** blokuje pipeline ani UC1. Spotkanie bez zewnętrznych → `internal`.
@@ -80,6 +81,9 @@ P-6. Klucz idempotencji: **`externalMeetingId`**. Ponowne enqueue / retry **tego
 Zmiana względem wcześniejszego brzmienia P-6 („spójnie z `fixtureKey` na ścieżce mock” w kontekście dema UI): na ścieżce **DEMO/Test** (`POST /demo/run-meeting`) `externalMeetingId` jest ID **runu** (UUID nadane przez API); `fixtureKey` wskazuje wyłącznie **materiał** mocka z katalogu. **Nie** wymaga się `externalMeetingId === fixtureKey`. Idempotencja nadal chroni ponowne przetworzenie tego samego UUID runu - nie wymusza jednego wiersza na cały katalog fixture dla wszystkich użytkowników dema. Semantyka produkcji (ID vendora) i DX (`fixtureKey` ≈ `externalMeetingId` na `/dev/meetings/enqueue`) - **bez zmian** w tym wymaganiu poza jawnym rozdzieleniem ścieżki DEMO/Test.
 
 P-7. Ponowne przetworzenie tego samego klucza (`externalMeetingId`) musi być bezpieczne względem końcowego stanu domenowego (brak duplikatów spotkań i „podwójnych” kanonicznych summary jako osobnych sukcesów bez nadpisania).
+
+P-7a. **Aktualizuj źródło / re-ingest (norma etap 1+):** ponowne `meeting.process` dla istniejącego spotkania (trigger UI/API `POST /meetings/:id/reprocess` — `SPEC-KOMUNIKACJA` K-5c) = ten sam P-6/P-7. Worker ponawia fetch portu metadanych + treści. **Upgrade-only:** gdy re-fetch nie dostarcza materiału, **zakaz** kasowania już zapisanego kanonicznego transcriptu/summary; gdy pojawia się nowy materiał tekstowy — normalize → redact → UC1 → Zod → update in place. **Zakaz** traktowania reprocess jako syncu pliku nagrania (media = K-5b on-demand). W **obecnej wersji / v0** — poza obowiązkową implementacją; norma produktowa w `docs/data_flow.md` §5a.
+Zmiana względem: P-6/P-7 bez jawnej powierzchni produktowej recovery metadata-only.
 
 ### Fail-closed i retry
 
@@ -126,13 +130,14 @@ P-15. Przy `failed` po Zod: **nie** oznaczać summary jako sukcesu; dopuszczalny
 
 ### Nie wolno
 
-- Uruchamiać pełnego transcript→summary synchronicznie w handlerze HTTP `api`.
+- Uruchamiać pełnego transcript→summary synchronicznie w handlerze HTTP `api` (w tym reprocess / „Aktualizuj”).
 - Enqueue’ować jobów z workera „dla UI” z pominięciem api (demo i produkcyjny trigger v1: api).
 - Używać `summary.*` vendora jako kanonu.
 - Persystować stan pośredni w DB przed LLM (P-9).
 - Wykonywać redakcji wyłącznie „przy okazji” wewnątrz adaptera LLM bez osobnego, testowalnego kroku.
 - Egzekwować ACL użytkownika w workerze przy budowie kanonu.
 - Fat-adapter „wszystko Google+FF”; traktować Calendar jako magazyn audio; wołać FF przy braku zgody (norma prod).
+- Degradować istniejący kanon przy pustym re-fetchu (naruszenie P-7a upgrade-only).
 
 ## Zatwierdzony stack (obszar)
 
@@ -143,7 +148,7 @@ P-15. Przy `failed` po Zod: **nie** oznaczać summary jako sukcesu; dopuszczalny
 | Persistencja | Prisma + PostgreSQL |
 | Walidacja wyniku summary | Zod w workerze |
 | Źródło / LLM v0 | Mock treści + zaślepka Calendar/`gemini-notes`; LLM mock |
-| Źródło etap 1+ | Calendar (metadane) + `fireflies` \| `gemini-notes` wg zgody |
+| Źródło etap 1+ | Calendar (metadane + `description`) + `fireflies` \| `gemini-notes` wg `[record-ok]` |
 
 ## Kryteria akceptacji
 
@@ -161,5 +166,6 @@ P-15. Przy `failed` po Zod: **nie** oznaczać summary jako sukcesu; dopuszczalny
 - Pełny schemat tabel → `SPEC-DANE`.
 - Katalog `audit_log` / pino → `SPEC-OBSERVABILITY`.
 - **Działająca** egzekucja Calendar + `gemini-notes` / `fireflies` (OAuth, prawdziwy capture) — poza obecną wersją; w v0 zaślepka (Faza 3.7); obowiązkowa przy adapterach prod (**etap 1+**).
+- HTTP/UI **Aktualizuj źródło** (P-7a / K-5c) — poza obowiązkowym v0; obowiązkowe przy adapterach prod (**etap 1+**).
 - Redakcja NER nazwisk; klasy poza E+T+P+K.
 - Równoległe przetwarzanie segmentów / fan-out jobów.

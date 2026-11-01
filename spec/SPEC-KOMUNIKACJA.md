@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 11
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # SPEC - Komunikacja (powierzchnie I/O)
@@ -14,7 +14,7 @@ Zmiana względem wcześniejszej projekcji `GET /meetings` (element listy bez wyn
 
 Zmiana względem wcześniejszego ujęcia „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu ani do portu **pipeline** transcriptu. Osobny use case / port **on-demand nagrania** (K-5b) zwraca świeży URL. Przy **zgodzie** Fireflies = źródło transcriptu **i** nagrań (media u vendora); u nas kanon tekstu + on-demand link (`docs/dokumentacja_komunikacji.md`).
 
-**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar) oddzielony od portu **treści** (`mock` \| `fireflies` \| `gemini-notes`). On-demand FF (K-5b) **tylko** gałąź ze zgodą. Obecna wersja: mock + zaślepka (Faza 3.7); działające adaptery = etap 1+.
+**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar, w tym `description`) oddzielony od portu **treści** (`mock` \| `fireflies` \| `gemini-notes`). Zgoda na FF = tag **`[record-ok]`** w opisie. On-demand FF (K-5b) **tylko** przy tagu. Obecna wersja: mock + zaślepka (Faza 3.7); działające adaptery = etap 1+.
 
 ## Cel / zakres
 
@@ -62,6 +62,7 @@ K-2. Trasy v1 (semantyka jak w docs; ścieżki bazowe):
 | `GET` | `/meetings/:id` | tak | detail po ACL (API; UI v1 nie ma osobnej strony detail); rozszerza K-2a o pola dodatkowe |
 | `GET` | `/meetings/:id/recording` | tak | on-demand nagranie: JSON `{ url: string }`; ACL jak detail (K-5b) |
 | `GET` | `/meetings/:id/events` | tak | **SSE** statusów pipeline dla spotkania (ACL jak detail) |
+| `POST` | `/meetings/:id/reprocess` | tak | **etap 1+:** enqueue ponownego `meeting.process` (K-5c); poza obowiązkowym v0 |
 | `POST` | `/demo/run-meeting` | tak | enqueue joba `meeting.process` (mock/fixture); **bez** bramki env `DEMO_ENABLED` |
 
 K-2a. Element listy `GET /meetings` (DTO / `packages/contracts`, spójnie z `docs/dokumentacja_komunikacji.md`):
@@ -106,6 +107,15 @@ K-5b. On-demand nagranie - `GET /meetings/:id/recording`:
 - **zakaz** zapisu `audio_url` / `video_url` (lub równoważnego) do trwałego modelu `Meeting` — wyłącznie odpowiedź on-demand (`SPEC-DANE`);
 - BFF: cienkie proxy (np. `GET /api/meetings/:id/recording`) z przekazywaniem cookie.
 Zmiana względem: wcześniejsze ujęcie pól media FF „poza portem v1” bez osobnego use case — obowiązuje rozróżnienie portu **pipeline** transcript vs port/use case **on-demand** media; oraz zawężenie FF media do gałęzi ze zgodą.
+
+K-5c. **Aktualizuj źródło** - `POST /meetings/:id/reprocess` (**etap 1+**; poza obowiązkową implementacją v0):
+
+- wymaga sesji; brak ACL / brak zasobu → **404** (jak detail);
+- wyłącznie **enqueue** `meeting.process` z **istniejącym** `externalMeetingId` spotkania (`SPEC-PIPELINE` P-6 / P-7a) — **zakaz** synchronicznego fetchu Calendar/FF/Notes/Drive w handlerze;
+- odpowiedź: `meetingId`, `jobId`, status początkowy (np. `pending`) — spójnie z innymi enqueue;
+- **zakaz** tworzenia drugiego `Meeting`; **zakaz** traktowania endpointu jako syncu / downloadu nagrania (media = K-5b);
+- BFF (etap 1+): cienkie proxy (np. `POST /api/meetings/:id/reprocess`) z cookie.
+Zmiana względem: brak jawnego kontraktu HTTP dla recovery metadata-only — obowiązuje K-5c + docs `data_flow.md` §5a.
 
 ### BFF (`apps/web`, `app/api/*`)
 
@@ -174,9 +184,9 @@ K-11. Statusy widoczne dla API: `pending` → `processing` → `completed` | `fa
 
 ### Port źródła treści + port metadanych
 
-K-12. Minimalny kontrakt obiektu **treści** (jak w docs): `externalId`, `title`, `startedAt`, `participants[]` (`email`, `displayName`, `internal`), `segments[]` (`speaker`, `text`, `startMs`). Port **metadanych** (Calendar) jest osobny — fakt callu / uczestnicy indywidualni; nie zastępuje kontraktu transcriptu.
+K-12. Minimalny kontrakt obiektu **treści** (jak w docs): `externalId`, `title`, `startedAt`, `participants[]` (`email`, `displayName`, `internal`), `segments[]` (`speaker`, `text`, `startMs`). Port **metadanych** (Calendar) jest osobny — fakt callu / opcjonalne `description` / uczestnicy indywidualni; nie zastępuje kontraktu transcriptu. `MeetingMetadataPayload.description` niesie sygnał `[record-ok]`.
 
-K-12a. Wybór adaptera treści (norma prod / etap 1+): wg zgody — `fireflies` \| `gemini-notes` (`SPEC-PIPELINE` P-2a). Obecna wersja: happy-path **mock**; zaślepka `gemini-notes` / Calendar (Faza 3.7) **bez** wymogu prawdziwego Google w CI.
+K-12a. Wybór adaptera treści (norma prod / etap 1+): `[record-ok]` w `description` → `fireflies`; brak tagu → `gemini-notes` (`SPEC-PIPELINE` P-2a; `calendarDescriptionAllowsRecording`). Obecna wersja: happy-path **mock**; zaślepka `gemini-notes` / Calendar (Faza 3.7) **bez** wymogu prawdziwego Google w CI; helper tagu w `@vinseo/contracts` wolno testować bez Calendar.
 
 K-13. Typy kształtu wolno trzymać w `packages/contracts`. **Walidacja runtime (Zod) kontraktu źródła: w `apps/api` oraz `apps/worker`.** Zakaz Zod w `packages/` (`SPEC-ARCHITEKTURA`).
 
@@ -240,6 +250,7 @@ Bez dodatkowej biblioteki sesji / cookie poza praktyką Nest + Next uzgodnioną 
 ## Poza zakresem
 
 - Implementacja webhooka Fireflies, OAuth Google, działającego Calendar / `gemini-notes` (w v0: mock K-5b + zaślepka Faza 3.7; prod = etap 1+).
+- `POST /meetings/:id/reprocess` (K-5c) — poza obowiązkowym v0; obowiązkowe w etapie 1+.
 - UC2 / RAG / `POST /ask`.
 - Szczegóły redakcji PII i wywołania LlmClient.
 - Widoki React i copy przycisku Test / buttonu nagrania (`SPEC-FRONTEND`).

@@ -1,7 +1,7 @@
 ---
-wersja: 4
+wersja: 5
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-11-01
 ---
 
 # LLM i asystent
@@ -38,7 +38,7 @@ Wspólny port / adapter klienta LLM (redakcja przed wysyłką; w prod później:
 | Wyjście | JSON → Zod (`shortSummary`, `decisions`, `actionItems`) | Odpowiedź + wskazanie źródeł (meeting id / fragment) |
 | Gdzie | Worker, job `meeting.process` | API (po retrieval) |
 
-Model roboczy w rachunkach: **Gemini 3.5 Flash-Lite** (podstawowy); opcjonalnie po testach jakości UC1 - **Claude Haiku 5.5** (cennik i warianty w `koszty_i_warianty.md`). Wymiana modelu to konfiguracja adaptera - **nie** zmienia portu `LlmClient` ani use case’ów.
+Model roboczy w rachunkach: **Gemini 3.5 Flash-Lite** (podstawowy); opcjonalnie po testach jakości UC1, na późniejszych etapach - **Claude Sonnet 5.5** (cennik i warianty w `koszty_i_warianty.md`). Wymiana modelu to konfiguracja adaptera - **nie** zmienia portu `LlmClient` ani use case’ów.
 
 ## UC1 - summarizeMeeting (obowiązkowe w architekturze oddania)
 

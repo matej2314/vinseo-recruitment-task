@@ -1,7 +1,7 @@
 ---
-wersja: 13
+wersja: 16
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Słownik
@@ -15,7 +15,7 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Firmowy asystent spotkań** (Meeting Memory) | Wewnętrzny system pamięci ustaleń ze spotkań; własne źródło prawdy o spotkaniach, streszczeniach i uprawnieniach. |
 | **Spotkanie** (meeting) | Rekord callu w systemie: metadane, powiązania z klientem/projektem, status przetwarzania, powiązane artefakty. |
 | **Uczestnik** (participant) | Osoba obecna na spotkaniu (pracownik lub osoba zewnętrzna). Konto w systemie ma tylko pracownik. |
-| **Pracownik** (employee / internal user) | Użytkownik z kontem (e-mail + hasło); jedyny typ konta w v1. |
+| **Pracownik** (employee / internal user) | Użytkownik z kontem w systemie; jedyny typ konta. Etap 0: e-mail + hasło; etap 1+: tożsamość z Google Workspace (firmowy e-mail). |
 | **Klient** (client) | Firma lub osoba, dla której agencja prowadzi działania; w systemie: rekord z domeną e-mail do matchingu; powiązanie spotkań przez opcjonalne `clientId`. |
 | **Domena klienta** (`emailDomain`) | Domena z e-maili zewnętrznych uczestników używana do automatycznego matchingu (bez HubSpot). |
 | **Status linku klienta** (`clientLinkStatus`) | `internal` \| `matched` \| `unmatched` - wynik próby powiązania spotkania z `Client`. |
@@ -24,9 +24,11 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Organizator** (organizer) | Pracownik będący organizatorem wydarzenia; ścieżka ACL v1. |
 | **Uczestnik zewnętrzny** | E-mail poza domeną firmy; tylko metadane (bez konta). |
 | **Spotkanie poufne** (`confidential`) | Flaga ręczna (1:1, rekrutacja, zarząd itd.). |
-| **Metadata-only** | Rekord spotkania bez transcriptu/summary — **tylko** gdy źródło treści nie dostarcza materiału (np. puste Notes by Gemini przy braku zgody na nagrywanie). Sam brak zgody **nie** oznacza automatycznie metadata-only. |
-| **Zgoda na nagrywanie** (recording consent) | Zgoda zewnętrznego (klient / kandydat) na FF / audio. **Tak** → treść + nagranie z Fireflies; **nie** → bez FF/audio, treść z Notes by Gemini (`bezpieczenstwo_i_rodo.md`). |
-| **Notes by Gemini** | Tekstowe notatki / materiał z Google Meet (Workspace) — **fallback treści** przy braku zgody na nagrywanie; **nie** jest nagraniem FF ani magazynem audio. |
+| **Metadata-only** | Rekord spotkania bez transcriptu/summary — **tylko** gdy źródło treści nie dostarcza materiału (np. puste Notes by Gemini przy braku `[record-ok]`). Sam brak tagu **nie** oznacza automatycznie metadata-only. Stan może być **przejściowy** — odzyskanie treści przez **Aktualizuj źródło** (`data_flow.md`). |
+| **Aktualizuj źródło** (source refresh / re-ingest) | Akcja UI/API (etap 1+): dla istniejącego spotkania enqueue ponownego `meeting.process` z tym samym `externalMeetingId` — świeży fetch metadanych + treści, update in place, bez duplikatu. **Nie** synchroniczny sync Google w HTTP; **nie** ściąganie pliku nagrania (nagranie = on-demand). |
+| **Tag `[record-ok]`** | Token w **opisie** wydarzenia Google Calendar. Obecność → ścieżka Fireflies; brak → Notes by Gemini (bezpieczny default). Szablon Calendar; odczyt z Calendar API (`bezpieczenstwo_i_rodo.md`). |
+| **Zgoda na nagrywanie** (recording consent) | Operacyjnie: obecność `[record-ok]` w opisie Calendar (etap 1+). **Tak** → treść + nagranie z Fireflies; **nie** → bez FF/audio, treść z Notes by Gemini. |
+| **Notes by Gemini** | Tekstowe notatki / materiał z Google Meet (Workspace) — **fallback treści** przy braku `[record-ok]`; **nie** jest nagraniem FF ani magazynem audio. |
 | **Źródło treści** (`contentSource`) | Logiczna gałąź materiału: `fireflies` \| `gemini_notes` \| `none` (metadata-only). W schemacie Prisma przy adapterach prod (etap 1+), nie jako must-have zaślepki v0. |
 | **Erase treści** | Usunięcie transcriptu/summary (i nagrań u vendora); fakt callu (title, daty, duration, status, clientId) zostaje. |
 | **Kampania** (campaign) | Działanie reklamowe / sprzedażowe (często na Allegro lub innym marketplace); bywa tematem ustaleń w transkrypcie (wtrącenia EN). |
@@ -43,13 +45,14 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Źródło prawdy** (source of truth) | Kanoniczny stan w naszej bazie (Postgres), nie Notebook zewnętrznego notetakera. |
 | **Adapter źródła** (source adapter) | Implementacja portu pobierająca materiał (mock; docelowo `fireflies` \| `gemini-notes`) i mapująca na kontrakt portu. |
 | **Port źródła** (meeting source port) | Ustalony kształt wejścia **treści** do pipeline (m.in. `externalId`, uczestnicy, segmenty) - niezależny od schemy vendora. Oddzielony od portu **metadanych** (Calendar). |
-| **Port metadanych** (calendar metadata port) | Pobranie faktu callu / uczestników indywidualnych z Google Calendar; **nie** dostarcza audio ani transcriptu FF. |
+| **Port metadanych** (calendar metadata port) | Pobranie faktu callu / `description` / uczestników indywidualnych z Google Calendar; **nie** dostarcza audio ani transcriptu FF. Z `description` wynika sygnał `[record-ok]`. |
 | **Notetaker / Fireflies** | Zewnętrzna usługa capture **przy zgodzie** na nagrywanie: **transkrypcja i nagrania** (media u vendora); adapter wejścia transcriptu + źródło on-demand linku — nie firmowy magazyn plików. |
 | **On-demand link nagrania** (on-demand recording link) | Mechanizm: ACL jak detail → resolve świeżego URL (v0: mock `https://example.com/...`; prod: API FF **tylko** przy zgodzie). Odpowiedź JSON `{ url }`; **zakaz** trwałego `audio_url` / `video_url` w DB. |
-| **Button nagrania (demo v0)** | Przycisk w UI zawsze widoczny po zalogowaniu (demonstracja szkieletu); **docelowo** widoczność powiązana ze zgodą na nagrywanie — bez zgody brak buttonu FF (`bezpieczenstwo_i_rodo.md`). |
+| **Button nagrania (demo v0)** | Przycisk w UI zawsze widoczny po zalogowaniu (demonstracja szkieletu); **docelowo** widoczność powiązana z `[record-ok]` / zapisaną zgodą — bez tagu brak buttonu FF (`bezpieczenstwo_i_rodo.md`). |
 | **Zaślepka portów (Faza 3.7)** | Szkielet / NotImplemented portów Calendar + `gemini-notes` w `apps/worker` obecnej wersji; happy-path nadal mock; działająca logika = etap 1+. |
-| **ACL** (access control) | Reguły kto może odczytać spotkanie i artefakty; egzekwowane na API. |
+| **ACL** (access control) | Reguły kto może odczytać spotkanie i artefakty; egzekwowane na API. Niezależne od sposobu logowania (hasło vs Google). |
 | **Widoczność spotkania (ACL v1)** | Organizator **lub** uczestnik wewnętrzny **lub** admin. Egzekucja na `api` (także wyszukiwanie / asystent później). |
+| **IdP Google Workspace** | Logowanie pracowników kontem Google (domena firmowa) od etapu 1+; find-or-create `User` po e-mailu; **nie** jest credentials Calendar. |
 
 ## Przetwarzanie i jakość danych
 
@@ -87,7 +90,7 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Dziennik audytu** (`audit_log`) | Tabela w Postgresie na kluczowe zdarzenia biznesowe (auth, ACL, joby, demo, błędy walidacji summary); retencja 90 dni; odczyt v1 tylko ops/DB, bez HTTP. |
 | **Logi techniczne** (pino) | Strukturalne logi procesu na stdout - diagnostyka; nie zamiennik `audit_log`. |
 | **Cookie HttpOnly** | Przechowywanie sesji po stronie przeglądarki w sposób niedostępny dla JS strony. |
-| **bcrypt** | Hashowanie haseł przed zapisem i weryfikacja przy logowaniu. |
+| **bcrypt** | Hashowanie haseł przed zapisem i weryfikacja przy logowaniu e-mail/hasło (etap 0; opcjonalny fallback później). |
 | **Envelope błędu** | Wspólny JSON błędu API: `statusCode`, `message`, opcjonalnie `code`, `requestId`. |
 | **Wyszukiwarka (mock UI)** | Podstrona w `web` ze statycznymi wynikami; bez LLM/search API w v1. |
 
@@ -95,8 +98,9 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 
 | Hasło | Opis |
 |-------|------|
-| **Google Workspace** | Środowisko organizacji (Meet, Calendar, Drive); kontekst pracy firmy. |
+| **Google Workspace** | Środowisko organizacji (Meet, Calendar, Drive); kontekst pracy firmy; docelowo także IdP logowania pracowników. |
 | **Google Calendar API** | Źródło **metadanych** faktu callu (zawsze); uczestnicy indywidualni pod ACL — bez ekspansji grup. |
+| **OAuth Identity vs OAuth Calendar** | Login (OpenID) ustala sesję użytkownika; credentials Calendar/Notes to osobny flow integracji — **zakaz** łączenia w jeden „super-token”. |
 | **GraphQL Fireflies** | Publiczne API Fireflies do pobrania transcriptu (i ephemeral media URL) po ID. |
 | **Webhook V2 Fireflies** | Powiadomienie o zdarzeniu (np. `meeting.transcribed`) bez pełnej treści transcriptu w body. |
 | **Anti-corruption layer** | Świadome mapowanie schemy vendora na własny port - bez uzależnienia domeny od zewnętrznych nazw pól. |

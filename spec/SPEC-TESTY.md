@@ -1,5 +1,5 @@
 ---
-wersja: 11
+wersja: 12
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -78,7 +78,7 @@ T-11. **SSE:** przy uprawnionym użytkowniku strumień / zdarzenia statusu dla `
 T-11a. **Recording (on-demand):** `GET /meetings/:id/recording` — bez ACL → **404**; z ACL → **200** JSON `{ url }` z mocka (atrapa `https://example.com/...` lub równoważna zgodna z K-5b). **Zakaz** asercji na prawdziwe API Fireflies / sieć do FF. **Zakaz** oczekiwania kolumny / pola ephemeral media URL w DB (`SPEC-DANE` D-7b).
 Zmiana względem: brak DoD dla szkieletu nagrania — obowiązuje mock + ACL jak detail.
 
-T-11b. **Gałąź zgody / Gemini Notes (etap 1+ / gdy adaptery prod):** testy docelowe — „brak zgody → `gemini-notes` → UC1 gdy tekst”; „brak treści z Notes → metadata-only”. **CI v0 / zaślepka (Faza 3.7):** **nie** wymagane jako bloker; dopuszczalne lekkie testy rejestracji portu / że stub rzuca `NotImplemented` lub nie jest wołany na happy-path mock (szczegóły przy realizacji Fazy 3.7). **Zakaz** blokowania merge testami prawdziwego Google.
+T-11b. **Gałąź zgody / Gemini Notes (etap 1+ / gdy adaptery prod):** testy docelowe — „brak `[record-ok]` → `gemini-notes` → UC1 gdy tekst”; „`[record-ok]` → `fireflies`”; „brak treści z Notes → metadata-only”. **CI v0 / zaślepka (Faza 3.7):** **nie** wymagane jako bloker pełnej gałęzi Google; **wymagane** unit testy helpera `calendarDescriptionAllowsRecording` (tag w opisie). Dopuszczalne lekkie testy że stub Calendar / `gemini-notes` rzuca `NotImplemented` lub nie jest wołany na happy-path mock. **Zakaz** blokowania merge testami prawdziwego Google.
 
 T-12. **Audyt:** po deny ACL → `meeting.access.denied` bez treści spotkania; po fail Zod/job → odpowiedni `eventType`; writer nie utrwala raw transcriptu.
 

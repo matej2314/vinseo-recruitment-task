@@ -1,7 +1,7 @@
 ---
-wersja: 6
+wersja: 7
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Koszty i warianty
@@ -21,15 +21,15 @@ Orientacyjne koszty **miesięczne** Firmowego asystenta spotkań (PLN). To **mod
 | Model LLM - podstawowy | **Gemini 3.5 Flash-Lite** (`gemini-3.5-flash-lite`) | decyzja kosztów; UC1 + później UC2 |
 | Cennik Gemini - input | **0,30 USD / 1M tokenów** | [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing) (Standard) |
 | Cennik Gemini - output | **2,50 USD / 1M tokenów** | j.w. (output inkl. thinking) |
-| Model LLM - opcjonalny (po testach jakości) | **Claude Haiku 5.5** (`claude-haiku-5-5`) | ten sam port `LlmClient`; podmiana konfiguracją |
-| Cennik Haiku 5.5 - input (prompt ≤100k) | **0,10 USD / 1M tokenów** | [Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing) |
-| Cennik Haiku 5.5 - output (prompt ≤100k) | **0,50 USD / 1M tokenów** | j.w. |
+| Model LLM - opcjonalny (po testach jakości) | **Claude Sonnet 5.5** (`claude-sonnet-5-5`) | ten sam port `LlmClient`; podmiana konfiguracją |
+| Cennik Sonnet 5.5 - input | **2,00 USD / 1M tokenów** | [Models overview](https://platform.claude.com/docs/en/models/overview) |
+| Cennik Sonnet 5.5 - output | **10,00 USD / 1M tokenów** | j.w. |
 | Fireflies | **19 USD / seat / mies.** | ustalone |
 | Tokeny na spotkanie 45 min (założenie) | input **10 000**, output **800** | rząd wielkości transcript+prompt / summary+actions |
 
 **Uwaga tokenów:** 10k/800 to założenie inżynierskie (PL + diarization + prompt). Po pierwszym miesiącu prod warto podmienić średnią z telemetryki.
 
-**Uwaga Haiku >100k:** przy UC2 z długim kontekstem cennik Haiku 5.5 skacze do **0,50 / 2,50 USD** za 1M (in/out). W sumach poniżej liczymy tier ≤100k (UC1).
+**Uwaga Sonnet (long context / cache):** w sumach poniżej liczymy **cenę bazową** z overview (2 / 10 USD za 1M in/out). Cache, batch i ewentualny long-context mogą zmienić rachunek - weryfikacja przy UC2.
 
 ### Koszt LLM na jedno spotkanie - Gemini 3.5 Flash-Lite
 
@@ -45,18 +45,18 @@ C_{out} = \frac{800}{10^6} \times 2{,}50 = 0{,}002\ \mathrm{USD}
 C_{G/spotkanie} = 0{,}003 + 0{,}002 = 0{,}005\ \mathrm{USD} \approx 0{,}02\ \mathrm{PLN}
 \]
 
-### Koszt LLM na jedno spotkanie - Claude Haiku 5.5 (≤100k)
+### Koszt LLM na jedno spotkanie - Claude Sonnet 5.5
 
 \[
-C_{in} = \frac{10\,000}{10^6} \times 0{,}10 = 0{,}001\ \mathrm{USD}
+C_{in} = \frac{10\,000}{10^6} \times 2{,}00 = 0{,}02\ \mathrm{USD}
 \]
 
 \[
-C_{out} = \frac{800}{10^6} \times 0{,}50 = 0{,}0004\ \mathrm{USD}
+C_{out} = \frac{800}{10^6} \times 10{,}00 = 0{,}008\ \mathrm{USD}
 \]
 
 \[
-C_{H/spotkanie} = 0{,}001 + 0{,}0004 = 0{,}0014\ \mathrm{USD} \approx 0{,}006\ \mathrm{PLN}
+C_{S/spotkanie} = 0{,}02 + 0{,}008 = 0{,}028\ \mathrm{USD} \approx 0{,}11\ \mathrm{PLN}
 \]
 
 ### Koszt LLM miesięcznie
@@ -64,9 +64,9 @@ C_{H/spotkanie} = 0{,}001 + 0{,}0004 = 0{,}0014\ \mathrm{USD} \approx 0{,}006\ \
 | Model | 400 spotkań | 160 spotkań (~40% h) |
 |-------|-------------|----------------------|
 | Gemini 3.5 Flash-Lite | \(400 \times 0{,}005 = 2{,}00\) USD ≈ **8 PLN** | \(160 \times 0{,}005 = 0{,}80\) USD ≈ **3 PLN** |
-| Claude Haiku 5.5 | \(400 \times 0{,}0014 = 0{,}56\) USD ≈ **2 PLN** | \(160 \times 0{,}0014 = 0{,}224\) USD ≈ **1 PLN** |
+| Claude Sonnet 5.5 | \(400 \times 0{,}028 = 11{,}20\) USD ≈ **45 PLN** | \(160 \times 0{,}028 = 4{,}48\) USD ≈ **18 PLN** |
 
-Przy tym wolumenie Haiku 5.5 jest **tańszy** na samym LLM niż Gemini Flash-Lite. Opcja po testach to decyzja **jakości** (PL, structured JSON / Zod), nie droższy uplift.
+Przy tym wolumenie Sonnet 5.5 jest **droższy** na samym LLM niż Gemini Flash-Lite (delta ok. **+37 PLN**/mies. przy 400 spotkaniach). Opcja po testach to decyzja **jakości** (PL, structured JSON / Zod), nie oszczędność tokenów.
 
 ### Fireflies (seaty)
 
@@ -110,29 +110,29 @@ Capture treści: Notes by Gemini / Meet w Workspace (koszt **przyrostowy 0** w t
 
 ---
 
-## Wariant 2 - opcjonalnie po testach: Claude Haiku 5.5
+## Wariant 2 - opcjonalnie po testach: Claude Sonnet 5.5
 
 Ten sam port `LlmClient` / jedna integracja; model ustawiany konfiguracją po A/B jakości (PL + walidacja Zod). Nie wprowadzamy drugiej ścieżki „tylko do asystenta”.
 
-### 2A - Fireflies + Haiku 5.5 + VPS
+### 2A - Fireflies + Sonnet 5.5 + VPS
 
 | Składnik | PLN / mies. |
 |----------|-------------|
 | Fireflies (25 seatów) | **1 900** |
-| LLM Haiku (400) | **≈ 2** |
+| LLM Sonnet (400) | **≈ 45** |
 | VPS | **80–150** |
-| **Suma 2A** | **≈ 1 982 – 2 052** |
+| **Suma 2A** | **≈ 2 025 – 2 095** |
 
-### 2B - Workspace-lean + Haiku 5.5 + VPS
+### 2B - Workspace-lean + Sonnet 5.5 + VPS
 
 | Składnik | PLN / mies. |
 |----------|-------------|
 | Fireflies | **0** |
-| LLM Haiku (400) | **≈ 2** |
+| LLM Sonnet (400) | **≈ 45** |
 | VPS | **80–150** |
-| **Suma 2B** | **≈ 82 – 152** |
+| **Suma 2B** | **≈ 125 – 195** |
 
-Delta LLM Gemini → Haiku przy 400 spotkaniach: **≈ −6 PLN/mies.** (Haiku tańszy). Decyzja o przejściu = jakość / DPA / preferencja vendora, nie rachunek tokenów.
+Delta LLM Gemini → Sonnet przy 400 spotkaniach: **≈ +37 PLN/mies.** Decyzja o przejściu = jakość / DPA / preferencja vendora; uplift tokenów jest mały względem seatów FF.
 
 ---
 
@@ -140,12 +140,12 @@ Delta LLM Gemini → Haiku przy 400 spotkaniach: **≈ −6 PLN/mies.** (Haiku t
 
 Produktowo typy spotkań mają **równy priorytet**; A’ to **wariant kosztowy** (mniej godzin capture/LLM), nie „najpierw tylko klienci”. Założenie: **40% godzin** = \(0{,}4 \times 300 = 120\) h → **160** spotkań.
 
-| Składnik | Gemini (160) | Haiku (160) |
-|----------|--------------|-------------|
+| Składnik | Gemini (160) | Sonnet (160) |
+|----------|--------------|--------------|
 | Fireflies 25 seatów | 1 900 | 1 900 |
-| LLM | ≈ 3 | ≈ 1 |
+| LLM | ≈ 3 | ≈ 18 |
 | VPS | 80–150 | 80–150 |
-| **Suma (25 seatów)** | **≈ 1 983 – 2 053** | **≈ 1 981 – 2 051** |
+| **Suma (25 seatów)** | **≈ 1 983 – 2 053** | **≈ 1 998 – 2 068** |
 
 Jeśli firma ograniczy seata do np. **15** hostów:
 
@@ -153,14 +153,14 @@ Jeśli firma ograniczy seata do np. **15** hostów:
 15 \times 19 = 285\ \mathrm{USD} \approx 1\,140\ \mathrm{PLN}
 \]
 
-| Składnik | PLN / mies. (Gemini 160) | PLN / mies. (Haiku 160) |
-|----------|--------------------------|-------------------------|
+| Składnik | PLN / mies. (Gemini 160) | PLN / mies. (Sonnet 160) |
+|----------|--------------------------|--------------------------|
 | Fireflies (15 seatów) | **1 140** | **1 140** |
-| LLM | **≈ 3** | **≈ 1** |
+| LLM | **≈ 3** | **≈ 18** |
 | VPS | **80–150** | **80–150** |
-| **Suma** | **≈ 1 223 – 1 293** | **≈ 1 221 – 1 291** |
+| **Suma** | **≈ 1 223 – 1 293** | **≈ 1 238 – 1 308** |
 
-Oszczędność LLM przy A’ jest marginalna; główny zysk to **mniej danych u vendora** i ewentualnie **mniej seatów FF**.
+Oszczędność LLM przy A’ jest marginalna względem FF; główny zysk to **mniej danych u vendora** i ewentualnie **mniej seatów FF**.
 
 ---
 
@@ -170,8 +170,8 @@ Oszczędność LLM przy A’ jest marginalna; główny zysk to **mniej danych u 
 |---------|---------|-----|-----|---------------------|
 | **1A** Gemini + FF 25 | 1 900 | ≈ 8 | 80–150 | **≈ 1 988 – 2 058** |
 | **1B** Gemini + Workspace | 0* | ≈ 8 | 80–150 | **≈ 88 – 158** |
-| **2A** Haiku + FF 25 | 1 900 | ≈ 2 | 80–150 | **≈ 1 982 – 2 052** |
-| **2B** Haiku + Workspace | 0* | ≈ 2 | 80–150 | **≈ 82 – 152** |
+| **2A** Sonnet + FF 25 | 1 900 | ≈ 45 | 80–150 | **≈ 2 025 – 2 095** |
+| **2B** Sonnet + Workspace | 0* | ≈ 45 | 80–150 | **≈ 125 – 195** |
 | A’ 15 seatów, 160, Gemini | 1 140 | ≈ 3 | 80–150 | **≈ 1 2xx** |
 
 \*przyrostowo względem istniejącego Google Workspace.
@@ -179,11 +179,11 @@ Oszczędność LLM przy A’ jest marginalna; główny zysk to **mniej danych u 
 ## Rekomendacja decyzyjna (skrót)
 
 - **Start:** wariant **1** (Gemini 3.5 Flash-Lite) + capture **1B**, **1A / A’ z mniejszą liczbą seatów**, albo **hybryda per zgoda** (FF gdy zgoda; Gemini Notes gdy odmowa) — zależnie od UX diarization vs opex i procesu zgód.
-- **Po pierwszych testach jakości UC1:** ewentualnie przełączyć na **Haiku 5.5** (wariant 2) bez zmiany architektury - ten sam adapter LLM.
-- LLM przy obu cennikach **nie jest** głównym kosztem przy 300 h/mies. w tym modelu tokenów; rachunek przesuwa **Fireflies (seaty)** lub jego brak.
+- **Po pierwszych testach jakości UC1:** ewentualnie przełączyć na **Sonnet 5.5** (wariant 2) bez zmiany architektury - ten sam adapter LLM.
+- LLM przy obu cennikach **nie jest** głównym kosztem przy 300 h/mies. w tym modelu tokenów (nawet Sonnet ≈ 45 PLN); rachunek przesuwa **Fireflies (seaty)** lub jego brak.
 - **Obecna wersja kodu:** normy w docs; opex vendor ≈ 0 (mock + zaślepka portów, major 3.7). **Etap 1+:** pierwsze wejście działającej logiki Calendar + FF / Gemini Notes.
 
-**Uwaga Q&A (UC2):** koszt asystenta = f(N pytań/mies. × tokeny kontekstu; u Haiku także próg 100k). **Nie jest wliczony** w sumy powyżej - doliczyć osobno przy włączeniu etapu 2. Ten sam provider / klucz API co UC1 (bez drugiej integracji).
+**Uwaga Q&A (UC2):** koszt asystenta = f(N pytań/mies. × tokeny kontekstu; u Sonnet także cache / ewentualny long-context). **Nie jest wliczony** w sumy powyżej - doliczyć osobno przy włączeniu etapu 2. Ten sam provider / klucz API co UC1 (bez drugiej integracji).
 
 Praca własna zespołu (dev) i ewentualny DPA/legal - **poza** tą tabelą opex narzędzi.
 

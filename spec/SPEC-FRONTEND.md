@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 10
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # SPEC - Frontend (`apps/web`)
@@ -14,7 +14,7 @@ Norma implementacji warstwy Next.js: auth UI, dashboard z tabelą, mock wyszukiw
 - BFF jako cienkie proxy; aktualizacja tabeli po demo przez **SSE** (bez osobnej trasy detail UI); on-demand nagranie przez BFF.
 - Zakaz przenoszenia ACL i sekretów do przeglądarki.
 
-**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG, UI zbierania zgody / egzekucja gałęzi Gemini Notes w obecnym UI, egzekucja widoczności buttonu nagrania wg zgody (must-have etap 1+ / po FF + procesie zgód; norma produktowa w docs).
+**Poza tą wersją:** pełny panel produktowy (w tym admin erase treści / ręczne `clientId`), branding, Q&A UI, dark mode jako wymóg, PWA, Playwright E2E, ukrywanie Test za flagą UI, prawdziwa wyszukiwarka/RAG, UI zbierania zgody / egzekucja gałęzi Gemini Notes w obecnym UI, egzekucja widoczności buttonu nagrania wg zgody (must-have etap 1+ / po FF + procesie zgód; norma produktowa w docs), button **Aktualizuj źródło** (F-7b; must-have etap 1+).
 
 ## Powiązanie ze stylem z docs
 
@@ -60,6 +60,9 @@ F-7a. **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakre
 **Norma docelowa (etap 1+ / prod):** brak mechanizmu nagrania FF **bez** zgody na nagrywanie (brak buttonu); wyjątek demo v0 powyżej **nie** otwiera nagrania FF bez zgody w prod i **nie** jest sprzeczny z regułą prod. UI obecnej wersji **nie** musi egzekwować gałęzi Gemini Notes ani modelu zgody.
 Zmiana względem: brak normy UI dla nagrania — obowiązuje szkielet on-demand przez BFF/API (`SPEC-KOMUNIKACJA` K-5b) + jawny rozdział demo v0 vs prod.
 
+F-7b. **Aktualizuj źródło (etap 1+; poza UI v0):** w wierszu tabeli (głównie metadata-only / `failed`) przycisk **„Aktualizuj”** → BFF → `POST /api/meetings/:id/reprocess` (`SPEC-KOMUNIKACJA` K-5c) → SSE jak po enqueue. **Zakaz** synchronicznego syncu Google/FF w UI/BFF; **zakaz** mylenia z buttonem nagrania (F-7a / K-5b).
+Zmiana względem: brak normy UI recovery niepełnego rekordu.
+
 F-8. Po sukcesie enqueue:
 1. UI używa `meetingId` z odpowiedzi (własny run sesji) i otwiera **SSE** (przez BFF) dla tego id (`SPEC-KOMUNIKACJA`).
 2. Użytkownik **zostaje** na bieżącym widoku.
@@ -82,7 +85,7 @@ F-12. **Zakaz** wołania LLM, endpointu search/RAG oraz UC2 z tej podstrony w v1
 
 ### BFF
 
-F-13. Route Handlers w `app/api/*`: proxy auth, meetings (lista/detail API jeśli potrzebne), demo, **recording** (`/meetings/:id/recording`), **SSE**; ustawianie / przekazywanie cookie HttpOnly.
+F-13. Route Handlers w `app/api/*`: proxy auth, meetings (lista/detail API jeśli potrzebne), demo, **recording** (`/meetings/:id/recording`), **SSE**; (etap 1+) **reprocess** (`/meetings/:id/reprocess`); ustawianie / przekazywanie cookie HttpOnly.
 
 F-14. BFF nie egzekwuje ACL, nie enqueue’uje pg-boss bezpośrednio, nie woła adapterów źródła/LLM / media.
 

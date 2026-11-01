@@ -16,7 +16,8 @@ export interface FetchMeetingMetadataInput {
  * Zakaz: ekspansja grup Workspace; Calendar ≠ magazyn audio.
  *
  * Etap 1+: GoogleCalendarMeetingMetadataAdapter za MEETING_METADATA_PORT —
- * ten sam kształt MeetingMetadataPayload; uczestnicy wyłącznie indywidualni.
+ * ten sam kształt MeetingMetadataPayload (w tym `description` pod tag `[record-ok]`);
+ * uczestnicy wyłącznie indywidualni.
  */
 export interface MeetingMetadataPort {
   fetch(input: FetchMeetingMetadataInput): Promise<MeetingMetadataPayload>;

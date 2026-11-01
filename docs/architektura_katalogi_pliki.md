@@ -1,7 +1,7 @@
 ---
-wersja: 10
+wersja: 11
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Architektura katalogów i plików
@@ -18,7 +18,7 @@ Docelowe (i obowiązujące) drzewo monorepo Firmowego asystenta spotkań. Układ
 │   │   │   ├── main.ts
 │   │   │   ├── app.module.ts
 │   │   │   ├── config/               # zwalidowana konfiguracja procesu
-│   │   │   ├── auth/                 # e-mail/hasło, bcrypt, sesja / cookies
+│   │   │   ├── auth/                 # etap 0: e-mail/hasło, bcrypt; etap 1+: + IdP Google; sesja / cookies
 │   │   │   ├── users/
 │   │   │   ├── meetings/             # odczyt/zapis spotkań (cienkie controllery)
 │   │   │   ├── access/               # reguły ACL (osobny moduł)

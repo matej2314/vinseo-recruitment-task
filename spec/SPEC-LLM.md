@@ -1,7 +1,7 @@
 ---
-wersja: 2
+wersja: 3
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-30
+data_modyfikacji: 2026-11-01
 ---
 
 # SPEC - LLM i streszczenie (UC1)
@@ -39,7 +39,8 @@ L-2. Adaptery za portem:
 | **mock** | **Obowiązkowy i jedyny używany w v1 kodu** - zero wychodzących requestów HTTP do API modelu |
 | **prod** | Dozwolony kształt implementacji na później; podmiana bez zmiany `summarizeMeeting` |
 
-L-3. Klient HTTP / SDK po stronie prod: **dowolny**, o ile spełnia port. Vendor i model są wymienne (docs wskazują roboczo **Gemini 3.5 Flash-Lite** na start oraz opcjonalnie **Claude Haiku 5.5** po testach jakości - `docs/koszty_i_warianty.md`, `docs/llm_i_asystent.md`). To **nie** sztywni SPEC do jednego SDK; decyzja modelu = konfiguracja adaptera.
+L-3. Klient HTTP / SDK po stronie prod: **dowolny**, o ile spełnia port. Vendor i model są wymienne (docs wskazują roboczo **Gemini 3.5 Flash-Lite** na start oraz opcjonalnie **Claude Sonnet 5.5** po testach jakości, na późniejszych etapach - `docs/koszty_i_warianty.md`, `docs/llm_i_asystent.md`). To **nie** sztywni SPEC do jednego SDK; decyzja modelu = konfiguracja adaptera.
+Zmiana względem: wcześniejsze wskazanie opcjonalne **Claude Haiku 5.5** (L-3 / docs kosztów). Powód: model alternatywny po testach = Sonnet 5.5.
 
 L-4. Klucze API i sekrety providera: wyłącznie po stronie serwera (`api` / `worker`). **Zakaz** użycia w `apps/web` i w bundlu klienta.
 

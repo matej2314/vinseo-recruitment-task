@@ -1,7 +1,7 @@
 ---
-wersja: 10
+wersja: 15
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Architektura - Firmowy asystent spotkań
@@ -21,7 +21,7 @@ v1: **bez** bogatej warstwy klas domenowych (encje DDD, domain events „wszędz
 - Jedna organizacja, jedna instalacja, **jedna baza PostgreSQL** (stan domenowy, pg-boss oraz tabela audytu **`audit_log`** - trwały ślad kluczowych zdarzeń biznesowych; to nie jest event sourcing ani zamiennik logów procesu).
 - Trzy procesy runtime: **`api`**, **`worker`**, **`web`** - wspólny kod kontraktów w monorepo, bez rozbijania na mikroserwisy per capability.
 - Integracje zewnętrzne przez **porty i adaptery** (hexagonal na granicach I/O): **port metadanych** (Calendar) **oddzielony** od **portu treści** (adaptery `mock` \| `fireflies` \| `gemini-notes`); **jeden** provider LLM. **Zakaz fat-adaptera** „wszystko Google+FF w jednym”.
-- Fireflies (przy zgodzie) dostarcza **transcript** (+ media on-demand); Gemini Notes (przy braku zgody) — materiał tekstowy. Kanoniczne streszczenie i zadania powstają u nas (UC1 LLM). Obiekt `summary.*` z Fireflies **ignorujemy**. Calendar **nie** jest magazynem nagrania. Szczegóły: `llm_i_asystent.md`, `bezpieczenstwo_i_rodo.md`.
+- Fireflies (gdy w opisie Calendar jest `[record-ok]`) dostarcza **transcript** (+ media on-demand); Gemini Notes (brak tagu) — materiał tekstowy. Kanoniczne streszczenie i zadania powstają u nas (UC1 LLM). Obiekt `summary.*` z Fireflies **ignorujemy**. Calendar **nie** jest magazynem nagrania; z Calendar bierzemy m.in. `description` pod sygnał zgody. Szczegóły: `llm_i_asystent.md`, `bezpieczenstwo_i_rodo.md`.
 - **Obecna wersja:** mock treści na happy-path; **zaślepka** portów Calendar / `gemini-notes` (major Faza 3.7). **Etap 1+:** działająca logika na tych samych portach.
 
 Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątków „bogatszego DDD tylko w jednym module”.
@@ -74,7 +74,7 @@ Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątkó
 
 | Proces | Robi | Nie robi |
 |--------|------|----------|
-| **api** | Logowanie (e-mail/hasło), sesja, egzekwowanie ACL, API domenowe dla BFF | Długiego przetwarzania transcript→summary w requestcie synchronicznym |
+| **api** | Auth użytkowników (etap 0: e-mail/hasło; etap 1+: Google Workspace IdP), sesja, egzekwowanie ACL, API domenowe dla BFF | Długiego przetwarzania transcript→summary w requestcie synchronicznym |
 | **worker** | Joby pg-boss, kroki pipeline, wywołania portów (mock źródła / mock summary) | Publicznego API dla przeglądarki; decyzji „czy user X może to zobaczyć” przy serwowaniu UI |
 | **web** | Cookie HttpOnly, BFF, sidebar (tabela+Test / mock wyszukiwarka) | Reguł uprawnień do treści spotkań |
 
@@ -100,9 +100,10 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 
 ### Użytkownicy (pracownicy)
 
-- Rejestracja / logowanie: **e-mail + hasło**. Rejestracja v1 **otwarta** (bez zaproszenia); po sukcesie register **od razu cookie sesji** (jak login).
-- Hasła: **bcrypt** przed zapisem; przy rejestracji min. **12** znaków, ≥1 wielka, ≥1 cyfra, ≥1 specjalny.
-- Sesja: **access JWT (TTL 15 min)** + **refresh** (hash w PostgreSQL); oba w cookie **HttpOnly** (BFF przekazuje); rotacja `POST /auth/refresh`. Treść sekretna nie w `localStorage` / `sessionStorage`. Szczegóły: `spec/SPEC-AUTH_I_ACL.md`.
+- **Obecna wersja / etap 0:** rejestracja / logowanie **e-mail + hasło**. Rejestracja **otwarta** (bez zaproszenia); po sukcesie register **od razu cookie sesji** (jak login). Hasła: **bcrypt**; min. **12** znaków, ≥1 wielka, ≥1 cyfra, ≥1 specjalny. Norma implementacji etapu 0: `spec/SPEC-AUTH_I_ACL.md`.
+- **Kolejne etapy (od etapu 1 / pilota):** **logowanie kontem Google Workspace** (domena firmowa) jako główny IdP. Po weryfikacji u Google: find-or-create `User` po firmowym e-mailu → **ta sama** sesja aplikacji. Cel koncepcyjny: tożsamość w aplikacji = tożsamość Workspace od początku pracy z Calendar (ten sam e-mail co organizator / uczestnik wewnętrzny). ACL v1 **bez zmian**.
+- **Rozdział OAuth:** token / consent **logowania (OpenID)** ≠ credentials **integracji** Calendar / Notes / Drive (worker / admin). Zakaz używania tokenu logowania użytkownika jako uniwersalnego klucza do pipeline’u.
+- Sesja (niezależnie od IdP): **access JWT (TTL 15 min)** + **refresh** (hash w PostgreSQL); oba w cookie **HttpOnly** (BFF przekazuje); rotacja `POST /auth/refresh`. Treść sekretna nie w `localStorage` / `sessionStorage`.
 - Tylko pracownicy firmy mają konta (zgodnie z koncepcją produktu).
 - Lista spotkań: paginacja backendowa - `limit` ∈ {10,25,50,100} oraz **`page`** (nie cursor).
 
@@ -110,6 +111,7 @@ Katalog **`packages/`** trzyma **wspólne definicje kontraktów** (typy TypeScri
 
 - Wywołania do zewnętrznych API w obecnej wersji: **mock** treści + **zaślepka** Calendar / `gemini-notes` — bez prawdziwych credentiali / OAuth Google w happy-path.
 - Docelowa podmiana adapterów (Calendar metadane; `fireflies` \| `gemini-notes` treści) nie powinna wymagać przepisywania use case'ów pipeline'u ani łączenia obu portów w fat-adapter.
+- Etap 1+: OAuth / credentials **Calendar** pozostają osobne od logowania Google pracowników (`dokumentacja_koncepcyjna.md`, `bezpieczenstwo_i_rodo.md`).
 
 ### Autoryzacja (ACL)
 
@@ -126,10 +128,10 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 
 ## Pipeline spotkania
 
-1. Pojawia się materiał źródłowy (obecna wersja: mock; etap 1+: metadane z Calendar + treść z `fireflies` lub `gemini-notes` wg zgody).
+1. Pojawia się materiał źródłowy (obecna wersja: mock; etap 1+: metadane z Calendar + treść z `fireflies` lub `gemini-notes` wg `[record-ok]`).
 2. Enqueue job (klucz idempotencji: zewnętrzne ID spotkania / transcriptu).
 3. Worker: pobranie treści → normalizacja → **redakcja (E+T+P+K)** → **UC1 summarizeMeeting** (LlmClient mock/prod) → walidacja Zod → zapis. Bez użycia `summary` z Fireflies. Brak materiału treści → metadata-only (bez UC1).
-4. Ponowne uruchomienie tego samego klucza: **update in place**, bez drugiego rekordu spotkania.
+4. Ponowne uruchomienie tego samego klucza: **update in place**, bez drugiego rekordu spotkania. Obejmuje też produktowe **Aktualizuj źródło** (etap 1+): UI/API tylko enqueue; worker ponawia fetch Calendar + treści. Nagranie FF **nie** wchodzi do joba — nadal on-demand (`data_flow.md`).
 5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** wywołaniem LlmClient; po udanym Zod - persist. Niepoprawne summary **nie** trafia do bazy jako sukces (quarantine / failed; max 1 retry JSON).
 
 ## Granica „na zewnątrz” i redakcja
@@ -150,7 +152,7 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 | Kontrakty współdzielone | `packages/` (typy; bez Zod) |
 | Walidacja HTTP | class-validator + class-transformer |
 | Walidacja wyniku AI / summary | Zod w aplikacji |
-| LLM | Jeden port `LlmClient` (podstawowo Gemini 3.5 Flash-Lite; opcjonalnie Haiku 5.5 po testach - `koszty_i_warianty.md`); UC1 summarize + UC2 ask później |
+| LLM | Jeden port `LlmClient` (podstawowo Gemini 3.5 Flash-Lite; opcjonalnie Claude Sonnet 5.5 po testach, na późniejszych etapach - `koszty_i_warianty.md`); UC1 summarize + UC2 ask później |
 | Testy | Jest |
 
 ## Anty-patterny, których unikamy (architektonicznie)

@@ -1,7 +1,7 @@
 ---
-wersja: 6
+wersja: 8
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Bezpieczeństwo i RODO
@@ -21,7 +21,7 @@ Szerszy kontekst produktu: `dokumentacja_koncepcyjna.md`. ACL i redakcja w kodzi
 
 | Kategoria | Przykłady | Gdzie w systemie |
 |-----------|-----------|------------------|
-| Konto pracownika | e-mail, hash hasła | Postgres; hasło tylko bcrypt |
+| Konto pracownika | e-mail firmowy; etap 0: hash hasła; etap 1+: IdP Google (`googleSub` / e-mail Workspace), opcjonalnie hash hasła (break-glass) | Postgres; hasło tylko bcrypt gdy używane |
 | Metadane spotkania | tytuł, czas, czas trwania, `clientId`, status linku, `processingStatus` | Postgres |
 | Treść wrażliwa | transcript, summary, action items, e-maile zewnętrznych | Postgres pod ACL; **nie** w pino / `audit_log` jako treść |
 | Audyt | eventType, id, requestId | `audit_log` (90 dni); przy erase - anonimizacja |
@@ -33,16 +33,18 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 
 ### Zasada v1 (robocza)
 
-**Jawna zmiana normy** względem wcześniejszego zapisu „brak zgody → brak capture / czyste metadata-only bez transcriptu / AI”: odmowa dotyczy **nagrywania** (Fireflies / audio), nie automatycznie każdej treści tekstowej.
+**Jawna zmiana normy** względem wcześniejszego zapisu „brak zgody → brak capture / czyste metadata-only bez transcriptu / AI”: brak zgody dotyczy **nagrywania** (Fireflies / audio), nie automatycznie każdej treści tekstowej.
 
-1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży).
-2. **Metadane faktu callu** (tytuł, czas, uczestnicy indywidualni): **zawsze** z **Google Calendar** (ew. Meet w zakresie linku / czasu) — niezależnie od zgody na nagrywanie.
-3. **Zgoda** zewnętrznego (klient / kandydat) na nagrywanie → treść + nagranie: **Fireflies** (transcript do pipeline; nagranie wyłącznie on-demand — `dokumentacja_komunikacji.md`).
-4. **Brak zgody** na nagrywanie → **zakaz FF / audio** (brak buttonu / on-demand linku FF w produkcji); źródło informacji = **Notes by Gemini** (Google Meet / Workspace). Gdy Notes dostarcza materiał tekstowy → redakcja E+T+P+K + **UC1** + Zod. **Metadata-only** (bez transcriptu / AI) **tylko** gdy Gemini Notes **nie** dostarcza treści.
-5. **Docelowo (produkcja / po procesie zgód):** widoczność mechanizmu nagrania w UI jest powiązana ze **zgodą na nagrywanie** (bez zgody — brak buttonu / on-demand FF).
+**Sygnał zgody na nagrywanie (etap 1+):** w polu **opisu** wydarzenia Google Calendar (`description`) token **`[record-ok]`** (dowolne miejsce w tekście; match bez rozróżniania wielkości liter). **Jest tag** → ścieżka Fireflies. **Brak tagu** → bezpieczny default: Notes by Gemini (bez FF / audio). Tag widać w UI Calendar; najwygodniej w firmowym **szablonie** wydarzenia. Wynik mapujemy na stan zgody / `contentSource` w naszej bazie i API.
+
+1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży); przy nagrywaniu — tag `[record-ok]` w opisie eventu.
+2. **Metadane faktu callu** (tytuł, czas, opis, uczestnicy indywidualni): **zawsze** z **Google Calendar** (ew. Meet w zakresie linku / czasu) — niezależnie od ścieżki treści.
+3. **`[record-ok]` w opisie** → treść + nagranie: **Fireflies** (transcript do pipeline; nagranie wyłącznie on-demand — `dokumentacja_komunikacji.md`).
+4. **Brak `[record-ok]`** → **zakaz FF / audio** (brak buttonu / on-demand linku FF w produkcji); źródło informacji = **Notes by Gemini** (Google Meet / Workspace). Gdy Notes dostarcza materiał tekstowy → redakcja E+T+P+K + **UC1** + Zod. **Metadata-only** (bez transcriptu / AI) **tylko** gdy Gemini Notes **nie** dostarcza treści.
+5. **Docelowo (produkcja):** widoczność mechanizmu nagrania w UI powiązana z obecnością `[record-ok]` / zapisaną zgodą (bez tagu — brak buttonu / on-demand FF).
 6. **Etap 0 / demo (świadomy wyjątek):** przycisk nagrania w UI jest **zawsze widoczny** w celach demonstracyjnych szkieletu on-demand — to **nie** jest docelowa norma produkcyjna.
 7. Bot / Notetaker na callu jest widoczny; ewentualny Meet SDK też wymaga zgody w UI Google - proces firmowy musi to uwzględniać.
-8. **Obecna wersja (kod):** happy-path = mock źródła + mock LLM (w tym mock URL nagrania); **zaślepka** portów metadanych (Calendar) i treści `gemini-notes` — major backend **Faza 3.7**; **bez** prawdziwego OAuth / Calendar / Gemini Notes. **Działająca** logika Calendar + wybór `fireflies` \| `gemini-notes` wg zgody = **etap 1 (pilot) / kolejna wersja** (`plan_wdrozenia_etapy.md`), na tych samych portach.
+8. **Obecna wersja (kod):** happy-path = mock źródła + mock LLM (w tym mock URL nagrania); **zaślepka** portów metadanych (Calendar) i treści `gemini-notes` — major backend **Faza 3.7**; helper `calendarDescriptionAllowsRecording` w `@vinseo/contracts`. **Działająca** egzekucja tagu + wybór `fireflies` \| `gemini-notes` = **etap 1 (pilot) / kolejna wersja** (`plan_wdrozenia_etapy.md`).
 
 ### Nagranie a nasza baza
 
@@ -87,6 +89,13 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 - `audit_log` powiązany ze spotkaniem: **anonimizacja** (bez treści, bez PII klienta w payloadzie; identyfikatory zdarzeń mogą pozostać).
 - Spotkanie po erase nadal podlega ACL v1 (organizator/uczestnik/admin widzą „pustą” kartę faktu).
 
+## Tożsamość (auth) a Workspace
+
+- **Etap 0:** e-mail + hasło; oczekiwany adres firmowy jak w Workspace (konwencja, nie egzekucja IdP).
+- **Etap 1+:** logowanie kontem **Google Workspace** (domena firmowa) — find-or-create `User` po firmowym e-mailu. Dzięki temu tożsamość aplikacji jest od początku zsynchronizowana z e-mailem, który Calendar zapisuje jako organizatora / uczestnika wewnętrznego.
+- Logowanie Google **nie zmienia** ACL v1 i **nie** przyznaje dostępu przez grupy Workspace.
+- **Rozdział:** OAuth / OpenID **logowania pracowników** ≠ OAuth / service credentials **Calendar / Notes / Drive** (integracja w `api`/`worker`). Token sesji aplikacji (JWT) nie zastępuje credentials vendora.
+
 ## Dostęp (ACL) a prywatność
 
 - Egzekucja wyłącznie na `api`: **organizator** ∨ **uczestnik** ∨ **admin**.
@@ -111,8 +120,9 @@ Po upływie: hard delete transcriptu preferowany po 90 dniach; summary/action it
 | Notes by Gemini (prod, **przy braku zgody** na nagrywanie) | Fallback **treści** (notatki / tekst z Meet); **bez** audio FF; jest materiał → UC1; brak / pusty materiał → metadata-only. |
 | LLM (jeden provider) | Tylko treść **po redakcji**; UC1 + później UC2; w MVP kodu - mock bez requestów. |
 | HubSpot | **Brak integracji**; najwyżej wzmianka w docs decyzyjnych. |
-| Minimalne uprawnienia Google | Calendar / Meet / Docs / Drive **tylko** w zakresie wybranego adaptera — **bez osłabienia** scope’ów „na skróty”. OAuth Google **≠** login pracowników v1. |
-| API Key / OAuth | Tylko `api`/`worker`; nigdy `NEXT_PUBLIC_*`. |
+| Minimalne uprawnienia Google (integracja) | Calendar / Meet / Docs / Drive **tylko** w zakresie wybranego adaptera — **bez osłabienia** scope’ów „na skróty”. Credentials integracji **≠** token logowania użytkownika. |
+| Logowanie Google (IdP, etap 1+) | Scope’y **tożsamości** (OpenID / profil / e-mail domeny firmowej); osobny klient OAuth od integracji Calendar. Etap 0: e-mail/hasło bez IdP Google. |
+| API Key / OAuth | Tylko `api`/`worker` (oraz BFF proxy auth); nigdy sekrety w `NEXT_PUBLIC_*`. |
 
 Mapowanie techniczne FF: `dokumentacja_komunikacji.md`. Porty metadane vs treść: `architektura.md`.
 
@@ -128,7 +138,7 @@ Mapowanie techniczne FF: `dokumentacja_komunikacji.md`. Porty metadane vs treś�
 
 | Sytuacja | Zachowanie |
 |----------|------------|
-| Odmowa zgody na nagrywanie | Bez FF / audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; Calendar nadal dostarcza metadane; docelowo brak buttonu / on-demand FF w UI (w etapie 0: wyjątek demo — button zawsze widoczny; działająca gałąź = etap 1+) |
+| Brak `[record-ok]` w opisie Calendar | Bez FF / audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; Calendar nadal dostarcza metadane; docelowo brak buttonu / on-demand FF w UI (w etapie 0: wyjątek demo — button zawsze widoczny; działająca gałąź = etap 1+) |
 | Spotkanie `confidential` | Flaga; pipeline v1 jak zwykle; ACL v1 + admin |
 | Brak matcha domeny klienta | `unmatched`, treść OK, `clientId` null do ręcznego przypisania |
 | Zaproszenie grupy „wszyscy” | Bez ekspansji ACL na całą firmę |

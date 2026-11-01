@@ -1,5 +1,5 @@
 ---
-wersja: 5
+wersja: 6
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-10-31
 ---
@@ -97,10 +97,11 @@ Zmiana względem D-7 v1: `ProjectMembership` nie jest „podstawą ACL zespołu�
 D-7b. **Zakaz** przechowywania `audio_url` / `video_url` (lub równoważnego pola ephemeral media) jako **trwałego** pola / kolumny na `Meeting` (ani 1:1 powiązanego rekordu „na stałe”). Link do nagrania powstaje wyłącznie w odpowiedzi on-demand (`SPEC-KOMUNIKACJA` K-5b); tożsamość względem źródła nadal `externalMeetingId` (D-5). Erase treści: **bez** „czyszczenia URL nagrania” jako pola DB (nie istnieje); nagranie u vendora — jak `docs/bezpieczenstwo_i_rodo.md`.
 
 D-7c. **Model logiczny zgody / źródła treści** (rozszerzenie względem D-7 / D-7b):
-- Stan zgody na nagrywanie i/lub `contentSource`: `fireflies` \| `gemini_notes` \| `none` (metadata-only) — nazewnictwo w contracts / docs.
+- **Źródło sygnału zgody (etap 1+):** tag **`[record-ok]`** w `description` wydarzenia Calendar (port metadanych) → `calendarDescriptionAllowsRecording` → stan zgody / wybór adaptera (`SPEC-PIPELINE` P-2a).
+- Stan zgody na nagrywanie i/lub `contentSource`: `fireflies` \| `gemini_notes` \| `none` (metadata-only) — nazewnictwo w contracts / docs. `fireflies` tylko przy `[record-ok]`; brak tagu → `gemini_notes` albo `none` gdy brak materiału.
 - **Do kodu (schemat Prisma):** przy wdrożeniu adapterów prod (**etap 1+**), **nie** jako must-have migracji zaślepki v0 / Fazy 3.7.
-- W obecnej wersji **nie** wymaga się kolumn zgody / `contentSource` / `hasMedia` w Prisma.
-Zmiana względem: D-7b v4 („nie wprowadza się pola zgody … poza tą legalizacją”) — teraz norma logiczna jest nazwana; migracja odroczona do etapu 1+.
+- W obecnej wersji **nie** wymaga się kolumn zgody / `contentSource` / `hasMedia` w Prisma; helper tagu jest w `@vinseo/contracts`.
+Zmiana względem: D-7c bez wskazania sygnału Calendar — obowiązuje opt-in przez `[record-ok]` (bezpieczny default bez tagu).
 
 ### JSON: segmenty i summary
 

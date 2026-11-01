@@ -1,7 +1,7 @@
 ---
-wersja: 14
+wersja: 18
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Dokumentacja komunikacji (kontrakty I/O)
@@ -32,7 +32,8 @@ Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem
 
 - Publiczne API dla klientów zewnętrznych lub partnerów.
 - Powiadomienia (e-mail, Slack itd.).
-- Normatywny kontrakt produkcyjnego webhooka Fireflies / OAuth Google / prawdziwego Calendar w **obecnej** wersji (mock + zaślepka za portem; prod w etapie 1+).
+- Normatywny kontrakt produkcyjnego webhooka Fireflies / OAuth Google Calendar / prawdziwego Calendar w **obecnej** wersji (mock + zaślepka za portem; prod w etapie 1+).
+- Normatywne endpointy **logowania Google Workspace** (OAuth / OpenID callback) w **obecnej** wersji — koncepcja w `architektura.md` / `plan_wdrozenia_etapy.md` (etap 1+); etap 0 = e-mail/hasło poniżej.
 - Powierzchnia Q&A / RAG.
 - gRPC, Kafka ani inny broker poza pg-boss.
 - **HTTP / BFF do odczytu `audit_log`** - audyt zapisują api i worker; odczyt v1 tylko ops/DB (patrz `observability.md`).
@@ -52,15 +53,17 @@ Autoryzacja treści spotkań: wyłącznie tutaj (moduł `access`).
 
 | Metoda | Ścieżka | Opis | Auth |
 |--------|---------|------|------|
-| `POST` | `/auth/register` | Rejestracja pracownika (e-mail + hasło) | nie |
-| `POST` | `/auth/login` | Logowanie; ustawia cookie HttpOnly (access + refresh) | nie |
+| `POST` | `/auth/register` | Rejestracja pracownika (e-mail + hasło) — **norma etapu 0** | nie |
+| `POST` | `/auth/login` | Logowanie e-mail/hasło; ustawia cookie HttpOnly (access + refresh) — **norma etapu 0** | nie |
 | `POST` | `/auth/logout` | Kończy sesję; czyści cookie | tak |
 | `GET` | `/auth/me` | Bieżący użytkownik | tak |
 | `POST` | `/auth/refresh` | Rotacja refresh / nowy access | refresh cookie |
 
-**Hasła:** bcrypt przed zapisem; porównanie hasha przy loginie. Przy rejestracji / zmianie: minimum **12** znaków, ≥1 wielka litera, ≥1 cyfra, ≥1 znak specjalny.  
-**Rejestracja v1:** otwarta (bez zaproszenia). `POST /auth/register` po sukcesie **od razu ustawia cookie** sesji (access + refresh) - jak login; UI redirect na dashboard.  
-**Sesja:** krótki access JWT (**TTL 15 min**) + refresh (hash w PostgreSQL); oba cookie HttpOnly (Secure/SameSite per środowisko). Ciało odpowiedzi auth nie musi duplikować sekretów w JSON. Szczegóły: `spec/SPEC-AUTH_I_ACL.md`.
+**Hasła (etap 0):** bcrypt przed zapisem; porównanie hasha przy loginie. Przy rejestracji / zmianie: minimum **12** znaków, ≥1 wielka litera, ≥1 cyfra, ≥1 znak specjalny.  
+**Rejestracja etap 0:** otwarta (bez zaproszenia). `POST /auth/register` po sukcesie **od razu ustawia cookie** sesji (access + refresh) - jak login; UI redirect na dashboard.  
+**Sesja (wszystkie etapy):** krótki access JWT (**TTL 15 min**) + refresh (hash w PostgreSQL); oba cookie HttpOnly (Secure/SameSite per środowisko). Ciało odpowiedzi auth nie musi duplikować sekretów w JSON. Norma implementacji etapu 0: `spec/SPEC-AUTH_I_ACL.md`.
+
+**Etap 1+ (koncepcja, poza kontraktem HTTP obecnej wersji):** logowanie Google Workspace (start OAuth + callback) kończy się **tymi samymi** cookie sesji co login/register; find-or-create `User` po firmowym e-mailu. ACL odczytu spotkań **bez zmian**. OAuth IdP ≠ OAuth Calendar.
 
 Przykład ciała logowania:
 
@@ -79,6 +82,7 @@ Przykład ciała logowania:
 | `GET` | `/meetings/:id` | Szczegóły po ACL (API; UI v1 nie ma osobnej strony detail - tabela + SSE) | tak |
 | `GET` | `/meetings/:id/recording` | On-demand link do nagrania: JSON `{ "url": string }`; ACL jak detail | tak |
 | `GET` | `/meetings/:id/events` | **SSE** statusów pipeline (`pending`→…→`completed`\|`failed`); ACL jak detail | tak |
+| `POST` | `/meetings/:id/reprocess` | **Etap 1+:** enqueue ponownego `meeting.process` dla tego spotkania (Aktualizuj źródło); ACL jak detail | tak |
 
 **ACL v1 (przypomnienie kontraktowe):** **organizator** spotkania **lub** uczestnik wewnętrzny **lub** admin.  
 `clientId` / membership projektu **nie** przyznają odczytu w v1.  
@@ -89,6 +93,17 @@ Brak uprawnień do istniejącego zasobu: odpowiedź jak **404** (bez wycieku ist
 | Metoda | Ścieżka | Opis | Auth |
 |--------|---------|------|------|
 | `GET` | `/meetings/:id/recording` | Po ACL: resolve świeżego URL nagrania; **bez** redirectu 302 | tak |
+
+### 1.2b Aktualizuj źródło (etap 1+; poza kontraktem HTTP v0)
+
+| Metoda | Ścieżka | Opis | Auth |
+|--------|---------|------|------|
+| `POST` | `/meetings/:id/reprocess` | Po ACL: enqueue `meeting.process` z **istniejącym** `externalMeetingId` spotkania; odpowiedź jak demo enqueue (`meetingId`, `jobId`, status) | tak |
+
+- **Cel:** recovery metadata-only / `failed` / świadoma aktualizacja, gdy treść u Calendar/FF/Notes dogoniła rekord.
+- **Zakaz:** synchronicznego fetchu vendora w handlerze HTTP; osobnego „sync blob” nagrania; tworzenia drugiego `Meeting`.
+- **Nagranie:** poza tym endpointem — nadal 1.2a on-demand przy zgodzie.
+- **v0 / etap 0:** poza implementacją; norma produktowa w `data_flow.md` §5a.
 
 **Response (kształt):**
 
@@ -217,6 +232,7 @@ Krótka warstwa między przeglądarką a `api`.
 | `GET /api/meetings`, `GET /api/meetings/:id` | odpowiadające trasy API |
 | `GET /api/meetings/:id/recording` | `GET /meetings/:id/recording` (on-demand JSON `{ url }`) |
 | `GET /api/meetings/:id/events` | `GET /meetings/:id/events` (SSE) |
+| `POST /api/meetings/:id/reprocess` | `POST /meetings/:id/reprocess` (etap 1+; Aktualizuj źródło) |
 | trasy auth pod `/api/auth/*` | `/auth/*` (w tym `refresh`) |
 
 Dokładne ścieżki BFF mogą dodać prefiks `/api`; semantyka ciał i kodów jak w sekcji HTTP API - **z wyjątkiem rejestracji** (poniżej).
@@ -281,7 +297,7 @@ Ponowne enqueue z tym samym `externalMeetingId`: brak duplikatu spotkania; konty
 
 Wejście **treści** do pipeline (w obecnej wersji dostarcza **mock** / fixture; ten sam kształt pod adaptery `fireflies` \| `gemini-notes`). Port **metadanych** (Calendar: fakt callu, uczestnicy indywidualni) jest **osobny** — nie mylić z tym kontraktem transcriptu; w v0 zaślepka (Faza 3.7), w etapie 1+ Calendar API.
 
-**Wybór adaptera treści (docelowo / etap 1+):** wg zgody na nagrywanie — `fireflies` (ze zgodą) albo `gemini-notes` (bez zgody). Puste / brak materiału z Notes → metadata-only bez UC1. Obecna wersja: happy-path mock; zaślepka `gemini-notes` nie jest podpięta do egzekucji zgody.
+**Wybór adaptera treści (docelowo / etap 1+):** z portu metadanych Calendar czytamy m.in. `description`. Obecność tagu **`[record-ok]`** w opisie → `fireflies`; **brak tagu** → `gemini-notes` (bezpieczny default). Puste / brak materiału z Notes → metadata-only bez UC1. Obecna wersja: happy-path mock; zaślepka `gemini-notes` / Calendar; helper tagu w `@vinseo/contracts` (`calendarDescriptionAllowsRecording`).
 
 **Minimalny kontrakt obiektu źródłowego (treść):**
 

@@ -1,7 +1,7 @@
 ---
-wersja: 9
+wersja: 13
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Anty-patterny
@@ -47,6 +47,18 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 - **Unikać:** traktowania zaproszenia grupy Workspace (zwłaszcza all-company) lub membership działu jako ACL do treści spotkań; ekspansji grup Calendar do `MeetingParticipant` „dla wygody”.
 - **Boli:** wyciek ustaleń do osób bez realnej obecności na callu; Workspace ≠ grupy klienckie.
 - **Zamiast:** ACL v1 = organizator ∨ uczestnik ∨ admin; Calendar → wyłącznie uczestnicy **indywidualni**; membership klienta dopiero w kolejnej fazie i tylko w naszej DB.
+
+### Jeden OAuth Google „do logowania i Calendar naraz”
+
+- **Unikać:** jednego consentu / tokenu użytkownika używanego jednocześnie jako sesja UI i jako credentials pipeline’u Calendar/Notes/Drive.
+- **Boli:** nadmiarowe scope’y przy loginie, trudny audyt, wyciek uprawnień integracji do sesji przeglądarki, mylenie IdP z adapterem I/O.
+- **Zamiast:** logowanie Google (etap 1+) = OpenID / e-mail domeny → sesja JWT aplikacji; Calendar/Notes = osobne credentials workera/admina (`architektura.md`, `bezpieczenstwo_i_rodo.md`).
+
+### Traktowanie „Zaloguj z Google” jako zmiany ACL
+
+- **Unikać:** wniosku, że skoro użytkownik jest w Workspace, widzi wszystkie spotkania firmy / działu.
+- **Boli:** obejście ACL v1 „przy okazji SSO”.
+- **Zamiast:** SSO tylko ustala `User` (firmowy e-mail); odczyt spotkań nadal organizator ∨ uczestnik ∨ admin.
 
 ### ACL przez `ProjectMembership` w v1
 
@@ -94,9 +106,15 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 ### Synchroniczne przetwarzanie spotkania w HTTP
 
-- **Unikać:** `POST /demo/run-meeting` czeka na cały transcript→summary w jednym requeście.
+- **Unikać:** `POST /demo/run-meeting` (ani `POST /meetings/:id/reprocess`) czeka na cały transcript→summary / sync Google+FF w jednym requeście.
 - **Boli:** timeouty, brak odporności, niemożliwy retry kroku.
 - **Zamiast:** enqueue pg-boss; HTTP zwraca `jobId` / `meetingId` + status.
+
+### „Aktualizuj” jako fat-sync Google / ściąganie nagrania
+
+- **Unikać:** osobnego subsystemu „synchronizacja Calendar+Drive+FF+media” w API; persistencji pliku audio przy reprocess; kasowania istniejącego summary, gdy re-fetch wróci pusty.
+- **Boli:** timeouty HTTP, duplikaty, utrata kanonu, mylenie on-demand media z pipeline treści.
+- **Zamiast:** ten sam `meeting.process` + `externalMeetingId`; upgrade-only; nagranie = `GET .../recording` (`data_flow.md` §5a).
 
 ### Brak idempotencji jobów
 
@@ -167,13 +185,13 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 
 - **Unikać:** serwowania Gemini Notes jako `recording` / podpinania on-demand FF przy braku zgody; mylenia tekstu Notes z audio.
 - **Boli:** naruszenie normy RODO (nagrywanie bez zgody); fałszywy UX „odsłuchu”.
-- **Zamiast:** bez zgody — treść z `gemini-notes` (+ UC1 gdy tekst); bez buttonu / mechanizmu nagrania FF (`bezpieczenstwo_i_rodo.md`).
+- **Zamiast:** bez `[record-ok]` — treść z `gemini-notes` (+ UC1 gdy tekst); bez buttonu / mechanizmu nagrania FF (`bezpieczenstwo_i_rodo.md`).
 
 ### Calendar jako magazyn audio / fat-adapter „wszystko Google+FF”
 
-- **Unikać:** traktowania Calendar / Meet linku jako źródła nagrania; jednego adaptera łączącego metadane Calendar + FF + Gemini Notes + media.
-- **Boli:** niemożliwa podmiana per zgoda; regresja ACL/grup; nieczytelne granice portów.
-- **Zamiast:** port metadanych (Calendar) oddzielony od portu treści (`fireflies` \| `gemini-notes`); Calendar ≠ audio.
+- **Unikać:** traktowania Calendar / Meet linku jako źródła nagrania; jednego adaptera łączącego metadane Calendar + FF + Gemini Notes + media; „AI czyta cały opis” zamiast sztywnego tokenu `[record-ok]`.
+- **Boli:** niemożliwa podmiana per zgoda; regresja ACL/grup; nieczytelne granice portów; kruche NLP.
+- **Zamiast:** port metadanych (Calendar) oddzielony od portu treści (`fireflies` \| `gemini-notes`); Calendar ≠ audio; zgoda = dokładny tag `[record-ok]` w `description`.
 
 ### Drugi vendor LLM „tylko do asystenta”
 

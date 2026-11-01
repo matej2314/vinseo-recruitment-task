@@ -1,14 +1,14 @@
 ---
-wersja: 12
+wersja: 15
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Przepływy danych
 
 Przepływy Firmowego asystenta spotkań (v1). Poziom szczegółów: kroki, systemy i statusy - bez pełnych payloadów JSON (te są w `dokumentacja_komunikacji.md`).
 
-**Obecna wersja:** happy-path poniżej = mock treści; bez OAuth Google / webhooka Calendar w runtime; zaślepki portów Calendar + `gemini-notes` (major Faza 3.7). **Kolejna wersja / etap 1+:** Calendar → fakt + uczestnicy; wybór adaptera treści wg zgody (`fireflies` \| `gemini-notes`); UC1 gdy treść; metadata-only gdy brak materiału.
+**Obecna wersja:** happy-path poniżej = mock treści; bez OAuth Google / webhooka Calendar w runtime; zaślepki portów Calendar + `gemini-notes` (major Faza 3.7). **Kolejna wersja / etap 1+:** Calendar → fakt + `description` + uczestnicy; wybór adaptera treści wg `[record-ok]` (`fireflies` \| `gemini-notes`); UC1 gdy treść; metadata-only gdy brak materiału.
 
 ## 1. Pipeline spotkania (happy path, mock)
 
@@ -142,11 +142,11 @@ sequenceDiagram
   end
 ```
 
-**Invarianty:** brak kolumny ephemeral media URL na `Meeting`; ten sam kontrakt HTTP przy podmianie mock → FF; docelowo widoczność buttonu wg zgody (`bezpieczenstwo_i_rodo.md`) — w v0 button zawsze widoczny (demo).
+**Invarianty:** brak kolumny ephemeral media URL na `Meeting`; ten sam kontrakt HTTP przy podmianie mock → FF; docelowo widoczność buttonu wg `[record-ok]` (`bezpieczenstwo_i_rodo.md`) — w v0 button zawsze widoczny (demo).
 
 ## 4. Auth (login i sesja)
 
-Rejestracja (`POST /auth/register`) to standardowy zapis użytkownika z hasłem po **bcrypt** - bez osobnego diagramu.
+**Etap 0:** rejestracja (`POST /auth/register`) to standardowy zapis użytkownika z hasłem po **bcrypt** - bez osobnego diagramu. Poniżej: login e-mail/hasło.
 
 ```mermaid
 sequenceDiagram
@@ -173,6 +173,8 @@ sequenceDiagram
 
 Logout czyści cookie po stronie API/BFF zgodnie z konfiguracją. Sukces / failure logowania oraz logout trafiają do **`audit_log`** (bez hasła).
 
+**Etap 1+ (koncepcja):** zamiast (lub obok) hasła — start OAuth Google Workspace → callback → find-or-create `User` po firmowym e-mailu → **te same** Set-Cookie sesji. Integracja Calendar używa **osobnych** credentials; ACL odczytu spotkań bez zmian (`dokumentacja_koncepcyjna.md`).
+
 ## 5. Awaria w połowie i idempotencja
 
 ```mermaid
@@ -189,8 +191,48 @@ stateDiagram-v2
 |----------|------------------------|
 | Crash / awaria **przed** wspólnym persist (po Zod) | Brak kanonicznego transcriptu+summary w DB; status joba / spotkania `failed` lub retry pg-boss; dopuszczalne tylko metadane statusu (`pending` / `processing` / `failed`) - **bez** pół-sukcesu „transcript bez summary”; **bez** drugiego wiersza spotkania przy tym samym `externalMeetingId` |
 | Dwukrotny **Test** (DEMO) - nawet przy tym samym wylosowanym `fixtureKey` | **Dwa** wiersze: każde wywołanie ma nowe `externalMeetingId` (UUID); lista użytkownika może rosnąć |
-| Ponowne enqueue **tego samego** `externalMeetingId` (retry / DX / prod) | Co najwyżej jedno kanoniczne spotkanie; brak duplikatu biznesowego po kluczu tożsamości |
+| Ponowne enqueue **tego samego** `externalMeetingId` (retry / DX / prod / **Aktualizuj źródło**) | Co najwyżej jedno kanoniczne spotkanie; brak duplikatu biznesowego po kluczu tożsamości |
 | Niepoprawny JSON z mocka summarizera | max 1 retry „popraw JSON”; potem `failed`; brak kanonicznego summary „na siłę” |
+
+### 5a. Aktualizuj źródło (etap 1+; recovery niepełnego rekordu)
+
+Gdy pierwsza próba kończy się **metadata-only** (albo `failed` przy pustym / niedostępnym źródle), a użytkownik wie, że u vendora treść już jest (Notes dogoniły, share Drive, FF skończył transcript):
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant UI as Panel
+  participant API as api
+  participant Q as pg-boss
+  participant W as worker
+  participant Cal as Calendar
+  participant Src as Adapter treści
+  participant DB as PostgreSQL
+
+  UI->>API: POST /meetings/:id/reprocess (Aktualizuj)
+  Note over API: ACL jak detail; tylko enqueue
+  API->>Q: meeting.process (ten sam externalMeetingId)
+  API-->>UI: meetingId + status pending
+  Q->>W: job
+  W->>Cal: świeże metadane / description
+  W->>Src: ponowny fetch treści
+  alt nowy materiał tekstowy
+    Note over W,DB: redact → UC1 → Zod → update in place
+  else nadal brak treści
+    Note over W,DB: zostaje / wraca metadata-only;<br/>bez kasowania istniejącego kanonu (upgrade-only)
+  end
+```
+
+| Reguła | Norma |
+|--------|--------|
+| Mechanizm | Ten sam job `meeting.process` + klucz `externalMeetingId` — **nie** osobny typ „sync Google” |
+| HTTP | Synchronicznie tylko ACL + enqueue; I/O vendora w workerze |
+| Kiedy UI | Głównie metadata-only / `failed`; opcjonalnie admin force; debounce (np. 1× / N min) |
+| Treść | Upgrade-only: pojawienie się transcriptu → zapis + UC1; pusty re-fetch **nie** kasuje istniejącego summary/transcriptu |
+| Nagranie FF | Poza jobem; nadal `GET .../recording` (on-demand). „Aktualizuj” **nie** pobiera ani nie persistuje pliku audio/video |
+| Gałąź bez `[record-ok]` | Tylko ponowna próba Notes / tekstu; bez audio FF |
+
+Szczegóły kontraktu HTTP / UI: `dokumentacja_komunikacji.md`, `frontend.md`. Norma: `spec/SPEC-PIPELINE`, `SPEC-KOMUNIKACJA`, `SPEC-FRONTEND`.
 
 ## 6. Docelowe wejście (etap 1+; poza mockiem / zaślepką v0)
 
@@ -205,11 +247,11 @@ sequenceDiagram
   participant W as worker
   participant DB as PostgreSQL
 
-  Note over Cal,W: metadane faktu zawsze z Calendar
-  Cal-->>W: title, czas, uczestnicy indywidualni
-  alt zgoda na nagrywanie
+  Note over Cal,W: metadane faktu zawsze z Calendar<br/>tag [record-ok] w description
+  Cal-->>W: title, czas, description, uczestnicy
+  alt description zawiera [record-ok]
     Src->>Src: fireflies (transcript + media u FF)
-  else brak zgody
+  else brak [record-ok]
     Src->>Src: gemini-notes (tekst; bez audio FF)
   end
   Q->>W: meeting.process
@@ -221,7 +263,7 @@ sequenceDiagram
   end
 ```
 
-Gałąź ze zgodą (FF webhook + GraphQL): szczegóły pól — `dokumentacja_komunikacji.md` (Mapowanie Fireflies); `summary.*` FF nie wchodzi do pipeline. On-demand nagranie FF — tylko przy zgodzie (sekcja 3a).
+Gałąź z `[record-ok]` (FF webhook + GraphQL): szczegóły pól — `dokumentacja_komunikacji.md` (Mapowanie Fireflies); `summary.*` FF nie wchodzi do pipeline. On-demand nagranie FF — tylko przy `[record-ok]` (sekcja 3a). Sygnał tagu: `calendarDescriptionAllowsRecording` (`@vinseo/contracts`).
 
 ## 7. Asystent Q&A (koncepcja, etap 2+)
 
@@ -252,7 +294,7 @@ Szczegóły: `llm_i_asystent.md`.
 
 - Kontrakty I/O i kształty: `dokumentacja_komunikacji.md`
 - Procesy i porty: `architektura.md`
-- UI / przycisk Test: `frontend.md`
+- UI / przycisk Test / Aktualizuj źródło: `frontend.md`
 - LLM UC1/UC2: `llm_i_asystent.md`
 - Audyt zdarzeń: `observability.md`
 - Pojęcia: `dictionary.md`

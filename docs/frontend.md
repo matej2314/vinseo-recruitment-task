@@ -1,7 +1,7 @@
 ---
-wersja: 12
+wersja: 15
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-01
 ---
 
 # Frontend
@@ -30,7 +30,7 @@ Opis warstwy `apps/web` Firmowego asystenta spotkań: zakres UI w etapie 0 / v1 
 
 ### 1. Strona główna `/` - auth
 
-- Jeden wspólny komponent **logowanie / rejestracja** z klasycznym przełączaniem trybu (różne pola i CTA wg trybu).
+- **Etap 0 / obecna wersja:** jeden wspólny komponent **logowanie / rejestracja** z klasycznym przełączaniem trybu (różne pola i CTA wg trybu).
 - **Tryb startowy:** login.
 - **CTA submit:** login - „Zaloguj się”; register - „Zarejestruj się”.
 - **Pod formularzem** tekstowe buttony przełączające tryb (bez innego, konkurencyjnego mechanizmu):
@@ -40,6 +40,7 @@ Opis warstwy `apps/web` Firmowego asystenta spotkań: zakres UI w etapie 0 / v1 
 - Po sukcesie **login lub register**: od razu cookie sesji → **redirect** na dashboard (widok domyślny).
 - Sesja: cookie **HttpOnly** (access JWT 15 min + refresh - `SPEC-AUTH_I_ACL`); **zakaz** `localStorage` / `sessionStorage` na sekrety.
 - Brak sesji na chronionych trasach → redirect na `/`.
+- **Etap 1+ (koncepcja UI):** na `/` pojawia się **„Zaloguj z Google”** (OAuth / OpenID Workspace, domena firmowa). Po callbacku BFF/`api` ustawia **te same** cookie sesji co dziś — bez zmiany layoutu dashboardu ani reguł ACL w UI. Formularz e-mail/hasło może zostać jako break-glass / okres przejściowy. UI **nie** egzekwuje ACL treści.
 
 ### 2. Layout po zalogowaniu - sidebar
 
@@ -67,6 +68,7 @@ Kanoniczne ścieżki UI: `apps/web/lib/routes.ts` (`uiRoutes`).
 - Po Test: `POST` demo → odpowiedź z `meetingId` **własnego** runu → otwarcie **SSE** dla tego id → użytkownik **zostaje** na widoku; tabela **aktualizuje / dokłada wiersz** (`processingStatus`, po `completed` treść kolumny Wynik ze `summary`; po `failed` status + komunikat). Bez redirectu na detail. SSE nie jest jedynym źródłem treści kolumny wyniku — po reloadzie wystarczy `GET` listy.
 - **Button nagrania (demo v0):** w wierszu tabeli (lub równoważnie w zakresie UI listy) **zawsze widoczny** po zalogowaniu — świadomy wyjątek demonstracyjny (`bezpieczenstwo_i_rodo.md`). Po kliknięciu: BFF → `GET /api/meetings/:id/recording` → API → JSON `{ url }` → otwarcie `url` (np. nowe okno/karta). **Zakaz** hardcodu URL wyłącznie w React jako jedynej ścieżki „produkcyjnej”.
 - **Etap 1+ / po integracji FF (norma docelowa):** resolve URL przez Fireflies (ten sam kontrakt) **tylko przy zgodzie** na nagrywanie; **bez zgody** — brak buttonu / mechanizmu nagrania FF (treść z Notes by Gemini po stronie pipeline, nie UI zbierania zgody w v0). W **obecnej wersji** UI **nie musi** egzekwować gałęzi Gemini Notes ani ukrywać buttonu.
+- **Aktualizuj źródło (etap 1+):** w wierszu (głównie metadata-only / `failed`) przycisk **„Aktualizuj”** → BFF → `POST /api/meetings/:id/reprocess` → API enqueue tego samego `externalMeetingId` → SSE jak po Test. **Zakaz** synchronicznego pobierania Google/FF w przeglądarce lub w BFF. Nagranie **nie** jest częścią tej akcji (osobny button on-demand przy zgodzie). **Poza UI v0 / etapem 0.**
 - **Bez** UI wyboru fixture - losowanie mocka po stronie API (katalog 10).
 - **Multi-tester:** wielu użytkowników na jednej instancji - każdy widzi **własne** spotkania dema (ACL); brak jednego globalnego wiersza współdzielonego między kontami.
 - **Ponowny Test** dodaje kolejny wiersz (akceptowalne w v1 dema; lista może rosnąć).
@@ -79,7 +81,7 @@ Kanoniczne ścieżki UI: `apps/web/lib/routes.ts` (`uiRoutes`).
 
 ## BFF (`app/api/*`)
 
-- Proxy do Nest API: auth (w tym refresh), meetings, demo, **recording** (`/meetings/:id/recording`), **SSE** (`/meetings/:id/events`).
+- Proxy do Nest API: auth (w tym refresh), meetings, demo, **recording** (`/meetings/:id/recording`), **SSE** (`/meetings/:id/events`), oraz (etap 1+) **reprocess** (`/meetings/:id/reprocess`).
 - Przekazywanie / ustawianie cookie HttpOnly.
 - **Nie** egzekwuje ACL; **nie** enqueue’uje jobów poza wywołaniem API.
 

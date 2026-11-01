@@ -12,7 +12,8 @@ import type {
  * Zakaz: audio / recording FF; fat-adapter z Calendar.
  *
  * Etap 1+: prawdziwy klient Notes — ten sam MeetingSourcePort / MeetingSourcePayload;
- * wybór vs fireflies wg zgody (P-2a); puste Notes → metadata-only (P-4a).
+ * wybór vs fireflies: brak `[record-ok]` w opisie Calendar → ten adapter (P-2a);
+ * puste Notes → metadata-only (P-4a).
  */
 @Injectable()
 export class GeminiNotesMeetingSourceAdapter implements MeetingSourcePort {
