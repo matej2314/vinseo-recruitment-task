@@ -1,7 +1,7 @@
 ---
-wersja: 16
+wersja: 17
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-11-01
+data_modyfikacji: 2026-11-02
 ---
 
 # Architektura - Firmowy asystent spotkań
@@ -48,29 +48,27 @@ Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątkó
 ## Procesy i odpowiedzialności
 
 ```text
-                    ┌─────────────┐
-   przeglądarka ──► │    web      │  Next.js: BFF + sidebar (tabela/Test/SSE
-                    │  (BFF)      │  + mock wyszukiwarki); cookie HttpOnly
-                    └──────┬──────┘
-                           │ HTTP (sesja użytkownika)
-                           ▼
-                    ┌─────────────┐
-                    │    api      │  NestJS: auth użytkowników, ACL,
-                    │             │  odczyt/zapis przez use case'y
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-         PostgreSQL    pg-boss     (metadane jobów
-         (dane)        (w tej      w tej samej DB)
-                        samej DB)
-                           ▲
-                           │ pobiera joby
-                    ┌──────┴──────┐
-                    │   worker    │  NestJS entry bez publicznego HTTP
-                    │             │  pipeline spotkania, adaptery I/O
-                    └─────────────┘
+przeglądarka
+      │
+      ▼
+┌───────────┐
+│    web    │  Next.js: BFF + sidebar (tabela/Test/SSE + mock wyszukiwarki);
+│   (BFF)   │  cookie HttpOnly; bez dostępu do DB / kolejki
+└─────┬─────┘
+      │ HTTP (sesja; wyłącznie do api)
+      ▼
+┌───────────┐         enqueue          ┌───────────┐
+│    api    │ ──────► pg-boss ───────► │  worker   │
+│ Nest:     │           │              │ Nest:     │
+│ auth, ACL │           │              │ pipeline  │
+│ odczyt    │           │              │ (bez HTTP │
+└─────┬─────┘           │              │ publicznego)
+      │                 ▼              └─────┬─────┘
+      └──────────► PostgreSQL ◄──────────────┘
+               (dane + audit_log + tabele kolejki)
 ```
+
+`api` i `worker` są równorzędnymi procesami. `web` łączy się wyłącznie z `api`. Oba backendy współdzielą PostgreSQL; `api` wrzuca joby do pg-boss, `worker` konsumuje (`meeting.process`).
 
 | Proces | Robi | Nie robi |
 |--------|------|----------|
