@@ -8,7 +8,6 @@ import type {
 
 /**
  * Zaślepka v0 portu metadanych (Calendar).
- * Happy-path pipeline **nie** woła tego adaptera.
  * Etap 1+: podmiana na prawdziwy klient Calendar API (ten sam port).
  */
 @Injectable()

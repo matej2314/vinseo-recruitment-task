@@ -17,10 +17,6 @@ const FIXTURES: Record<string, string> = Object.fromEntries(
   DEMO_FIXTURE_KEYS.map((key) => [key, `${key}.json`]),
 );
 
-/**
- * Szukamy fixture niezależnie od tego, czy Nest ma cwd = `apps/worker`
- * (pnpm --filter), czy root monorepo / Docker `working_dir: /app`.
- */
 async function readFixtureFile(fileName: string): Promise<string> {
   const cwd = process.cwd();
   const candidates = [

@@ -13,7 +13,7 @@ export interface FetchMeetingMetadataInput {
  * Port metadanych faktu callu (Google Calendar w etapie 1+).
  * v0: zaślepka — bez OAuth / Calendar API.
  * Oddzielony od MeetingSourcePort (treść) i od MeetingRecordingPort (api / K-5b).
- * Zakaz: ekspansja grup Workspace; Calendar ≠ magazyn audio.
+ * Zakaz: ekspansja grup Workspace;
  *
  * Etap 1+: GoogleCalendarMeetingMetadataAdapter za MEETING_METADATA_PORT —
  * ten sam kształt MeetingMetadataPayload (w tym `description` pod tag `[record-ok]`);
