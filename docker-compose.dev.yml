@@ -147,6 +147,8 @@ services:
     environment:
       NODE_ENV: development
       PNPM_STORE_DIR: /pnpm/store
+      # BFF → Nest w sieci Compose (nadpisuje localhost z apps/web/.env).
+      API_BASE_URL: http://api:3001
     depends_on:
       deps:
         condition: service_completed_successfully

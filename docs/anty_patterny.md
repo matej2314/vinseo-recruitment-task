@@ -1,5 +1,5 @@
 ---
-wersja: 13
+wersja: 14
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -109,6 +109,12 @@ Pułapki typowe dla Firmowego asystenta spotkań (modularny monolit, Nest `api`/
 - **Unikać:** `POST /demo/run-meeting` (ani `POST /meetings/:id/reprocess`) czeka na cały transcript→summary / sync Google+FF w jednym requeście.
 - **Boli:** timeouty, brak odporności, niemożliwy retry kroku.
 - **Zamiast:** enqueue pg-boss; HTTP zwraca `jobId` / `meetingId` + status.
+
+### Webhook Fireflies jako jedyny trigger discovery
+
+- **Unikać:** produkcyjne wejście do systemu wyłącznie przez FF `meeting.transcribed` (Calendar tylko „w środku” workera).
+- **Boli:** Meet bez nagrywania / bez FF nigdy nie trafia do DB; Workspace przestaje być źródłem faktu; metadata-only i Notes nie mają startu.
+- **Zamiast:** **Calendar reconcile** (cron) jako primary discovery → `meeting.process` z `Event.id`; FF webhook = **content-ready** / upgrade; Push Calendar najwyżej jako opcjonalny hint (`data_flow.md` §6).
 
 ### „Aktualizuj” jako fat-sync Google / ściąganie nagrania
 

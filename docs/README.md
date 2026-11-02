@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -27,11 +27,11 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | [dokumentacja_koncepcyjna.md](./dokumentacja_koncepcyjna.md) | Cel, odbiorcy, zakres / poza zakresem, sukces v1 |
 | [architektura.md](./architektura.md) | Styl, procesy api/worker/web, auth (etap 0 hasło / etap 1+ Google IdP), ACL, pipeline, Prisma, audit |
 | [architektura_katalogi_pliki.md](./architektura_katalogi_pliki.md) | Drzewo monorepo |
-| [dokumentacja_komunikacji.md](./dokumentacja_komunikacji.md) | HTTP, BFF, pg-boss, port źródła, on-demand nagranie, reprocess (etap 1+), mapowanie Fireflies, demo |
+| [dokumentacja_komunikacji.md](./dokumentacja_komunikacji.md) | HTTP, BFF, pg-boss (`meeting.process` + etap 1+ `calendar.reconcile`), porty, FF content-ready, demo |
 | [frontend.md](./frontend.md) | Next.js, Tailwind, shadcn, auth UI, `/meetings` (Wynik)+Test+SSE+nagranie demo; Aktualizuj (etap 1+), mock `/search` |
 | [llm_i_asystent.md](./llm_i_asystent.md) | LlmClient, UC1 summarize, UC2 ask; FF summary ignorowane |
 | [dictionary.md](./dictionary.md) | Słownik pojęć |
-| [data_flow.md](./data_flow.md) | Diagramy przepływów (w tym §5a Aktualizuj źródło) |
+| [data_flow.md](./data_flow.md) | Diagramy: mock/demo, §5a Aktualizuj, §6 discovery Calendar (etap 1+) |
 | [anty_patterny.md](./anty_patterny.md) | Pułapki stacku i projektu |
 | [testy.md](./testy.md) | Piramida testów, Jest, CI |
 | [observability.md](./observability.md) | pino, health, `audit_log` |
@@ -47,7 +47,7 @@ Uruchomienie kodu i sekcja AI przy oddaniu: **root** `README.md` projektu (nie t
 | Co budujemy / poza MVP | `dokumentacja_koncepcyjna.md` |
 | Nest, worker, pg-boss, porty | `architektura.md` |
 | Gdzie leży kod w repo | `architektura_katalogi_pliki.md` |
-| Endpointy, job, mock FF, on-demand nagranie | `dokumentacja_komunikacji.md` |
+| Endpointy, joby, discovery Calendar, FF content-ready | `dokumentacja_komunikacji.md` |
 | Login (etap 0 hasło / etap 1+ Google), sidebar, `/meetings` (Wynik)+Test+nagranie, shadcn | `frontend.md` |
 | LLM / asystent Q&A | `llm_i_asystent.md` |
 | Znaczenie pojęć | `dictionary.md` |

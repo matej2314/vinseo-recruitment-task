@@ -1,5 +1,5 @@
 ---
-wersja: 8
+wersja: 9
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -38,8 +38,8 @@ Klienci zewnętrzni **nie mają kont** - mogą być w metadanych uczestników / 
 **Sygnał zgody na nagrywanie (etap 1+):** w polu **opisu** wydarzenia Google Calendar (`description`) token **`[record-ok]`** (dowolne miejsce w tekście; match bez rozróżniania wielkości liter). **Jest tag** → ścieżka Fireflies. **Brak tagu** → bezpieczny default: Notes by Gemini (bez FF / audio). Tag widać w UI Calendar; najwygodniej w firmowym **szablonie** wydarzenia. Wynik mapujemy na stan zgody / `contentSource` w naszej bazie i API.
 
 1. Na spotkaniach z klientem: **jawna informacja** na początku Meet (oraz zapis w umowie / procesie sprzedaży, gdy firma to wdroży); przy nagrywaniu — tag `[record-ok]` w opisie eventu.
-2. **Metadane faktu callu** (tytuł, czas, opis, uczestnicy indywidualni): **zawsze** z **Google Calendar** (ew. Meet w zakresie linku / czasu) — niezależnie od ścieżki treści.
-3. **`[record-ok]` w opisie** → treść + nagranie: **Fireflies** (transcript do pipeline; nagranie wyłącznie on-demand — `dokumentacja_komunikacji.md`).
+2. **Metadane faktu callu** (tytuł, czas, opis, uczestnicy indywidualni): **zawsze** z **Google Calendar** (ew. Meet w zakresie linku / czasu) — niezależnie od ścieżki treści. **Discovery** produkcji (etap 1+) też startuje od Calendar (`calendar.reconcile`), nie od webhooka FF — bez nagrywania fakt callu i tak może wejść do systemu (Notes / metadata-only); `data_flow.md` §6.
+3. **`[record-ok]` w opisie** → treść + nagranie: **Fireflies** (transcript do pipeline; nagranie wyłącznie on-demand — `dokumentacja_komunikacji.md`). FF webhook = content-ready, nie warunek pojawienia się spotkania.
 4. **Brak `[record-ok]`** → **zakaz FF / audio** (brak buttonu / on-demand linku FF w produkcji); źródło informacji = **Notes by Gemini** (Google Meet / Workspace). Gdy Notes dostarcza materiał tekstowy → redakcja E+T+P+K + **UC1** + Zod. **Metadata-only** (bez transcriptu / AI) **tylko** gdy Gemini Notes **nie** dostarcza treści.
 5. **Docelowo (produkcja):** widoczność mechanizmu nagrania w UI powiązana z obecnością `[record-ok]` / zapisaną zgodą (bez tagu — brak buttonu / on-demand FF).
 6. **Etap 0 / demo (świadomy wyjątek):** przycisk nagrania w UI jest **zawsze widoczny** w celach demonstracyjnych szkieletu on-demand — to **nie** jest docelowa norma produkcyjna.

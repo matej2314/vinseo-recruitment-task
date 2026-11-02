@@ -1,6 +1,7 @@
-# Efemeryczny Postgres wyłącznie pod `pnpm --filter @vinseo/api test:e2e`
-# (lub root `pnpm test:e2e`). Sekrety / atomy z root `.env`.
+# Efemeryczny Postgres pod `pnpm test:e2e` oraz `pnpm test:integration`
+# (api `run-e2e.mjs` / worker `run-integration.mjs`). Sekrety / atomy z root `.env`.
 # Osobny od ścieżki A (`docker-compose.db.yml`) — teardown nie gasi db:up.
+# Nie uruchamiać e2e i integration równolegle (ten sam E2E_POSTGRES_PORT).
 name: vinseo-e2e
 
 services:

@@ -1,5 +1,5 @@
 ---
-wersja: 16
+wersja: 17
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -46,7 +46,10 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 | **Adapter źródła** (source adapter) | Implementacja portu pobierająca materiał (mock; docelowo `fireflies` \| `gemini-notes`) i mapująca na kontrakt portu. |
 | **Port źródła** (meeting source port) | Ustalony kształt wejścia **treści** do pipeline (m.in. `externalId`, uczestnicy, segmenty) - niezależny od schemy vendora. Oddzielony od portu **metadanych** (Calendar). |
 | **Port metadanych** (calendar metadata port) | Pobranie faktu callu / `description` / uczestników indywidualnych z Google Calendar; **nie** dostarcza audio ani transcriptu FF. Z `description` wynika sygnał `[record-ok]`. |
-| **Notetaker / Fireflies** | Zewnętrzna usługa capture **przy zgodzie** na nagrywanie: **transkrypcja i nagrania** (media u vendora); adapter wejścia transcriptu + źródło on-demand linku — nie firmowy magazyn plików. |
+| **Discovery (Calendar)** | Etap 1+: wykrywanie kandydatów do pipeline na podstawie Events API (zakończone wydarzenia), **nie** na podstawie webhooka FF. |
+| **`calendar.reconcile`** | Job pg-boss (etap 1+): list/sync wydarzeń Calendar → follow-up `meeting.process` per kandydat. Primary trigger produkcji. |
+| **Content-ready** | Sygnał „treść u vendora gotowa” (np. FF `meeting.transcribed`) → ponowne `meeting.process` (upgrade); **nie** zastępuje discovery. |
+| **Notetaker / Fireflies** | Dodatek treści **przy zgodzie** na nagrywanie: transcript + nagrania (media u vendora); **nie** brama discovery systemu. |
 | **On-demand link nagrania** (on-demand recording link) | Mechanizm: ACL jak detail → resolve świeżego URL (v0: mock `https://example.com/...`; prod: API FF **tylko** przy zgodzie). Odpowiedź JSON `{ url }`; **zakaz** trwałego `audio_url` / `video_url` w DB. |
 | **Button nagrania (demo v0)** | Przycisk w UI zawsze widoczny po zalogowaniu (demonstracja szkieletu); **docelowo** widoczność powiązana z `[record-ok]` / zapisaną zgodą — bez tagu brak buttonu FF (`bezpieczenstwo_i_rodo.md`). |
 | **Zaślepka portów (Faza 3.7)** | Szkielet / NotImplemented portów Calendar + `gemini-notes` w `apps/worker` obecnej wersji; happy-path nadal mock; działająca logika = etap 1+. |
@@ -58,11 +61,12 @@ Hasła po polsku, angielski odpowiednik w nawiasie, opis po polsku. Pojęcia pro
 
 | Hasło | Opis |
 |-------|------|
-| **Pipeline** | Sekwencja kroków: pobranie → normalizacja → redakcja → streszczenie → zapis. |
-| **Job** (`meeting.process`) | Zadanie w kolejce pg-boss realizujące pipeline dla jednego zewnętrznego ID spotkania. |
+| **Pipeline** | Sekwencja kroków process: metadane (Calendar) → treść → normalizacja → redakcja → streszczenie → zapis (lub metadata-only). |
+| **Job** (`meeting.process`) | Zadanie w kolejce pg-boss realizujące pipeline dla jednego `externalMeetingId`. |
+| **Job** (`calendar.reconcile`) | Etap 1+: discovery wydarzeń Calendar; enqueue follow-up `meeting.process`. |
 | **Idempotencja** (idempotency) | Ponowne uruchomienie z tym samym kluczem tożsamości (`externalMeetingId`) nie tworzy duplikatu spotkania. |
-| **Klucz idempotencji** (idempotency key) | `externalMeetingId` / ID transcriptu vendora. Na DEMO/Test: UUID **runu** nadany przez API - **nie** utożsamiany z `fixtureKey`. |
-| **externalMeetingId** | Tożsamość kanonicznego spotkania / runu w systemie (prod: ID vendora; DEMO/Test: nowe UUID na każde wywołanie Test). |
+| **Klucz idempotencji** (idempotency key) | `externalMeetingId`. DEMO/Test: UUID **runu** (**nie** = `fixtureKey`). Prod etap 1+: Google Calendar **`Event.id`**. |
+| **externalMeetingId** | Tożsamość kanonicznego spotkania / runu (prod: Calendar Event.id; DEMO/Test: nowe UUID na każde wywołanie Test). ID transcriptu FF **nie** jest kanonem spotkania. |
 | **Redakcja** (redaction) | Maskowanie / filtrowanie danych wrażliwych przed krokiem „na zewnątrz” (nawet przed mockiem summarizera). |
 | **Summarizer** | Port generujący streszczenie i zadania; w v1 mock o kontrakcie jak przyszły LLM. |
 | **Walidacja kontraktu** (schema validation) | Sprawdzenie kształtu wyniku (Zod **w aplikacji**); HTTP DTO: class-validator. |

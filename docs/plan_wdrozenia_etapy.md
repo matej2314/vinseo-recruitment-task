@@ -1,5 +1,5 @@
 ---
-wersja: 15
+wersja: 16
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -13,7 +13,7 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 | Etap | Nazwa | Cel |
 |------|-------|-----|
 | **0** | Szkielet | Działający system w repo: pipeline, ACL v1, testy, docs, CI; mocki zamiast vendorów; auth e-mail/hasło |
-| **1** | Pilot | Mały zespół; prawdziwy capture i LLM; **logowanie Google Workspace** (powiązanie kont z e-mailem Calendar); produkcyjny VPS; różne typy spotkań (równy priorytet) |
+| **1** | Pilot | Mały zespół; **discovery Calendar** + adaptery treści; prawdziwy LLM; **logowanie Google Workspace**; produkcyjny VPS; FF tylko przy `[record-ok]` (content-ready) |
 | **2** | Rozszerzenie | Więcej użytkowników; retencja automatyczna; erase admin; ewentualnie Q&A ze źródłami; dopracowanie IdP |
 | **3** | Cała firma | Membership zespołu klienta (onboarding historii); polityka grup Calendar; confidential/vendor w prod; offboarding zsynchronizowany z IdP |
 
@@ -73,9 +73,11 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 - Wybór 1–2 zespołów (nie ograniczać wyłącznie do calli klienckich).
 - **Logowanie Google Workspace (IdP):** „Zaloguj z Google” ograniczone do domeny firmowej; po sukcesie find-or-create `User` po firmowym e-mailu → ta sama sesja (JWT + refresh / cookie) co w etapie 0. **ACL v1 bez zmian** (organizator ∨ uczestnik ∨ admin). Cel: od startu pilota konta aplikacji = tożsamość Workspace (ten sam e-mail co w Calendar), bez polegania wyłącznie na ręcznej rejestracji „tym samym adresem”. OAuth login **≠** credentials Calendar/Notes (`architektura.md`, `bezpieczenstwo_i_rodo.md`).
-- **Calendar** (metadane faktu + `description` + uczestnicy indywidualni) + adaptery treści z **egzekucją `[record-ok]`**: tag w opisie → `fireflies`; brak tagu → `gemini-notes`; UC1 gdy tekst; metadata-only gdy brak treści (`koszty_i_warianty.md`, `bezpieczenstwo_i_rodo.md`).
-- **Aktualizuj źródło:** UI + `POST /meetings/:id/reprocess` → ponowne `meeting.process` (ten sam `externalMeetingId`); upgrade-only treści; nagranie nadal on-demand (`data_flow.md` §5a).
-- Prawdziwy **LlmClient** / UC1 summarize; redakcja włączona; gdy FF: transcript + **pełny adapter on-demand nagrania** (ten sam kontrakt HTTP co szkielet etapu 0); bez `[record-ok]` — **brak** mechanizmu nagrania FF.
+- **Discovery Calendar (obowiązkowe):** job **`calendar.reconcile`** (cron / schedule) — zakończone wydarzenia Meet w oknie → enqueue **`meeting.process`** z `externalMeetingId` = Calendar `Event.id`. Ścieżka **bez FF** (Notes lub metadata-only) musi działać. Opcjonalnie później: Calendar Push jako hint sync. **Zakaz** opierania discovery wyłącznie o webhook Fireflies (`data_flow.md` §6).
+- **Calendar** (metadane faktu + `description` + uczestnicy indywidualni) + adaptery treści z **egzekucją `[record-ok]`**: tag → `fireflies`; brak tagu → `gemini-notes`; UC1 gdy tekst; metadata-only gdy brak treści.
+- **FF webhook** (gdy jest zgoda): tylko **content-ready** / upgrade tego samego `externalMeetingId` — nie jedyne wejście do systemu.
+- **Aktualizuj źródło:** UI + `POST /meetings/:id/reprocess` → ponowne `meeting.process`; upgrade-only; nagranie on-demand (`data_flow.md` §5a).
+- Prawdziwy **LlmClient** / UC1; redakcja; gdy FF: transcript + **pełny adapter on-demand nagrania**; bez `[record-ok]` — **brak** mechanizmu nagrania FF.
 - Szablon Calendar z `[record-ok]` (organizator uzupełnia opis „dla człowieka”); opcjonalnie Apps Script / automatyzacja Workspace dopinająca tag.
 - Egzekucja wobec widoczności buttonu nagrania + wybór źródła treści (norma: `bezpieczenstwo_i_rodo.md`).
 - Nginx + TLS na VPS; demo tylko dla zaufanych kont.
@@ -155,7 +157,8 @@ Jak dojść od szkieletu (oddanie / v1 kodu) do użycia w całej firmie. Spójne
 
 | Ryzyko | Mitygacja |
 |--------|-----------|
-| Brak `[record-ok]` w opisie Calendar | Bez FF/audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; etap 1 wymaga szablonu tagu + adapterów prod |
+| Discovery tylko przez webhook FF | Calendar reconcile (cron) jako primary; FF = content-ready; ścieżka bez nagrywania = Notes / metadata-only |
+| Brak `[record-ok]` w opisie Calendar | Bez FF/audio; treść z Notes by Gemini (+ UC1 gdy tekst); metadata-only tylko gdy Notes puste; etap 1 wymaga szablonu tagu + adapterów prod + discovery Calendar |
 | FF + RODO | DPA / wariant B; confidential w prod |
 | Za szeroki ACL przez grupy Google | Brak ekspansji „wszyscy”; membership dopiero w etapie 3 i tylko w naszej DB; SSO Google ≠ ACL |
 | Mylenie login Google z OAuth Calendar | Osobne klienty / credentials; sesja JWT aplikacji ≠ token pipeline’u |

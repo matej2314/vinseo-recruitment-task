@@ -1,7 +1,7 @@
 ---
-wersja: 12
+wersja: 13
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-02
 ---
 
 # SPEC - Testy
@@ -36,7 +36,7 @@ T-1. Runner: **Jest** we workspaces (`apps/api`, `apps/worker`; web: smoke / lek
 
 T-2. HTTP API: **supertest** + `@nestjs/testing`.
 
-T-3. Integracja: osobna baza PostgreSQL testowa (`POSTGRES_DB_TEST`, zwykle `vinseo_test` na tym samym serwerze co runtime `POSTGRES_DB`). Lokalnie: ścieżka A **`pnpm db:up`** → `docker-compose.db.yml` (A-7) pod worker/integrację; **API e2e** → `pnpm test:e2e` z efemerycznym `docker-compose.e2e.yml` (start/migracje/teardown w orchestratorze, bez ręcznego `db:up`). Pełny stack B (`dev:stack:up` / A-8) **nie** jest wymagany do DoD ani CI v1. Connection stringi: pełne `DATABASE_URL` / `DATABASE_URL_TEST` (oraz opcjonalnie `E2E_DATABASE_URL*`) **wygrywają** nad atomami `POSTGRES_*` (`scripts/pg-url.mjs`); Compose bierze atomy z `.env`. Migracje Prisma na URL testowy przed suite; **zakaz** współdzielenia bazy runtime z suite bez izolacji.
+T-3. Integracja: osobna baza PostgreSQL testowa (`POSTGRES_DB_TEST`, zwykle `vinseo_test`). Lokalnie: **worker integration** (`pnpm test:integration`) i **API e2e** (`pnpm test:e2e`) używają efemerycznego `docker-compose.e2e.yml` (start/migracje/teardown w orchestratorze `run-integration.mjs` / `run-e2e.mjs`, te same `E2E_POSTGRES_*` / opcjonalne `E2E_DATABASE_URL*`; bez ręcznego `db:up`). Ścieżka A (`pnpm db:up` / `docker-compose.db.yml`) zostaje pod DX / ręczne Studio — **nie** jest bramką DoD integration. Pełny stack B (`dev:stack:up` / A-8) **nie** jest wymagany do DoD ani CI v1. Connection stringi: pełne `DATABASE_URL` / `DATABASE_URL_TEST` (oraz opcjonalnie `E2E_DATABASE_URL*`) **wygrywają** nad atomami `POSTGRES_*` (`scripts/pg-url.mjs`); Compose bierze atomy z `.env`. Migracje Prisma na URL testowy przed suite; **zakaz** współdzielenia bazy runtime z suite bez izolacji. Zmiana względem: wcześniejsze T-3 wymagające `pnpm db:up` pod worker/integrację.
 
 T-4. Wyłącznie fixture / mock - bez prawdziwych nagrań i danych klientów.
 
@@ -117,7 +117,7 @@ T-16. Merge do **`main`** tylko przy zielonych wymaganych checkach (branch prote
 |---------|--------|
 | Runner | Jest |
 | API HTTP | supertest + `@nestjs/testing` |
-| DB test | PostgreSQL `POSTGRES_DB_TEST` — ścieżka A (`db:up`) albo e2e api (`test:e2e` / compose.e2e) + Prisma; stack B nie jest bramką CI |
+| DB test | PostgreSQL `POSTGRES_DB_TEST` — efemeryczny compose.e2e (`test:e2e` / `test:integration`) + Prisma; ścieżka A (`db:up`) tylko DX; stack B nie jest bramką CI |
 | CI | GitHub Actions (PR + `workflow_dispatch`) |
 | Web | smoke build / typecheck |
 

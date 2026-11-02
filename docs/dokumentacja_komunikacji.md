@@ -1,5 +1,5 @@
 ---
-wersja: 18
+wersja: 19
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -8,13 +8,15 @@ data_modyfikacji: 2026-11-01
 
 Normatywny kontrakt komunikacji Firmowego asystenta spotkań w v1. Opisuje **co** wolno wymieniać między procesami i z otoczeniem; *dlaczego* takie granice - w `architektura.md`.
 
-Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-meeting` dostaje **nowe** `externalMeetingId` (UUID) i `organizerId` sesji; serwer losuje `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza na tej ścieżce. Wcześniejsza reguła „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” **nie** dotyczy UI Test - zostaje przy DX / ogólnej idempotencji po `externalMeetingId`. Produkcja (Fireflies) bez zmiany normy w tej wersji.
+Zmiana względem poprzedniej wersji docs (DEMO/Test): każde `POST /demo/run-meeting` dostaje **nowe** `externalMeetingId` (UUID) i `organizerId` sesji; serwer losuje `fixtureKey` z katalogu **10**; `fixtureKey` ≠ tożsamość wiersza na tej ścieżce. Wcześniejsza reguła „ten sam `fixtureKey` / `externalMeetingId` → jeden wiersz” **nie** dotyczy UI Test - zostaje przy DX / ogólnej idempotencji po `externalMeetingId`.
+
+**Jawna zmiana (etap 1+ / produkcja):** discovery i kanon faktu = **Google Calendar** (`calendar.reconcile` + `meeting.process` z `Event.id`). Webhook Fireflies **nie** jest primary triggerem systemu — tylko **content-ready** (upgrade treści przy `[record-ok]`). Demo/Test **bez zmian**.
 
 Zmiana względem wcześniejszej projekcji listy (tylko metadane + `processingStatus`): element `GET /meetings` **niesie też** `summary` oraz `failureReason`, bo UI v1 nie ma strony detail — podgląd wyniku w tabeli musi przetrwać odświeżenie widoku (nie tylko kanał SSE). Detail nadal rozszerza o pola niedostępne w wierszu listy (np. uczestnicy zewnętrzni).
 
 Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem v1”: pola ephemeral media **nie** wchodzą do **trwałego** modelu spotkania ani do portu pipeline transcript. Osobny use case / port **on-demand nagrania** zwraca świeży URL (v0: mock; prod: Fireflies **przy zgodzie**). Przy zgodzie Fireflies jest źródłem transkrypcji **i** nagrań (media u vendora; u nas kanon tekstu + on-demand link, nie magazyn plików).
 
-**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar) oddzielony od portu **treści** (`fireflies` \| `gemini-notes` \| mock). Przy braku zgody na nagrywanie — treść z Notes by Gemini (+ UC1 gdy tekst); on-demand FF **nie** stosuje się. **Obecna wersja:** bez OAuth Google / webhooka Calendar w runtime; mock treści na happy-path; zaślepki portów wg major Fazy 3.7. **Kolejna wersja / etap 1+:** działające adaptery na tych samych portach.
+**Doprecyzowanie gałęzi zgody:** port **metadanych** (Calendar) oddzielony od portu **treści** (`fireflies` \| `gemini-notes` \| mock). Przy braku zgody na nagrywanie — treść z Notes by Gemini (+ UC1 gdy tekst); on-demand FF **nie** stosuje się. **Obecna wersja:** bez OAuth Google / webhooka Calendar w runtime; mock treści na happy-path; zaślepki portów wg major Fazy 3.7. **Kolejna wersja / etap 1+:** Calendar **discovery** + działające adaptery; FF webhook tylko jako content-ready.
 
 ## Powierzchnie w zakresie v1
 
@@ -23,7 +25,8 @@ Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem
 | HTTP API | synchroniczne request/response | `web` (BFF) ↔ `api` |
 | BFF | synchroniczne request/response | przeglądarka ↔ `web` (`app/api/*`) ↔ `api` |
 | SSE | strumień `text/event-stream` | przeglądarka ↔ BFF ↔ `api` |
-| Kolejka pg-boss | asynchroniczne joby | `api` (enqueue) ↔ `worker` (consume) |
+| Kolejka pg-boss | asynchroniczne joby | `api` (enqueue UI/demo/cron/webhook) ↔ `worker` (consume; follow-up `meeting.process` po reconcile) |
+| Discovery Calendar (etap 1+) | cron / opcjonalny Push → reconcile | `api` + `worker` + Calendar Events API |
 | Port metadanych (Calendar) | fakt callu / uczestnicy | zaślepka (v0) / Calendar API (etap 1+) → `worker` |
 | Port źródła treści | wejście transcriptu do pipeline | mock (v0) / `fireflies` \| `gemini-notes` (etap 1+) → `worker` |
 | Port / use case on-demand nagrania | synchroniczne resolve URL | `api` → mock (v0) / Fireflies media (**tylko** gałąź ze zgodą) |
@@ -32,7 +35,7 @@ Zmiana względem wcześniejszego zapisu „`audio_url` / `video_url` poza portem
 
 - Publiczne API dla klientów zewnętrznych lub partnerów.
 - Powiadomienia (e-mail, Slack itd.).
-- Normatywny kontrakt produkcyjnego webhooka Fireflies / OAuth Google Calendar / prawdziwego Calendar w **obecnej** wersji (mock + zaślepka za portem; prod w etapie 1+).
+- Normatywna implementacja produkcyjnego discovery Calendar / webhooka FF / OAuth Google w **obecnej** wersji (mock + zaślepka; kontrakt docelowy poniżej i w `data_flow.md` §6 — etap 1+).
 - Normatywne endpointy **logowania Google Workspace** (OAuth / OpenID callback) w **obecnej** wersji — koncepcja w `architektura.md` / `plan_wdrozenia_etapy.md` (etap 1+); etap 0 = e-mail/hasło poniżej.
 - Powierzchnia Q&A / RAG.
 - gRPC, Kafka ani inny broker poza pg-boss.
@@ -265,9 +268,9 @@ Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 
 | Pole | Wartość |
 |------|---------|
-| Nazwa joba | `meeting.process` |
-| Enqueue | głównie `api` (w tym demo); worker tylko konsumuje |
-| Idempotencja | klucz = `externalMeetingId` (tożsamość spotkania / runu). Na DEMO/Test: UUID nadany przy enqueue; `fixtureKey` to tylko materiał mocka. Na DX / prod mock: dotychczasowa semantyka poza kontraktem UI Test |
+| Nazwy jobów | **`meeting.process`** (pipeline spotkania); **`calendar.reconcile`** (etap 1+ discovery — poza v0) |
+| Enqueue | UI/demo/cron/webhook FF/Push: **`api`**. Po `calendar.reconcile` worker może enqueue follow-up `meeting.process` (kontynuacja discovery; nie ścieżka UI). |
+| Idempotencja `meeting.process` | klucz = `externalMeetingId`. **DEMO/Test:** UUID runu; `fixtureKey` = materiał mocka. **Prod (etap 1+):** `externalMeetingId` = Google Calendar **`Event.id`**. DX: poza kontraktem UI Test |
 
 **Payload (DEMO/Test - przykład):**
 
@@ -282,8 +285,21 @@ Kontrakt Nest `POST /auth/register` bez zmian: e-mail + hasło (sekcja 1.1).
 
 - `externalMeetingId` - UUID **runu** dema (nie musi równać się `fixtureKey`).
 - `fixtureKey` - wylosowany klucz z katalogu 10; wskazuje treść mocka za portem źródła.
-- `source: "mock"` w v1; docelowo inne wartości adaptera bez zmiany nazwy joba (ew. wersjonowanie payloadu w contracts).
+- `source: "mock"` w v1; docelowo `fireflies` \| `gemini-notes` (hint adaptera treści) bez zmiany nazwy joba `meeting.process`.
 - **`requestId`:** correlation id z requestu HTTP `api` przy enqueue (wymagane na ścieżce demo / request-driven); worker loguje ten sam id (`observability.md`).
+
+**Payload (prod etap 1+ — przykład):**
+
+```json
+{
+  "externalMeetingId": "calendar-event-id",
+  "source": "gemini-notes",
+  "requestId": "correlation-id-from-api-or-reconcile"
+}
+```
+
+- `externalMeetingId` — **Calendar Event.id** (kanon faktu); nie ID transcriptu Fireflies.
+- `source` — wybrany / oczekiwany adapter treści (`fireflies` przy `[record-ok]`, inaczej `gemini-notes`); worker i tak weryfikuje tag z Calendar `description`.
 
 **Statusy przetwarzania** (na spotkaniu / jobie widoczne dla API):
 
@@ -380,28 +396,46 @@ Port źródła w v1 jest **celowo uproszczony** (anti-corruption layer). Nie kop
 
 Auth do Fireflies: API Key (Bearer) do GraphQL. W v1 nadal atrapa; na produkcji sekret tylko po stronie serwera (nigdy w `web`).
 
-### Przepływ produkcyjny (docelowy)
+### Przepływ produkcyjny (docelowy) — Workspace first
+
+**1) Discovery (obowiązkowe, etap 1+)** — szczegóły diagramu: `data_flow.md` §6a.
+
+```text
+Cron (lub opcjonalnie Calendar Push → sync hint)
+  → api enqueue calendar.reconcile
+  → worker: Calendar events.list (okno end / syncToken)
+  → dla kandydatów: enqueue meeting.process { externalMeetingId: Event.id }
+  → worker meeting.process:
+       Calendar get (metadane + description)
+       → treść: fireflies | gemini-notes wg [record-ok]
+       → treść OK: normalize → redact → UC1 → Zod → persist
+       → brak treści: metadata-only (fakt z Calendar)
+```
+
+**2) Content-ready Fireflies (drugorzędne, tylko gałąź `[record-ok]`)**
 
 ```text
 Fireflies Webhooks V2  POST  (event: meeting.transcribed)
   → weryfikacja X-Hub-Signature (HMAC-SHA256), jeśli skonfigurowany sekret
-  → enqueue meeting.process { externalMeetingId: meeting_id, source: "fireflies" }
-  → worker: GraphQL transcript(id) → mapowanie na port źródła
+  → resolve Calendar Event.id (mapowanie; nie używać FF id jako kanonu spotkania)
+  → enqueue meeting.process { externalMeetingId: calendarEventId, source: "fireflies" }
+  → worker: GraphQL transcript → mapowanie na port źródła → upgrade-only
   → normalize → redact → summarize (Wasz) → Zod → persist
 ```
 
-- Preferowany trigger do pipeline transcriptu: **`meeting.transcribed`** (surowy transcript gotowy).
-- Event **`meeting.summarized`** dotyczy AI summary **po stronie Fireflies** - u nas nie jest wymagany do zbudowania własnego streszczenia; można go ignorować albo użyć tylko operacyjnie.
-- Payload webhooka **nie** zawiera pełnego transcriptu - tylko m.in. `event`, `meeting_id`, `timestamp` (oraz opcjonalnie `client_reference_id`, `reprocessed_at` przy resendach). Treść = osobne zapytanie GraphQL.
-- Resendy z `reprocessed_at`: traktować jak ponowne przetworzenie z tym samym `externalMeetingId` (idempotencja / nadpisanie), nie jak nowe spotkanie.
+- **Primary trigger systemu:** Calendar reconcile (cron). Push Calendar = opcjonalny hint. FF webhook **nie** zastępuje discovery.
+- Preferowany event FF do **treści:** **`meeting.transcribed`** (surowy transcript gotowy).
+- Event **`meeting.summarized`** dotyczy AI summary **po stronie Fireflies** — u nas nie jest wymagany; można ignorować.
+- Payload webhooka FF **nie** zawiera pełnego transcriptu — tylko m.in. `event`, `meeting_id`, `timestamp` (oraz opcjonalnie `client_reference_id`, `reprocessed_at`). Treść = GraphQL.
+- Resendy: ponowne `meeting.process` z tym samym **Calendar** `externalMeetingId` (idempotencja / upgrade), nie nowe spotkanie.
 
-Ta powierzchnia webhooka jest **poza normatywnym zakresem v1** (mock), ale mapowanie poniżej jest ustalone na przyszłą podmianę adaptera.
+Implementacja discovery / webhooków jest **poza v0** (mock); kontrakt docelowy obowiązuje od etapu 1+.
 
-### Tabela mapowania: Fireflies → port źródła
+### Tabela mapowania: Fireflies → port źródła (treść)
 
 | Port (nasz) | Fireflies | Uwagi |
 |-------------|-----------|--------|
-| `externalId` | `Transcript.id` / webhook `meeting_id` | Tożsame ID w API FF |
+| `externalId` (w porcie **treści**) | `Transcript.id` / webhook `meeting_id` | ID materiału FF. **Kanon spotkania / joba** = Calendar `Event.id` (`externalMeetingId` w pg-boss), nie to pole |
 | `title` | `title` | 1:1 |
 | `startedAt` | `dateString` (preferowane) lub `date` (ms epoch → ISO) | Zawsze znormalizować do ISO-8601 w porcie |
 | `participants[].email` | `participants[]` (e-maile) lub `meeting_attendees[].email` | Złożyć listę bez duplikatów |

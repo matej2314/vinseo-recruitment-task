@@ -1,9 +1,10 @@
 /**
- * Integracja na Postgres `vinseo_test` (SPEC-TESTY T-3 / T-9).
+ * Integracja na Postgres testowy (SPEC-TESTY T-3 / T-9).
  *
  * Uruchomienie: `pnpm test:integration` (root lub `@vinseo/worker`).
- * Wymaga: `pnpm db:up` albo `pnpm dev:stack:up` (oba tworzą `vinseo_test`),
- * potem: `DATABASE_URL="$DATABASE_URL_TEST" pnpm db:migrate:deploy`
+ * Orchestrator `test/run-integration.mjs` podnosi efemeryczny
+ * `docker-compose.e2e.yml` (te same E2E_POSTGRES_* co `test:e2e`), migruje,
+ * odpala suite i w `finally` robi `down -v`. Nie wymaga `pnpm db:up`.
  *
  * Nie wchodzi w domyślne `pnpm test` (unit).
  */

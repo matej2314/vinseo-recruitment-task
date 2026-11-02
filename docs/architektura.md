@@ -1,5 +1,5 @@
 ---
-wersja: 15
+wersja: 16
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -21,8 +21,8 @@ v1: **bez** bogatej warstwy klas domenowych (encje DDD, domain events „wszędz
 - Jedna organizacja, jedna instalacja, **jedna baza PostgreSQL** (stan domenowy, pg-boss oraz tabela audytu **`audit_log`** - trwały ślad kluczowych zdarzeń biznesowych; to nie jest event sourcing ani zamiennik logów procesu).
 - Trzy procesy runtime: **`api`**, **`worker`**, **`web`** - wspólny kod kontraktów w monorepo, bez rozbijania na mikroserwisy per capability.
 - Integracje zewnętrzne przez **porty i adaptery** (hexagonal na granicach I/O): **port metadanych** (Calendar) **oddzielony** od **portu treści** (adaptery `mock` \| `fireflies` \| `gemini-notes`); **jeden** provider LLM. **Zakaz fat-adaptera** „wszystko Google+FF w jednym”.
-- Fireflies (gdy w opisie Calendar jest `[record-ok]`) dostarcza **transcript** (+ media on-demand); Gemini Notes (brak tagu) — materiał tekstowy. Kanoniczne streszczenie i zadania powstają u nas (UC1 LLM). Obiekt `summary.*` z Fireflies **ignorujemy**. Calendar **nie** jest magazynem nagrania; z Calendar bierzemy m.in. `description` pod sygnał zgody. Szczegóły: `llm_i_asystent.md`, `bezpieczenstwo_i_rodo.md`.
-- **Obecna wersja:** mock treści na happy-path; **zaślepka** portów Calendar / `gemini-notes` (major Faza 3.7). **Etap 1+:** działająca logika na tych samych portach.
+- **Etap 1+:** Google Calendar / Workspace = **discovery + metadane faktu** (Events API); Fireflies (przy `[record-ok]`) = **dodatek treści** (+ media on-demand); Gemini Notes (brak tagu) = treść bez FF. Kanoniczne streszczenie = UC1; `summary.*` FF **ignorujemy**. Calendar **nie** jest magazynem nagrania; z `description` — sygnał zgody. Szczegóły: `data_flow.md` §6, `llm_i_asystent.md`, `bezpieczenstwo_i_rodo.md`.
+- **Obecna wersja:** mock treści na happy-path; **zaślepka** portów Calendar / `gemini-notes` (major Faza 3.7). Demo bez zmian. **Etap 1+:** discovery (`calendar.reconcile`) + działające adaptery na tych samych portach.
 
 Ten sam styl obowiązuje **we wszystkich** bounded contextach v1 - bez wyjątków „bogatszego DDD tylko w jednym module”.
 
@@ -128,11 +128,11 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 
 ## Pipeline spotkania
 
-1. Pojawia się materiał źródłowy (obecna wersja: mock; etap 1+: metadane z Calendar + treść z `fireflies` lub `gemini-notes` wg `[record-ok]`).
-2. Enqueue job (klucz idempotencji: zewnętrzne ID spotkania / transcriptu).
-3. Worker: pobranie treści → normalizacja → **redakcja (E+T+P+K)** → **UC1 summarizeMeeting** (LlmClient mock/prod) → walidacja Zod → zapis. Bez użycia `summary` z Fireflies. Brak materiału treści → metadata-only (bez UC1).
-4. Ponowne uruchomienie tego samego klucza: **update in place**, bez drugiego rekordu spotkania. Obejmuje też produktowe **Aktualizuj źródło** (etap 1+): UI/API tylko enqueue; worker ponawia fetch Calendar + treści. Nagranie FF **nie** wchodzi do joba — nadal on-demand (`data_flow.md`).
-5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** wywołaniem LlmClient; po udanym Zod - persist. Niepoprawne summary **nie** trafia do bazy jako sukces (quarantine / failed; max 1 retry JSON).
+1. **Wejście do systemu:** obecna wersja — mock / demo enqueue. **Etap 1+ — discovery Calendar** (`calendar.reconcile`: cron obowiązkowy; Push opcjonalny) wybiera zakończone wydarzenia; **nie** czeka na webhook Fireflies.
+2. Enqueue **`meeting.process`** (klucz idempotencji: DEMO = UUID runu; **prod = Calendar `Event.id`**). FF webhook / reprocess = ponowne enqueue tego samego klucza (content-ready / upgrade).
+3. Worker (`meeting.process`): **metadane z Calendar** → wybór portu treści (`fireflies` \| `gemini-notes` wg `[record-ok]`) → normalizacja → **redakcja (E+T+P+K)** → **UC1** (gdy treść) → Zod → zapis. Bez `summary` z FF. Brak materiału treści → **metadata-only** (fakt z Calendar zostaje).
+4. Ponowne uruchomienie tego samego klucza: **update in place**. Obejmuje **Aktualizuj źródło** i FF content-ready. Nagranie FF **nie** wchodzi do joba — on-demand (`data_flow.md`).
+5. **Brak** trwałego zapisu stanu pośredniego (transcript/summary) w DB **przed** LlmClient; po udanym Zod — persist. Niepoprawne summary → quarantine / `failed` (max 1 retry JSON).
 
 ## Granica „na zewnątrz” i redakcja
 
@@ -159,6 +159,7 @@ ACL egzekwuje **`api`** (lista, detail, przyszłe wyszukiwanie / asystent). BFF 
 
 - Logika biznesowa i ACL w komponentach React / wyłącznie w BFF.
 - Synchroniczne „przetwórz całe spotkanie” w handlerze HTTP.
+- **Webhook Fireflies jako jedyny trigger discovery** (brak ścieżki bez nagrywania) — zamiast: Calendar reconcile first (`data_flow.md` §6, `anty_patterny.md`).
 - Zaufanie surowemu JSON-owi z modelu bez walidacji w aplikacji.
 - Gruby `utils` / wspólna paczka z Zod i wszystkim naraz zamiast cienkich kontraktów.
 - Czytanie `process.env` głęboko w domenie zamiast zwalidowanej konfiguracji na starcie procesu.

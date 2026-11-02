@@ -1,5 +1,5 @@
 ---
-wersja: 15
+wersja: 16
 data_utworzenia: 2026-10-29
 data_modyfikacji: 2026-11-01
 ---
@@ -8,7 +8,9 @@ data_modyfikacji: 2026-11-01
 
 Przepływy Firmowego asystenta spotkań (v1). Poziom szczegółów: kroki, systemy i statusy - bez pełnych payloadów JSON (te są w `dokumentacja_komunikacji.md`).
 
-**Obecna wersja:** happy-path poniżej = mock treści; bez OAuth Google / webhooka Calendar w runtime; zaślepki portów Calendar + `gemini-notes` (major Faza 3.7). **Kolejna wersja / etap 1+:** Calendar → fakt + `description` + uczestnicy; wybór adaptera treści wg `[record-ok]` (`fireflies` \| `gemini-notes`); UC1 gdy treść; metadata-only gdy brak materiału.
+**Obecna wersja:** happy-path poniżej = mock treści; bez OAuth Google / webhooka Calendar w runtime; zaślepki portów Calendar + `gemini-notes` (major Faza 3.7). Demo (Test) bez zmian — ręczny enqueue `meeting.process` na mocku.
+
+**Kolejna wersja / etap 1+ (Workspace first):** **discovery** z Google Calendar (cron `calendar.reconcile`; Push opcjonalny) → enqueue `meeting.process` z `externalMeetingId` = Calendar `Event.id` → worker: metadane z Calendar + treść (`fireflies` \| `gemini-notes` wg `[record-ok]`) → UC1 gdy treść; **metadata-only** gdy brak materiału. Webhook Fireflies = **content-ready** (upgrade), nie jedyny trigger systemu.
 
 ## 1. Pipeline spotkania (happy path, mock)
 
@@ -236,34 +238,71 @@ Szczegóły kontraktu HTTP / UI: `dokumentacja_komunikacji.md`, `frontend.md`. N
 
 ## 6. Docelowe wejście (etap 1+; poza mockiem / zaślepką v0)
 
-Ten sam pipeline od kroku normalize; zmienia się sposób pojawienia się joba, źródło **metadanych** i wybór adaptera **treści**.
+**Jawna zmiana koncepcji:** Google Workspace / Calendar jest **pierwszorzędnym źródłem faktu i discovery**; Fireflies jest **dodatkiem treści** (przy `[record-ok]`), nie bramą do systemu. Bez nagrywania / bez webhooka FF ścieżka nadal działa (Notes lub metadata-only).
+
+Ten sam pipeline treści od kroku normalize; zmienia się **kto tworzy job** i skąd bierze się `externalMeetingId`.
+
+### 6a. Discovery → process (obowiązkowe)
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Cal as Google Calendar
-  participant Src as Adapter treści<br/>fireflies / gemini-notes
+  participant Cron as Cron / schedule
+  participant Push as Calendar Push<br/>(opcjonalnie)
+  participant API as api
   participant Q as pg-boss
   participant W as worker
+  participant Cal as Google Calendar
+  participant Src as Adapter treści<br/>fireflies / gemini-notes
   participant DB as PostgreSQL
 
-  Note over Cal,W: metadane faktu zawsze z Calendar<br/>tag [record-ok] w description
-  Cal-->>W: title, czas, description, uczestnicy
-  alt description zawiera [record-ok]
-    Src->>Src: fireflies (transcript + media u FF)
-  else brak [record-ok]
-    Src->>Src: gemini-notes (tekst; bez audio FF)
+  Note over Cron,Push: sygnał discovery — nie treść spotkania
+  Cron->>API: tick (okno zakończonych Event)
+  opt Push events/watch
+    Push->>API: POST webhook (headers only)
+  end
+  API->>Q: enqueue calendar.reconcile
+  Q->>W: calendar.reconcile
+  W->>Cal: events.list (time window / syncToken)
+  Cal-->>W: Event[] (id, end, Meet, …)
+  loop kandydat (np. end + grace, Meet, nieobsłużony / do upgrade)
+    W->>Q: follow-up meeting.process<br/>externalMeetingId = Event.id
+    Note over W,Q: dozwolone tylko jako kontynuacja discovery;<br/>UI / BFF nadal enqueue wyłącznie przez api
   end
   Q->>W: meeting.process
-  W->>Src: fetch treści
+  W->>Cal: get Event (metadane + description)
+  alt description zawiera [record-ok]
+    W->>Src: fireflies
+  else brak [record-ok]
+    W->>Src: gemini-notes
+  end
   alt jest materiał tekstowy
     Note over W,DB: normalize → redact → UC1 → Zod → persist
   else brak / pusty materiał
-    W->>DB: metadata-only (bez AI)
+    W->>DB: metadata-only (fakt z Calendar; bez AI)
   end
 ```
 
-Gałąź z `[record-ok]` (FF webhook + GraphQL): szczegóły pól — `dokumentacja_komunikacji.md` (Mapowanie Fireflies); `summary.*` FF nie wchodzi do pipeline. On-demand nagranie FF — tylko przy `[record-ok]` (sekcja 3a). Sygnał tagu: `calendarDescriptionAllowsRecording` (`@vinseo/contracts`).
+| Reguła | Norma |
+|--------|--------|
+| Primary discovery | Okresowy **`calendar.reconcile`** (cron / pg-boss schedule): zakończone wydarzenia w oknie + grace → kandydaci do `meeting.process` |
+| Push Calendar | Opcjonalny hint „zrób sync teraz” (`events/watch`); payload **bez** id eventu — po pushu i tak reconcile / `syncToken` |
+| Klucz prod | `externalMeetingId` = **Google Calendar `Event.id`** |
+| Rola workera | Procesor **wydarzenia Calendar** (metadane zawsze) + wybór portu treści; nie „konsument wyłącznie FF” |
+| Bez FF / bez nagrania | Nadal enqueue po `end`; wynik: Notes+UC1 albo **świadome metadata-only** |
+
+### 6b. Content-ready Fireflies (drugorzędne)
+
+```text
+Fireflies Webhooks V2  (meeting.transcribed)
+  → api (weryfikacja podpisu)
+  → enqueue meeting.process { externalMeetingId: calendarEventId, source hint: fireflies }
+  → worker: upgrade-only (jak reprocess) — transcript GraphQL → redact → UC1
+```
+
+- FF webhook **przyspiesza** pojawienie się treści przy gałęzi `[record-ok]`; **nie** zastępuje discovery Calendar.
+- Mapowanie FF → Calendar event (czas / Meet link / `client_reference_id` gdy ustawione) — w `dokumentacja_komunikacji.md`.
+- `summary.*` FF nie wchodzi do pipeline. On-demand nagranie — tylko przy `[record-ok]` (sekcja 3a). Sygnał tagu: `calendarDescriptionAllowsRecording` (`@vinseo/contracts`).
 
 ## 7. Asystent Q&A (koncepcja, etap 2+)
 
@@ -284,7 +323,8 @@ Szczegóły: `llm_i_asystent.md`.
 | Dane | Powstają w | Trafiają do |
 |------|------------|-------------|
 | Użytkownik + hash hasła | api (register/login) | PostgreSQL |
-| Job pipeline | api (demo / prod enqueue) | pg-boss (w Postgres) |
+| Job discovery (etap 1+) | api (cron tick / Calendar Push) | pg-boss: `calendar.reconcile` |
+| Job pipeline | api (demo / reconcile → process / FF content-ready / reprocess) | pg-boss: `meeting.process` |
 | Transcript znormalizowany + summary + action items | worker (po UC1 + Zod) | PostgreSQL - **jeden** persist po udanej walidacji (nie z FF summary; nie przed LlmClient) |
 | Decyzja ACL | api (`access`) | odpowiedź HTTP (organizator ∨ uczestnik ∨ admin); deny → `audit_log` |
 | Ephemeral URL nagrania | api (on-demand; mock / później FF) | tylko odpowiedź JSON `{ url }` — **nie** Postgres |

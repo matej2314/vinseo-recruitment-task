@@ -1,7 +1,7 @@
 ---
-wersja: 12
+wersja: 13
 data_utworzenia: 2026-10-29
-data_modyfikacji: 2026-10-31
+data_modyfikacji: 2026-11-02
 ---
 
 # Strategia testów
@@ -42,15 +42,15 @@ Frontend (`web`): bez Playwright w v1; co najwyżej lekkie testy jednostkowe czy
 | Runner | **Jest** (wszystkie apps; migracja ze Vitest w scaffoldzie Nest) |
 | HTTP API | **supertest** + `@nestjs/testing` |
 | Asercje kontraktu summary | Zod (parse w teście / oczekiwany sukces lub fail) |
-| Baza | Osobna baza **testowa** (`POSTGRES_DB_TEST`, lokalnie zwykle `vinseo_test`); nie współdzielona z runtime bez izolacji. Ścieżka A: `pnpm db:up`. API e2e: `pnpm test:e2e` (efemeryczny `docker-compose.e2e.yml`). Pełny `compose.dev` **nie** jest bramką CI/DoD testów |
+| Baza | Osobna baza **testowa** (`POSTGRES_DB_TEST`, lokalnie zwykle `vinseo_test`); nie współdzielona z runtime bez izolacji. Ścieżka A: `pnpm db:up` (DX). API e2e + worker integration: efemeryczny `docker-compose.e2e.yml` (`pnpm test:e2e` / `pnpm test:integration`). Pełny `compose.dev` **nie** jest bramką CI/DoD testów |
 
 ## Baza testowa
 
 - Atomy w root `.env`: `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_DB_TEST` / `POSTGRES_HOST` / `POSTGRES_PORT` oraz e2e: `E2E_POSTGRES_HOST` / `E2E_POSTGRES_PORT`. Pełne `DATABASE_URL` / `DATABASE_URL_TEST` (i opcjonalnie `E2E_DATABASE_URL*`) **wygrywają** nad składaniem z atomów (`scripts/pg-url.mjs`).
 - Ścieżka A (`docker-compose.db.yml`): jeden Postgres, dwie bazy (runtime + test). Wejście: `pnpm db:up` (wymaga uzupełnionych atomów w `.env`).
 - **API e2e** (`pnpm test:e2e` / `apps/api` `test:e2e`): orchestrator `run-e2e.mjs` sam podnosi `docker-compose.e2e.yml`, migruje, odpala Jest i w `finally` robi `down -v`. Nie używa `DATABASE_URL` ścieżki A (zwykle `:5432`) — bierze `E2E_DATABASE_URL*` albo składa URL z atomów + `E2E_POSTGRES_*`.
-- Worker / integracja poza e2e api: lokalnie nadal `pnpm db:up`, potem migracje na `DATABASE_URL_TEST` (nie na runtime `DATABASE_URL`).
-- Migracje Prisma na bazę testową przed suite integracyjnym (e2e api: robi to orchestrator).
+- **Worker integration** (`pnpm test:integration` / `apps/worker` `test:integration`): orchestrator `run-integration.mjs` — ten sam Compose i te same `E2E_POSTGRES_*` / `E2E_DATABASE_URL*` co e2e; migracje + Jest + `down -v`. **Nie** wymaga `pnpm db:up`. Nie uruchamiać równolegle z `test:e2e` (ten sam host port).
+- Migracje Prisma na bazę testową przed suite — robi orchestrator (e2e i integration).
 - **Bez** prawdziwych nagrań i danych klientów - wyłącznie fixture / mock.
 - Testy jednostkowe ACL i redakcji **nie wymagają** bazy.
 
@@ -120,7 +120,7 @@ Przykładowa tabela (rozszerzać w kodzie):
 ## Organizacja w monorepo
 
 - Testy współlokalizowane lub w `test/` danej aplikacji (`apps/api`, `apps/worker`).
-- Skrypt root: `pnpm test` (helper `scripts/*.test.mjs` + Jest api/worker); `pnpm test:e2e` — efemeryczna baza; integracja workera: `pnpm db:up` + `test:integration` (patrz `deployment.md`).
+- Skrypt root: `pnpm test` (helper `scripts/*.test.mjs` + Jest api/worker); `pnpm test:e2e` / `pnpm test:integration` — efemeryczna baza (`docker-compose.e2e.yml`, patrz `deployment.md`).
 - Nazewnictwo opisuje zachowanie (`access.allows-project-member.spec.ts`), nie implementację.
 
 ## CI i reguła zespołu
